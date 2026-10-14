@@ -1,0 +1,51 @@
+name: CI
+
+on:
+  # Feature branches are checked by the PR, main after the merge.
+  push:
+    branches: [main]
+  pull_request:
+
+# A new push to the same PR cancels the outdated run.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+jobs:
+  tests:
+    name: PHP ${{ matrix.php }}
+    runs-on: ubuntu-latest
+    # Runs pull requests only from branches of this repository: a pull request
+    # from a fork is skipped (the push to the fork runs CI there). The workflow
+    # needs no secrets; the guard keeps strangers' code off the runners.
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        php: ['8.2', '8.3', '8.4']
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          extensions: mbstring
+          coverage: none
+
+      - name: Install dev dependencies (Kirby as fixture)
+        run: composer install --no-interaction --no-progress --prefer-dist --ignore-platform-req=ext-gd
+
+      # The integration tests symlink the sibling packages into the throwaway
+      # site when they exist (tests/helpers.php: ANNAI_NOREN_PATH,
+      # ANNAI_KOYOMI_PATH). Without them the Noren and Koyomi checks print SKIP.
+      - name: Fetch Noren and Koyomi as fixtures
+        run: |
+          git clone --depth 1 https://github.com/simsimmal/kirby-noren ../kirby-noren || true
+          git clone --depth 1 https://github.com/simsimmal/kirby-koyomi ../kirby-koyomi || true
+
+      - name: Tests
+        run: sh tests/run.sh

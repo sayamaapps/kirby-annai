@@ -1,0 +1,140 @@
+#!/usr/bin/env php
+<?php
+/**
+ * Shows, per page, what search engines and AI agents see on a Kirby site
+ * (SPEC.md §3.11). OWNER: task `tools`.
+ *
+ *   vendor/bin/annai-check [--root=DIR] [--url=https://example.test] [--page=ID ...] [--json]
+ *
+ * Exit codes: 0 no problems, 1 problems or robots warnings, 2 usage error
+ * or Annai off (annai.active), 3 the site could not be booted or checked.
+ * Messages go to STDERR; the report goes to STDOUT.
+ */
+if (PHP_SAPI !== 'cli') {
+    http_response_code(404);
+    exit;
+}
+
+const ANNAI_CHECK_USAGE = "usage: vendor/bin/annai-check [--root=DIR] [--url=https://example.test] [--page=ID ...] [--json]\n";
+
+/**
+ * Arguments, paths and exception messages without control characters, as
+ * Annai\I18n::printable() (the plugin is not loaded yet at this point).
+ */
+function annai_check_printable(string $message): string
+{
+    return (string) preg_replace('/[\x{00}-\x{08}\x{0B}-\x{1F}\x{7F}-\x{9F}]/u', '', mb_scrub($message, 'UTF-8'));
+}
+
+function annai_check_error(string $message, int $code): never
+{
+    fwrite(STDERR, 'annai-check: ' . annai_check_printable($message) . "\n");
+    exit($code);
+}
+
+function annai_check_usage(string $message): never
+{
+    fwrite(STDERR, 'annai-check: ' . annai_check_printable($message) . "\n" . ANNAI_CHECK_USAGE);
+    exit(2);
+}
+
+$root = null;
+$url = null;
+$pages = [];
+$json = false;
+
+foreach (array_slice($argv, 1) as $argument) {
+    if ($argument === '--json') {
+        $json = true;
+        continue;
+    }
+    if ($argument === '--help' || $argument === '-h') {
+        echo ANNAI_CHECK_USAGE;
+        exit(0);
+    }
+    if (preg_match('/^--(root|url|page)=(.*)$/', $argument, $match) !== 1) {
+        annai_check_usage('unknown argument: ' . $argument);
+    }
+    [, $name, $value] = $match;
+    if (trim($value) === '') {
+        annai_check_usage('--' . $name . ' needs a value');
+    }
+    match ($name) {
+        'root' => $root = $value,
+        'url' => $url = $value,
+        'page' => $pages[] = $value,
+    };
+}
+
+if ($url !== null && preg_match('#^https?://[^/\s]+#i', $url) !== 1) {
+    annai_check_usage('--url must be an absolute http(s) URL, for example https://example.test');
+}
+
+$rootOption = $root ?? (getcwd() ?: '.');
+$root = realpath($rootOption);
+if ($root === false || !is_dir($root)) {
+    annai_check_error('no such directory: ' . $rootOption, 2);
+}
+if (!is_dir($root . '/site')) {
+    annai_check_error($root . ' is not a Kirby site (no site/ directory); use --root=DIR', 2);
+}
+$autoload = $root . '/vendor/autoload.php';
+if (!is_file($autoload)) {
+    annai_check_error($autoload . ' is missing; run composer install in ' . $root, 2);
+}
+require $autoload;
+
+// Kirby's `debug` option is forced off: with it on, Annai\Options::warn() throws
+// at the first broken option and the check died with "check failed" (exit 3) and
+// one message. Off, every broken option is logged and Check::site() reports it as
+// a site problem ("configuration: …"), the report is complete and the exit code 1.
+// Options passed here win over site/config/config.php (Kirby merges them last).
+$options = ['debug' => false];
+if ($url !== null) {
+    $options['url'] = $url;
+}
+
+try {
+    $kirby = new Kirby\Cms\App([
+        'roots' => [
+            'index'   => is_dir($root . '/public') ? $root . '/public' : $root,
+            'base'    => $root,
+            'site'    => $root . '/site',
+            'content' => $root . '/content',
+            'storage' => $root . '/storage',
+        ],
+        'options' => $options,
+    ]);
+} catch (\Throwable $error) {
+    annai_check_error('cannot boot Kirby: ' . $error->getMessage(), 3);
+}
+
+// The plugin is loaded by Kirby from site/plugins; never autoloaded here.
+if (!class_exists(\Annai\Options::class, false)) {
+    annai_check_error('Annai is not installed in ' . $root . '/site/plugins (plugin sayamaapps/annai)', 2);
+}
+if (!\Annai\Options::active($kirby)) {
+    annai_check_error('Annai is off (annai.active)', 2);
+}
+
+try {
+    $report = \Annai\Check::site($kirby, $pages);
+} catch (\Throwable $error) {
+    annai_check_error('check failed: ' . $error->getMessage(), 3);
+}
+
+if ($json) {
+    // A byte that is not UTF-8 (a --page id in Latin-1, a folder name from an
+    // import) becomes U+FFFD, as in the JSON-LD: without the flag json_encode()
+    // gave up on the whole report and the check ended with exit 3.
+    $encoded = json_encode($report, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE);
+    if ($encoded === false) {
+        annai_check_error('the report cannot be encoded as JSON: ' . json_last_error_msg(), 3);
+    }
+    // json_encode escapes C0 itself; JSON_UNESCAPED_UNICODE would print C1 raw.
+    echo preg_replace_callback('/[\x{80}-\x{9F}]/u', fn (array $c): string => sprintf('\u%04x', mb_ord($c[0], 'UTF-8')), $encoded), "\n";
+} else {
+    echo \Annai\Check::render($report);
+}
+
+exit(\Annai\Check::exitCode($report));

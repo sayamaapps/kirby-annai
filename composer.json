@@ -1,0 +1,55 @@
+{
+    "name": "sayamaapps/kirby-annai",
+    "description": "Everything search engines and AI agents read from a Kirby CMS 5 site: robots.txt, sitemap.xml, llms.txt, JSON-LD for a local business, meta description, canonical, Open Graph, noindex and hreflang. Opening hours from Noren, events from Koyomi when installed. No styling.",
+    "type": "kirby-plugin",
+    "license": "MIT",
+    "keywords": ["kirby", "kirby-plugin", "kirby-5", "seo", "sitemap", "robots-txt", "llms-txt", "json-ld", "schema-org", "open-graph", "local-business"],
+    "homepage": "https://github.com/simsimmal/kirby-annai",
+    "authors": [
+        {
+            "name": "Simon Räder",
+            "homepage": "https://sayamaapps.de"
+        }
+    ],
+    "support": {
+        "issues": "https://github.com/simsimmal/kirby-annai/issues",
+        "source": "https://github.com/simsimmal/kirby-annai"
+    },
+    "require": {
+        "php": "^8.2",
+        "ext-mbstring": "*",
+        "ext-json": "*",
+        "getkirby/composer-installer": "^1.2",
+        "giggsey/libphonenumber-for-php-lite": "^9.0"
+    },
+    "require-dev": {
+        "getkirby/cms": "^5.0"
+    },
+    "suggest": {
+        "sayamaapps/kirby-noren": "Opening hours in JSON-LD and llms.txt come from Noren's schema.org arrays when it is installed and active",
+        "sayamaapps/kirby-koyomi": "Events appear in sitemap.xml and llms.txt when Koyomi is installed and active",
+        "sayamaapps/kirby-sudare": "While Sudare's preview protection is on, every page is noindex and robots.txt says Disallow: /"
+    },
+    "bin": [
+        "bin/annai-check"
+    ],
+    "scripts": {
+        "test": "sh tests/run.sh"
+    },
+    "config": {
+        "optimize-autoloader": true,
+        "allow-plugins": {
+            "getkirby/composer-installer": true
+        },
+        "platform": {
+            "php": "8.2.0"
+        }
+    },
+    "extra": {
+        "installer-name": "annai",
+        "kirby-cms-path": false,
+        "kirby": {
+            "compatible": "^5.0"
+        }
+    }
+}
