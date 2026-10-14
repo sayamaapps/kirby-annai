@@ -643,6 +643,10 @@ ASDF_PHP_VERSION=8.5.3 php tests/CheckTest.php  # one file
 
 The tests are plain PHP scripts: each `tests/*Test.php` is a standalone script, exit code 0 means pass. The Kirby-free tests load the source classes directly (`TextTest` also Composer's autoloader, for libphonenumber); the Kirby tests boot a real Kirby instance from the development dependency and load the plugin through a throwaway site. None needs a network connection. The Noren and Koyomi tests look for the sibling packages (`ANNAI_NOREN_PATH`, `ANNAI_KOYOMI_PATH`, or `../kirby-noren`, `../kirby-koyomi`) and print `SKIP` when they are not there.
 
+## Maintenance
+
+This module is open source under the MIT license and is maintained for the author's own projects. Issues and pull requests are welcome, but there is no support promise and no release schedule. Report security problems privately through GitHub's private vulnerability reporting (the "Report a vulnerability" button on the Security tab).
+
 ## License
 
 MIT, see [LICENSE](LICENSE).
