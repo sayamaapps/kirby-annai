@@ -51,9 +51,11 @@ halten; bereits abgerufene Inhalte werden dadurch nicht zurückgeholt.
   `robots.txt` und zusätzliche Einträge der Sitemap sind öffentlich.
 - **Fehlerprotokoll.** Konfigurationsfehler (etwa eine unbekannte Zeitzone) werden in
   das Fehlerprotokoll des Servers geschrieben. Die Meldung enthält keine Besucherdaten.
-- **Vorschauschutz.** Solange eine Vorschau geschützt ist, trägt die Seite keine
-  Suchmaschinen-Angaben nach außen (`noindex`, `Disallow: /`). Der Schutz selbst liegt
-  vor dem Modul.
+- **Vorschauschutz.** Solange eine Vorschau geschützt ist, trägt jede Seite
+  `noindex`. `robots.txt`, Sitemap und `llms.txt` liegen hinter dem Schutz und zeigen
+  den regulären Inhalt nur Anfragen, die der Schutz durchlässt. Eine vom Schutz
+  ausgenommene Route bleibt geschlossen (`Disallow: /`, leere Sitemap, nur der Name).
+  Der Schutz selbst liegt vor dem Modul.
 - **Übergabe der Website.** Wer die Website an einen Kunden übergibt, prüft, ob weitere
   Dienste (Analyse, Karten, Formulare) auf derselben Seite eingebunden sind; für diese
   gilt eine eigene Beschreibung. Dieses Modul gehört nicht dazu.

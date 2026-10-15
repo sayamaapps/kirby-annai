@@ -29,16 +29,37 @@ namespace Sudare {
         public static bool $on = false;
         public static bool $protects = false;
         public static ?string $base = null;
+        /** Paths the configuration exempts (Sudare 1.0.0 Config::isExempt()). */
+        public static array $exempt = [];
 
         public static function active(): bool
         {
             return self::$on;
         }
 
+        /** The configuration of the guarded request: null when no guard ran (CLI). */
+        public static function config(): ?FakeConfig
+        {
+            return self::$on ? new FakeConfig(self::$exempt) : null;
+        }
+
         public static function protects(string $base, ?array $env = null): bool
         {
             self::$base = $base;
             return self::$protects;
+        }
+    }
+
+    /** Fake of Sudare\Config: isExempt($path, $method, $sent) on a list of paths. */
+    class FakeConfig
+    {
+        public function __construct(private array $exempt)
+        {
+        }
+
+        public function isExempt(string $path, string $method = 'GET', ?string $sent = null): bool
+        {
+            return in_array($path, $this->exempt, true);
         }
     }
 }
@@ -563,13 +584,34 @@ rtRun(rtOn(), function (App $kirby): void {
     Sudare\Sudare::$on = true;
     try {
         expect('noindex, nofollow, noarchive', Annai\Pages::robots($kirby, $kirby->site()->homePage()), 'preview: Sudare active → noindex on every page');
+        // Sudare answers unauthenticated requests before Kirby renders: the robots.txt that
+        // reaches Annai is the normal one (Sitemap line, no Disallow: /), not the hidden one.
         [, $body] = annai_request($kirby, 'robots.txt');
-        expect("User-agent: *\nDisallow: /\n", $body, 'preview: Sudare active → robots.txt Disallow: /');
+        holds(in_array('Sitemap: http://example.invalid/sitemap.xml', explode("\n", $body), true), 'preview: Sudare active → robots.txt keeps its Sitemap line');
+        holds(!in_array('Disallow: /', explode("\n", $body), true), 'preview: Sudare active → robots.txt is not Disallow: / (the normal file)');
+        expect(false, Annai\Pages::hidden($kirby), 'preview: Sudare active → not hidden');
     } finally {
         Sudare\Sudare::$on = false;
     }
     expect(false, Annai\Pages::preview($kirby), 'preview: Sudare inactive → false (auto)');
+    expect(false, Annai\Pages::hidden($kirby), 'preview: Sudare inactive → not hidden');
     expect(null, Annai\Pages::robots($kirby, $kirby->site()->homePage()), 'preview: Sudare inactive → no robots meta on home');
+}, 'rtFixture');
+
+// Pages::hidden() is the explicit annai.noindex => true only: it implies the preview,
+// a protected preview alone is not hidden.
+rtRun(rtOn(['annai.noindex' => true]), function (App $kirby): void {
+    expect(true, Annai\Pages::hidden($kirby), 'hidden: annai.noindex true → hidden');
+    expect(true, Annai\Pages::preview($kirby), 'hidden: annai.noindex true → also a preview');
+}, 'rtFixture');
+
+rtRun(rtOn(['annai.noindex' => false]), function (App $kirby): void {
+    Sudare\Sudare::$on = true;
+    try {
+        expect(false, Annai\Pages::hidden($kirby), 'hidden: annai.noindex false → not hidden');
+    } finally {
+        Sudare\Sudare::$on = false;
+    }
 }, 'rtFixture');
 
 // Kirby's page cache kept the preview noindex after the preview had ended: a
@@ -594,19 +636,19 @@ rtRun($cached, function (App $kirby, string $tmp) use ($cached): void {
     expect(true, $later->response()->cache(), 'page cache after the preview: the response is cacheable again');
 }, 'rtFixture');
 
-// While the preview is protected, sitemap.xml and llms.txt list nothing:
-// they only leak when an operator exempts them in Sudare, but then they must not.
+// A protected preview (Sudare answers 401 before Kirby renders) serves sitemap.xml and
+// llms.txt as they are after the go-live; the responses carry Cache-Control: no-store.
 rtRun(rtOn(['annai.language' => 'de']), function (App $kirby): void {
     Sudare\Sudare::$on = true;
     try {
         [$code, $xml] = annai_request($kirby, 'sitemap.xml');
-        expect(200, $code, 'preview: sitemap.xml still answers');
-        expect([], rtLocs($xml), 'preview: sitemap.xml is an empty urlset');
-        holds(str_contains($xml, '<urlset'), 'preview: sitemap.xml is still a urlset');
+        expect(200, $code, 'preview: sitemap.xml answers');
+        holds(str_contains($xml, '<urlset'), 'preview: sitemap.xml is a urlset');
+        expect(count(Annai\Pages::entries($kirby)), count(rtLocs($xml)), 'preview: sitemap.xml lists the entries, as after the go-live');
+        holds(rtLocs($xml) !== [], 'preview: sitemap.xml is not empty');
         [$code, $md] = annai_request($kirby, 'llms.txt');
-        expect(200, $code, 'preview: llms.txt still answers');
-        expect("# Testhof\n", $md, 'preview: llms.txt is the H1 only');
-        holds(Annai\Pages::entries($kirby) !== [], 'preview: Pages::entries() still has the entries (data method)');
+        expect(200, $code, 'preview: llms.txt answers');
+        holds(str_starts_with($md, "# Testhof\n") && str_contains($md, "\n## Seiten\n"), 'preview: llms.txt is the full file (sections), not the H1 only');
         // A CDN or proxy in front must not keep the closed robots.txt or the empty
         // sitemap past the go-live when a site exempts them from the protection.
         foreach (['robots.txt', 'sitemap.xml', 'llms.txt'] as $path) {
@@ -620,6 +662,82 @@ rtRun(rtOn(['annai.language' => 'de']), function (App $kirby): void {
     }
 }, 'rtFixture');
 
+// A protected preview keeps the routes its configuration exempts closed: Sudare lets
+// such a request through without credentials, so the file is not behind the lock.
+rtRun(rtOn(['annai.language' => 'de']), function (App $kirby): void {
+    try {
+        Sudare\Sudare::$on = true;
+        Sudare\Sudare::$exempt = ['/robots.txt'];
+        [, $body] = annai_request($kirby, 'robots.txt');
+        expect("User-agent: *\nDisallow: /\n", $body, 'exempt robots.txt: closed while Sudare exempts it');
+        [, $xml] = annai_request($kirby, 'sitemap.xml');
+        holds(rtLocs($xml) !== [], 'exempt robots.txt: sitemap.xml is not exempt, so it lists the pages');
+        [, $md] = annai_request($kirby, 'llms.txt');
+        holds(str_contains($md, "\n## Seiten\n"), 'exempt robots.txt: llms.txt is not exempt, so it is the full file');
+
+        Sudare\Sudare::$exempt = ['/sitemap.xml'];
+        [, $xml] = annai_request($kirby, 'sitemap.xml');
+        expect([], rtLocs($xml), 'exempt sitemap.xml: an empty urlset');
+        holds(str_contains($xml, '<urlset'), 'exempt sitemap.xml: still a urlset');
+        [, $body] = annai_request($kirby, 'robots.txt');
+        holds(!in_array('Disallow: /', explode("\n", $body), true), 'exempt sitemap.xml: robots.txt is the normal file');
+
+        Sudare\Sudare::$exempt = ['/llms.txt'];
+        [, $md] = annai_request($kirby, 'llms.txt');
+        expect("# Testhof\n", $md, 'exempt llms.txt: the H1 only');
+
+        Sudare\Sudare::$exempt = ['/robots.txt', '/sitemap.xml', '/llms.txt'];
+        foreach (['robots.txt', 'sitemap.xml', 'llms.txt'] as $path) {
+            expect('no-store', $kirby->render($path)?->headers()['Cache-Control'] ?? null, "exempt $path: still Cache-Control: no-store");
+        }
+        expect(true, Annai\Pages::hidden($kirby, '/robots.txt'), 'exempt: hidden() for the exempted route');
+        expect(false, Annai\Pages::hidden($kirby), 'exempt: no path → only the explicit setting counts');
+    } finally {
+        Sudare\Sudare::$on = false;
+        Sudare\Sudare::$exempt = [];
+    }
+    // Exempt but not protected (no guard ran, the configuration is null): nothing is closed.
+    Sudare\Sudare::$exempt = ['/robots.txt'];
+    try {
+        [, $body] = annai_request($kirby, 'robots.txt');
+        holds(!in_array('Disallow: /', explode("\n", $body), true), 'exempt without a protection: robots.txt unchanged');
+        holds(!array_key_exists('Cache-Control', $kirby->render('robots.txt')?->headers() ?? []), 'exempt without a protection: no Cache-Control');
+        expect(false, Annai\Pages::hidden($kirby, '/robots.txt'), 'exempt without a protection: not hidden');
+    } finally {
+        Sudare\Sudare::$exempt = [];
+    }
+}, 'rtFixture');
+
+// A protected preview exempting one chunk closes that chunk only.
+rtRun(rtOn(['annai.language' => 'de', 'annai.sitemap.chunk' => 1]), function (App $kirby): void {
+    Sudare\Sudare::$on = true;
+    Sudare\Sudare::$exempt = ['/sitemap-1.xml'];
+    try {
+        expect(404, $kirby->render('sitemap-1.xml')?->code(), 'exempt chunk: sitemap-1.xml closed (404)');
+        expect(200, $kirby->render('sitemap-2.xml')?->code(), 'exempt chunk: sitemap-2.xml not exempt, answers');
+        expect(200, $kirby->render('sitemap.xml')?->code(), 'exempt chunk: the index is not exempt');
+    } finally {
+        Sudare\Sudare::$on = false;
+        Sudare\Sudare::$exempt = [];
+    }
+}, 'rtFixture');
+
+// An explicit annai.noindex => true hides the files, with no protection in front:
+// an empty urlset and the llms.txt H1 only, with Cache-Control: no-store.
+rtRun(rtOn(['annai.language' => 'de', 'annai.noindex' => true]), function (App $kirby): void {
+    [$code, $xml] = annai_request($kirby, 'sitemap.xml');
+    expect(200, $code, 'hidden: sitemap.xml answers');
+    expect([], rtLocs($xml), 'hidden: sitemap.xml is an empty urlset');
+    holds(str_contains($xml, '<urlset'), 'hidden: sitemap.xml is still a urlset');
+    [$code, $md] = annai_request($kirby, 'llms.txt');
+    expect(200, $code, 'hidden: llms.txt answers');
+    expect("# Testhof\n", $md, 'hidden: llms.txt is the H1 only');
+    holds(Annai\Pages::entries($kirby) !== [], 'hidden: Pages::entries() still has the entries (data method)');
+    foreach (['robots.txt', 'sitemap.xml', 'llms.txt'] as $path) {
+        expect('no-store', $kirby->render($path)?->headers()['Cache-Control'] ?? null, "hidden: $path is sent with Cache-Control: no-store");
+    }
+}, 'rtFixture');
+
 // The chunk files carry the header too (a chunked sitemap, preview switched on by option).
 rtRun(rtOn(['annai.noindex' => true, 'annai.sitemap.chunk' => 2]), function (App $kirby): void {
     expect('no-store', $kirby->render('sitemap.xml')?->headers()['Cache-Control'] ?? null, 'preview: a chunked sitemap.xml is sent with Cache-Control: no-store');
@@ -629,14 +747,9 @@ rtRun(rtOn(['annai.noindex' => true, 'annai.sitemap.chunk' => 2]), function (App
 }, 'rtFixture');
 
 // The preview H1 is the name as render() writes it: no HTML, no link.
-rtRun(rtOn(), function (App $kirby): void {
-    Sudare\Sudare::$on = true;
-    try {
-        [, $md] = annai_request($kirby, 'llms.txt');
-        expect("# Hof (x)(javascript:alert(1))\n", $md, 'preview: llms.txt H1 without HTML and without a link');
-    } finally {
-        Sudare\Sudare::$on = false;
-    }
+rtRun(rtOn(['annai.noindex' => true]), function (App $kirby): void {
+    [, $md] = annai_request($kirby, 'llms.txt');
+    expect("# Hof (x)(javascript:alert(1))\n", $md, 'hidden: llms.txt H1 without HTML and without a link');
 }, function (string $tmp): void {
     rtFixture($tmp);
     annai_page($tmp, '', 'site', ['title' => 'Testhof', 'marke' => '<img src=x onerror=alert(1)>Hof [x](javascript:alert(1))']);
@@ -644,20 +757,25 @@ rtRun(rtOn(), function (App $kirby): void {
 
 // Without a brand field and a site title the H1 used to be "# " alone, in the preview
 // file as in the full one; the host of Kirby's base URL is the fallback.
+$rtNoName = function (string $tmp): void {
+    annai_page($tmp, '', 'site', ['beschreibung' => '']);
+    annai_page($tmp, '2_laden', 'default', ['title' => 'Hofladen']);
+};
 rtRun(rtOn(['annai.language' => 'de']), function (App $kirby): void {
     [, $md] = annai_request($kirby, 'llms.txt');
     holds(str_starts_with($md, "# example.invalid\n\n## Seiten\n"), 'no site name: the llms.txt H1 is the host');
     Sudare\Sudare::$on = true;
     try {
         [, $md] = annai_request($kirby, 'llms.txt');
-        expect("# example.invalid\n", $md, 'no site name + preview: the H1-only file carries the host too');
+        holds(str_starts_with($md, "# example.invalid\n\n## Seiten\n"), 'no site name + protected preview: the full file carries the host as H1');
     } finally {
         Sudare\Sudare::$on = false;
     }
-}, function (string $tmp): void {
-    annai_page($tmp, '', 'site', ['beschreibung' => '']);
-    annai_page($tmp, '2_laden', 'default', ['title' => 'Hofladen']);
-});
+}, $rtNoName);
+rtRun(rtOn(['annai.language' => 'de', 'annai.noindex' => true]), function (App $kirby): void {
+    [, $md] = annai_request($kirby, 'llms.txt');
+    expect("# example.invalid\n", $md, 'no site name + hidden: the H1-only file carries the host too');
+}, $rtNoName);
 
 // A value that is not a bool (env-driven config) is reported and counts as
 // automatic: it must not switch Sudare's noindex off.
@@ -675,6 +793,7 @@ foreach (['true', 1, 'auto'] as $value) {
             Sudare\Sudare::$on = false;
         }
         expect(false, Annai\Pages::preview($kirby), 'annai.noindex ' . var_export($value, true) . ' + Sudare inactive → automatic, false');
+        expect(false, Annai\Pages::hidden($kirby), 'annai.noindex ' . var_export($value, true) . ' is never hidden');
     }, 'rtFixture');
 }
 
@@ -685,7 +804,8 @@ rtRun(rtOn(), function (App $kirby, string $tmp): void {
         expect(true, Annai\Pages::preview($kirby), 'preview on the CLI: Sudare::protects() true → preview');
         expect($tmp, Sudare\Sudare::$base, 'preview on the CLI: protects() gets the site base directory');
         [, $body] = annai_request($kirby, 'robots.txt');
-        expect("User-agent: *\nDisallow: /\n", $body, 'preview on the CLI: robots.txt Disallow: /');
+        holds(!in_array('Disallow: /', explode("\n", $body), true), 'preview on the CLI: robots.txt is the normal file, not Disallow: /');
+        expect(false, Annai\Pages::hidden($kirby), 'preview on the CLI: protects() true → not hidden');
     } finally {
         Sudare\Sudare::$protects = false;
     }
@@ -943,13 +1063,13 @@ rtRun(rtOn(['languages' => true, 'annai.hreflang' => true, 'annai.exclude.templa
         expect([], Annai\Pages::alternates($kirby, $kirby->page('laden')), 'hreflang + preview: no alternates while every page is noindex');
         // The sitemap entries (the data method, the check tool) keep one entry per
         // language while the preview is on — they used to collapse to one per page because
-        // alternates() answered [] for every page; the route still serves nothing.
+        // alternates() answered [] for every page.
         $entries = $kirby->site()->annaiSitemap();
         expect(5, count($entries), 'hreflang + preview: annaiSitemap() still has one entry per language (home 2, laden 2, kontakt 1)');
         $laden = array_values(array_filter($entries, fn (array $entry) => $entry['loc'] === 'http://example.invalid/en/laden'));
         expect(['de', 'en', 'x-default'], array_keys($laden[0]['alternates'] ?? []), 'hreflang + preview: the entries carry their alternates');
         [, $xml] = annai_request($kirby, 'sitemap.xml');
-        expect([], rtLocs($xml), 'hreflang + preview: the sitemap.xml route is still an empty urlset');
+        expect(5, count(rtLocs($xml)), 'hreflang + preview: the sitemap.xml route lists one entry per language (protected: the normal file)');
     } finally {
         Sudare\Sudare::$on = false;
     }

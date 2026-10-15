@@ -95,6 +95,9 @@ final class Pages
     }
 
     /**
+     * The preview: every page carries the noindex meta (robots()), and the
+     * three files answer `Cache-Control: no-store` (Routes::headers()).
+     *
      * `annai.noindex`: true or false as set; null asks Sudare through the
      * contract `Sudare\Sudare::active(): bool`. Any other value ('true', 1 from
      * an env-driven config) is reported and counts as null: a typo must not
@@ -109,6 +112,11 @@ final class Pages
      * noarchive" in the cache file and was served with it after the preview had
      * ended, until someone flushed the cache (as Noren does for time-dependent
      * output).
+     *
+     * A preview is not necessarily closed: behind Sudare the requests that reach
+     * robots.txt, sitemap.xml and llms.txt are authenticated already, so they
+     * carry the normal content, unless the protection exempts the route
+     * (hidden() with the route's path) or `annai.noindex => true` closes them.
      */
     public static function preview(App $kirby): bool
     {
@@ -117,6 +125,46 @@ final class Pages
             $kirby->response()->cache(false);
         }
         return $preview;
+    }
+
+    /**
+     * Are the files of this route closed? Closed (robots.txt `Disallow: /`
+     * without a sitemap line, sitemap.xml an empty urlset, llms.txt its H1 only,
+     * the chunk files 404; Routes) when
+     *   - `annai.noindex` is `true`: the site must not be indexed, even where
+     *     nothing protects it (an open page), or
+     *   - a protected preview exempts this route for this request: Sudare lets
+     *     the request through without credentials, so it is not behind the lock.
+     * Without the path only the explicit setting counts (the check tool's
+     * report). A protected preview alone never closes the files: Sudare answers
+     * unauthenticated requests with 401 before Kirby renders.
+     *
+     * @param ?string $path the route's path, e.g. '/robots.txt' or '/sitemap-2.xml'
+     */
+    public static function hidden(App $kirby, ?string $path = null): bool
+    {
+        if (Options::get($kirby, 'noindex') === true) {
+            return true;
+        }
+        return $path !== null && self::previewState($kirby) && self::exempt($kirby, $path);
+    }
+
+    /**
+     * Does Sudare's configuration of this request exempt the path? Sudare 1.0.0:
+     * `Sudare\Sudare::config()` is the configuration the guard remembered, null
+     * when no guard ran; `isExempt($path, $method, $sent)` reads the rules of
+     * that configuration. Without the class or the methods: false.
+     */
+    public static function exempt(App $kirby, string $path): bool
+    {
+        if (!class_exists('Sudare\\Sudare') || !method_exists('Sudare\\Sudare', 'config')) {
+            return false;
+        }
+        $config = \Sudare\Sudare::config();
+        if (!is_object($config) || !method_exists($config, 'isExempt')) {
+            return false;
+        }
+        return $config->isExempt($path, $kirby->request()->method(), $_SERVER['REQUEST_METHOD'] ?? null) === true;
     }
 
     /** preview() without the cache side effect. */
@@ -193,8 +241,8 @@ final class Pages
      * the check tool and $site->annaiSitemap() count one entry per language
      * behind a preview too, as the file is served after the go-live. Built
      * from alternates(), which answers [] for every page while the preview is
-     * on, the sitemap count behind Sudare used to be one per page. The route serves no
-     * entries at all during the preview (Routes::sitemap()); drafts and
+     * on, the sitemap count behind Sudare used to be one per page. The route
+     * serves no entries while hidden() (Routes::sitemap()); drafts and
      * excluded pages never reach entries() (all()).
      *
      * @return array<string,string>

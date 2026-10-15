@@ -173,8 +173,9 @@ final class Check
     /**
      * Site report (see the layout in SPEC.md §3.11): robots.txt and its
      * warnings, sitemap counts, llms.txt length and section headings, preview
-     * state, every phone and fax field with its raw value and its E.164 number
-     * or the reason it has none, also the phone of every further location page
+     * state (preview, and hidden for an explicit annai.noindex => true), every
+     * phone and fax field with its raw value and its E.164 number or the reason
+     * it has none, also the phone of every further location page
      * (printed, not counted),
      * notes (NO_HOST_NOTE; printed, not counted), the page reports and
      * the site-level problems, among them every option Options::warn()
@@ -190,7 +191,8 @@ final class Check
         $logged = count(Options::logged());
 
         // The sitemap and llms.txt as they are served once the preview ends
-        // (while it is on, the routes serve an empty urlset and only the H1).
+        // (while it is hidden, the routes serve an empty urlset and only the H1;
+        // a protected preview serves them as they are after the go-live anyway).
         $entries = Pages::entries($kirby);
         $chunks = Sitemap::chunks($entries, Options::sitemapChunk($kirby));
         $llms = LlmsTxt::render(Routes::llmsModel($kirby));
@@ -206,6 +208,7 @@ final class Check
         }
 
         $preview = Pages::preview($kirby);
+        $hidden = Pages::hidden($kirby);
         $problems = [];
         if ($preview) {
             $problems[] = self::PREVIEW_PROBLEM;
@@ -295,8 +298,9 @@ final class Check
         $lastmod = $entries !== [] && array_filter($entries, fn ($entry) => ($entry['lastmod'] ?? null) === null) === [];
 
         // The warnings are those of the configuration that applies once the
-        // preview ends: with blockAll, warnings() would say only "Disallow: /
-        // for everyone" and hide a blocked user agent until the go-live.
+        // preview ends: with blockAll (an explicit annai.noindex => true),
+        // warnings() would say only "Disallow: / for everyone" and hide a
+        // blocked user agent until the go-live.
         $robotsConfig = Routes::robotsConfig($kirby);
         $robotsText = Robots::render($robotsConfig);
         $robotsWarnings = Robots::warnings(array_merge($robotsConfig, ['blockAll' => false]));
@@ -320,6 +324,7 @@ final class Check
                 'headings' => $headings,
             ],
             'preview'  => $preview,
+            'hidden'   => $hidden,
             'phones'   => $phones,
             'notes'    => $notes,
             'pages'    => $pages,
@@ -363,7 +368,7 @@ final class Check
             (int) ($llms['length'] ?? 0),
             $headings !== '' ? $headings : 'none'
         );
-        $lines[] = 'preview: ' . (!empty($report['preview']) ? 'on (everything closed)' : 'off');
+        $lines[] = 'preview: ' . (!empty($report['hidden']) ? 'on (everything closed)' : (!empty($report['preview']) ? 'on (noindex, files as live)' : 'off'));
         foreach ($report['phones'] ?? [] as $phone) {
             $problem = $phone['problem'] ?? null;
             $lines[] = '  ~ ' . $phone['field'] . (isset($phone['page']) ? ' (' . $phone['page'] . ')' : '') . ': '

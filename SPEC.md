@@ -1109,16 +1109,17 @@ final class Pages
 
 final class Routes
 {
-    /** Robots::render() input: disallow, sitemap (Pages::base() . '/sitemap.xml'), agents (Options robotsAi + robotsAgents), extra, blockAll = Pages::preview(). */
+    /** Robots::render() input: disallow, sitemap (Pages::base() . '/sitemap.xml'), agents (Options robotsAi + robotsAgents), extra, blockAll = Pages::hidden('/robots.txt'). */
     public static function robotsConfig(App $kirby): array;
 
     /** Robots::render(robotsConfig()). */
     public static function robotsText(App $kirby): string;
-    // sitemap() and llmsText(): while Pages::preview() is true, an empty <urlset> and "# <name>\n";
-    // the chunks sitemap-<n>.xml are null → 404 then (nothing to split).
+    // sitemap() and llmsText(): while Pages::hidden($kirby, path) (explicit annai.noindex => true, or the
+    // route exempt from the protection) an empty <urlset> and "# <name>\n"; a closed chunk
+    // sitemap-<n>.xml is null → 404 (nothing to split). A protected preview serves the normal files.
     // robots(), sitemap() and llms(): while Pages::preview() is true, the Response
-    // carries `Cache-Control: no-store` — a CDN in front of an exempted route must not keep the closed
-    // robots.txt or the empty urlset past the go-live (Kirby's cache(false) covers its page cache only).
+    // carries `Cache-Control: no-store` — a CDN in front of an exempted route must not keep the
+    // robots.txt or the sitemap past the go-live (Kirby's cache(false) covers its page cache only).
 
     /** Response text/plain. */
     public static function robots(App $kirby): Response;
@@ -1219,7 +1220,7 @@ final class Check
 
     /**
      * Site report:
-     *   ['robots'  => ['text' => Routes::robotsText() (as served, Disallow: / in the preview),
+     *   ['robots'  => ['text' => Routes::robotsText() (as served; Disallow: / only while hidden),
      *                  'warnings' => Robots::warnings(robotsConfig() with blockAll false): the warnings of the
      *                  configuration that applies after the preview — a blocked user agent stays visible],
      *    'sitemap' => ['count' => count(entries), 'chunks' => int, 'lastmod' => bool],
@@ -1432,22 +1433,20 @@ built from Kirby's base URL (`Pages::base()`, no language prefix).
 - **Sudare** (preview protection): Annai calls `\Sudare\Sudare::active(): bool`
   when the class and the method exist, and on the CLI (check tool) also the
   stateless `\Sudare\Sudare::protects($base): bool`. True → every page gets
-  `noindex, nofollow, noarchive`, robots.txt is `User-agent: *\nDisallow: /`,
-  sitemap.xml is an empty urlset and llms.txt only its H1 (both sit behind the
-  protection anyway; this guards a site that exempts them). The exemption
-  case works because `active()` is the state of the configuration, not the
-  outcome for the path: Sudare 1.0.0 (`src/Sudare.php`) documents "active()
-  is true once guard() (or handle()) ran in this request with a valid,
-  switched-on configuration", `handle()` stores `self::$config = $config;`
-  before `Guard::handle($config, $request)` decides (row 4 of its table,
-  "exempt paths pass without credentials", changes nothing about it), and
-  `active()` returns `self::$config?->protects() ?? false` with
-  `Config::protects()` = `$this->state === self::STATE_ON`. An exempted
-  robots.txt therefore sees the preview (the fake in RoutesTest models
-  exactly this; there is no exempt case to model). Check::site() still
-  counts the sitemap and llms.txt as they will be served after the preview, and
-  computes the robots warnings for that state too; the preview is one site problem.
-  While the preview is on, the response is kept out of Kirby's page cache.
+  `noindex, nofollow, noarchive`, and robots.txt, sitemap.xml and llms.txt are
+  the normal files (`Cache-Control: no-store`): Sudare answers a request without
+  credentials with 401 before Kirby renders, so those requests are authenticated.
+  Closed (robots.txt `Disallow: /` without a sitemap line, sitemap.xml an empty
+  urlset, llms.txt its H1 only, chunk files 404) when `annai.noindex => true`
+  (`Pages::hidden()`), or when the request is exempt: `active()` is the state of
+  the configuration, not the outcome for the path (Sudare 1.0.0, `src/Sudare.php`:
+  `handle()` stores `self::$config` before `Guard::handle()` decides), so
+  `Pages::exempt($kirby, $path)` asks `\Sudare\Sudare::config()->isExempt($path,
+  $method, $sent)` per route (`/robots.txt`, `/sitemap.xml`, `/sitemap-<n>.xml`,
+  `/llms.txt`); `config()` is null without a guard run, and then nothing is exempt.
+  Check::site() counts the sitemap and llms.txt as they will be served after the
+  preview, and computes the robots warnings for that state too; the preview is one
+  site problem. While the preview is on, the response is kept out of Kirby's page cache.
 - **Noren**: detected by `function_exists('noren_option')`; used only when
   `noren.active` is true (`$site->norenUnits()` returns `[]` otherwise) and
   `annai.noren` is true. Annai never builds hours itself. Noren is asked only
@@ -1479,8 +1478,9 @@ built from Kirby's base URL (`Pages::base()`, no language prefix).
 - **D2 Proposal (b) noindex in preview**: `annai.noindex` default `null` =
   auto via `Sudare\Sudare::active()`. The contract (static `active()`) is a
   proposal to the Sudare build; adjust one side if they differ. While preview
-  is active robots.txt also becomes `Disallow: /` — a deviation from today
-  (today only the `X-Robots-Tag` header says noindex).
+  is active the robots meta says noindex on every page; robots.txt, sitemap.xml
+  and llms.txt stay the normal files behind the protection. Only an explicit
+  `annai.noindex => true` closes them (`Disallow: /`, empty urlset, H1 only).
 - **D3 Proposal (c) hreflang**: `annai.hreflang` default `false` because
   today no site prints hreflang. Recommended `true` for any multilang site.
 - **D4 Proposal (d) check tool**: CLI only (`bin/annai-check`), no Panel

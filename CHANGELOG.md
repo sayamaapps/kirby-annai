@@ -27,6 +27,30 @@ All notable changes to this project are documented here. Versions follow
   in the contact block and under unit and location headings. Agents get the dialable
   target. Under the versioning rule above this is a **major** change: a site
   updating its llms.txt sees the new form.
+- While the Sudare preview protection is on, robots.txt, sitemap.xml and
+  llms.txt are the normal files (`Cache-Control: no-store` stays), not
+  `Disallow: /`, an empty urlset and the name only. Sudare answers a request
+  without credentials with 401 before Kirby renders, so these requests are
+  authenticated. A route that Sudare's configuration exempts for the request
+  stays closed: `Sudare\Sudare::config()->isExempt()` is asked per route
+  (`/robots.txt`, `/sitemap.xml`, `/sitemap-<n>.xml`, `/llms.txt`). Every page
+  keeps the noindex meta.
+- The explicit `annai.noindex => true` closes the three files as well
+  (`Pages::hidden()`): robots.txt `Disallow: /` without a sitemap line, an
+  empty sitemap.xml, llms.txt with its H1 only, chunk files 404. This is the
+  closed state of 1.0.0, now separate from the protected preview.
+- The check tool (`annai-check`) reports `preview: on (noindex, files as live)`
+  for a protected preview and `preview: on (everything closed)` for the hidden
+  state; the JSON report has a `hidden` key next to `preview` (the explicit
+  setting only).
+
+### Documentation
+
+- README (Preview: Hidden, How the protection is detected), SPEC §7 and the
+  preview wording of `PRIVACY.md` and `DATENSCHUTZ.md`. The statement in the
+  privacy texts is unchanged (pages carry noindex, the files sit behind the
+  protection, an exempted route stays closed), so they carry no
+  `[privacy text]` marker.
 
 ## [1.0.0] — 2026-10-14
 
