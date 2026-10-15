@@ -52,11 +52,10 @@ halten; bereits abgerufene Inhalte werden dadurch nicht zurückgeholt.
 - **Fehlerprotokoll.** Konfigurationsfehler (etwa eine unbekannte Zeitzone) werden in
   das Fehlerprotokoll des Servers geschrieben. Die Meldung enthält keine Besucherdaten.
 - **Vorschauschutz.** Solange eine Vorschau geschützt ist, trägt jede Seite
-  `noindex`. `robots.txt`, Sitemap und `llms.txt` sind dann die regulären Dateien; sie
-  liegen hinter dem Schutz. Eine Route, die der Betreiber vom Schutz ausnimmt, ist für
-  den dafür freigegebenen Crawler während der Vorschau lesbar, also auch die
-  Seitenliste. Mit `annai.noindex => true` werden die Dateien stattdessen geschlossen
-  (`Disallow: /`). Der Schutz selbst liegt vor dem Modul.
+  `noindex`. `robots.txt`, Sitemap und `llms.txt` liegen hinter dem Schutz und zeigen
+  den regulären Inhalt nur Anfragen, die der Schutz durchlässt. Eine vom Schutz
+  ausgenommene Route bleibt geschlossen (`Disallow: /`, leere Sitemap, nur der Name).
+  Der Schutz selbst liegt vor dem Modul.
 - **Übergabe der Website.** Wer die Website an einen Kunden übergibt, prüft, ob weitere
   Dienste (Analyse, Karten, Formulare) auf derselben Seite eingebunden sind; für diese
   gilt eine eigene Beschreibung. Dieses Modul gehört nicht dazu.

@@ -20,8 +20,8 @@ final class Routes
      * Robots::render() input (SPEC.md §3.3, §3.9). The Sitemap line uses Kirby's
      * base URL: on a multi-language site $site->url() is the current language's
      * URL (/de), and /de/sitemap.xml does not exist. blockAll only while
-     * Pages::hidden() (an explicit annai.noindex => true): a protected preview
-     * answers the normal file.
+     * Pages::hidden('/robots.txt') (annai.noindex => true, or the protection
+     * exempts the route): a protected preview answers the normal file.
      */
     public static function robotsConfig(App $kirby): array
     {
@@ -30,7 +30,7 @@ final class Routes
             'sitemap'  => Pages::base($kirby) . '/sitemap.xml',
             'agents'   => Robots::agents(Options::robotsAi($kirby), Options::robotsAgents($kirby)),
             'extra'    => Options::robotsExtra($kirby),
-            'blockAll' => Pages::hidden($kirby),
+            'blockAll' => Pages::hidden($kirby, '/robots.txt'),
         ];
     }
 
@@ -63,10 +63,11 @@ final class Routes
     /**
      * $chunk null: one sitemap.xml when the entries fit into one file, else a
      * sitemapindex over sitemap-<n>.xml. $chunk n: the n-th file, or null when
-     * out of range or when only one file exists. While Pages::hidden() is true:
-     * an empty urlset, sent with Cache-Control: no-store (headers()); every
-     * chunk is then null → 404 (nothing to split, so no header either). A
-     * protected preview (Pages::preview() alone) lists the entries as usual.
+     * out of range or when only one file exists. While Pages::hidden() is true
+     * for the route (/sitemap.xml, or /sitemap-<n>.xml for a chunk): an empty
+     * urlset, sent with Cache-Control: no-store (headers()); a closed chunk is
+     * null → 404 (nothing to split, so no header either). A protected preview
+     * lists the entries as usual, unless the protection exempts the route.
      * Response application/xml.
      */
     public static function sitemap(App $kirby, ?int $chunk = null): ?Response
@@ -74,11 +75,11 @@ final class Routes
         if (!Options::active($kirby)) {
             return null;
         }
-        // An explicit annai.noindex => true lists nothing: robots.txt says
-        // Disallow: / anyway. A protected preview lists the pages as the file
-        // is served after the go-live: Sudare answers unauthenticated requests
-        // before Kirby renders.
-        $entries = Pages::hidden($kirby) ? [] : Pages::entries($kirby);
+        // A closed route lists nothing: robots.txt says Disallow: / anyway. A
+        // protected preview lists the pages as the file is served after the
+        // go-live: Sudare answers unauthenticated requests before Kirby renders.
+        $path = $chunk === null ? '/sitemap.xml' : '/sitemap-' . $chunk . '.xml';
+        $entries = Pages::hidden($kirby, $path) ? [] : Pages::entries($kirby);
         $size = Options::sitemapChunk($kirby);
         $parts = Sitemap::chunks($entries, $size);
         $headers = Pages::preview($kirby) ? ['Cache-Control' => 'no-store'] : null;
@@ -182,10 +183,10 @@ final class Routes
         return $model;
     }
 
-    /** LlmsTxt::render(llmsModel()); while Pages::hidden() only the H1 (see sitemap()). */
+    /** LlmsTxt::render(llmsModel()); while Pages::hidden('/llms.txt') only the H1 (see sitemap()). */
     public static function llmsText(App $kirby): string
     {
-        if (Pages::hidden($kirby)) {
+        if (Pages::hidden($kirby, '/llms.txt')) {
             // The name alone: no Noren call for a file that shows no hours.
             return LlmsTxt::heading(self::siteName($kirby, Business::facts($kirby, false))) . "\n";
         }

@@ -29,16 +29,37 @@ namespace Sudare {
         public static bool $on = false;
         public static bool $protects = false;
         public static ?string $base = null;
+        /** Paths the configuration exempts (Sudare 1.0.0 Config::isExempt()). */
+        public static array $exempt = [];
 
         public static function active(): bool
         {
             return self::$on;
         }
 
+        /** The configuration of the guarded request: null when no guard ran (CLI). */
+        public static function config(): ?FakeConfig
+        {
+            return self::$on ? new FakeConfig(self::$exempt) : null;
+        }
+
         public static function protects(string $base, ?array $env = null): bool
         {
             self::$base = $base;
             return self::$protects;
+        }
+    }
+
+    /** Fake of Sudare\Config: isExempt($path, $method, $sent) on a list of paths. */
+    class FakeConfig
+    {
+        public function __construct(private array $exempt)
+        {
+        }
+
+        public function isExempt(string $path, string $method = 'GET', ?string $sent = null): bool
+        {
+            return in_array($path, $this->exempt, true);
         }
     }
 }
@@ -638,6 +659,66 @@ rtRun(rtOn(['annai.language' => 'de']), function (App $kirby): void {
     }
     foreach (['robots.txt', 'sitemap.xml', 'llms.txt'] as $path) {
         holds(!array_key_exists('Cache-Control', $kirby->render($path)?->headers() ?? []), "no preview: $path sets no Cache-Control");
+    }
+}, 'rtFixture');
+
+// A protected preview keeps the routes its configuration exempts closed: Sudare lets
+// such a request through without credentials, so the file is not behind the lock.
+rtRun(rtOn(['annai.language' => 'de']), function (App $kirby): void {
+    try {
+        Sudare\Sudare::$on = true;
+        Sudare\Sudare::$exempt = ['/robots.txt'];
+        [, $body] = annai_request($kirby, 'robots.txt');
+        expect("User-agent: *\nDisallow: /\n", $body, 'exempt robots.txt: closed while Sudare exempts it');
+        [, $xml] = annai_request($kirby, 'sitemap.xml');
+        holds(rtLocs($xml) !== [], 'exempt robots.txt: sitemap.xml is not exempt, so it lists the pages');
+        [, $md] = annai_request($kirby, 'llms.txt');
+        holds(str_contains($md, "\n## Seiten\n"), 'exempt robots.txt: llms.txt is not exempt, so it is the full file');
+
+        Sudare\Sudare::$exempt = ['/sitemap.xml'];
+        [, $xml] = annai_request($kirby, 'sitemap.xml');
+        expect([], rtLocs($xml), 'exempt sitemap.xml: an empty urlset');
+        holds(str_contains($xml, '<urlset'), 'exempt sitemap.xml: still a urlset');
+        [, $body] = annai_request($kirby, 'robots.txt');
+        holds(!in_array('Disallow: /', explode("\n", $body), true), 'exempt sitemap.xml: robots.txt is the normal file');
+
+        Sudare\Sudare::$exempt = ['/llms.txt'];
+        [, $md] = annai_request($kirby, 'llms.txt');
+        expect("# Testhof\n", $md, 'exempt llms.txt: the H1 only');
+
+        Sudare\Sudare::$exempt = ['/robots.txt', '/sitemap.xml', '/llms.txt'];
+        foreach (['robots.txt', 'sitemap.xml', 'llms.txt'] as $path) {
+            expect('no-store', $kirby->render($path)?->headers()['Cache-Control'] ?? null, "exempt $path: still Cache-Control: no-store");
+        }
+        expect(true, Annai\Pages::hidden($kirby, '/robots.txt'), 'exempt: hidden() for the exempted route');
+        expect(false, Annai\Pages::hidden($kirby), 'exempt: no path → only the explicit setting counts');
+    } finally {
+        Sudare\Sudare::$on = false;
+        Sudare\Sudare::$exempt = [];
+    }
+    // Exempt but not protected (no guard ran, the configuration is null): nothing is closed.
+    Sudare\Sudare::$exempt = ['/robots.txt'];
+    try {
+        [, $body] = annai_request($kirby, 'robots.txt');
+        holds(!in_array('Disallow: /', explode("\n", $body), true), 'exempt without a protection: robots.txt unchanged');
+        holds(!array_key_exists('Cache-Control', $kirby->render('robots.txt')?->headers() ?? []), 'exempt without a protection: no Cache-Control');
+        expect(false, Annai\Pages::hidden($kirby, '/robots.txt'), 'exempt without a protection: not hidden');
+    } finally {
+        Sudare\Sudare::$exempt = [];
+    }
+}, 'rtFixture');
+
+// A protected preview exempting one chunk closes that chunk only.
+rtRun(rtOn(['annai.language' => 'de', 'annai.sitemap.chunk' => 1]), function (App $kirby): void {
+    Sudare\Sudare::$on = true;
+    Sudare\Sudare::$exempt = ['/sitemap-1.xml'];
+    try {
+        expect(404, $kirby->render('sitemap-1.xml')?->code(), 'exempt chunk: sitemap-1.xml closed (404)');
+        expect(200, $kirby->render('sitemap-2.xml')?->code(), 'exempt chunk: sitemap-2.xml not exempt, answers');
+        expect(200, $kirby->render('sitemap.xml')?->code(), 'exempt chunk: the index is not exempt');
+    } finally {
+        Sudare\Sudare::$on = false;
+        Sudare\Sudare::$exempt = [];
     }
 }, 'rtFixture');
 
