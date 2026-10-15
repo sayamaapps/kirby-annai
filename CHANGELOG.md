@@ -11,7 +11,10 @@ All notable changes to this project are documented here. Versions follow
   **[privacy text]**. Every site using the plugin must then review its privacy
   policy.
 
-## [Unreleased]
+## [2.0.0] — 2026-10-15
+
+Major under the rule above: the default output of llms.txt changes (the phone
+line). Everything else is additive or affects a protected preview only.
 
 ### Added
 
