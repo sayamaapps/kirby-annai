@@ -90,7 +90,7 @@ try {
     holds(str_starts_with((string) $type, 'text/plain'), 'llms.txt is text/plain');
     holds(str_starts_with($md, "# Testhof\n\n> Bio-Hofladen mit Café"), 'H1 and summary as a quote, line break flattened');
     holds(str_contains($md, '- Adresse: Musterweg 1, 12345 Musterstadt'), 'address from the location page');
-    holds(str_contains($md, '- Telefon: 030 / 23125000 (+493023125000)'), 'phone shown and international');
+    holds(str_contains($md, '- Telefon: 030 / 23125000 (tel:+493023125000)'), 'phone shown and international');
     holds(!str_contains($md, 'E-Mail'), 'empty email does not appear');
     holds(str_contains($md, '- Online bestellen: https://shop.example/testhof'), 'main action with the real target URL');
     holds(str_contains($md, "### Hofladen\n\n- Montag: 8:00–12:00, 14:00–18:00 Uhr"), 'hours per area, both blocks');

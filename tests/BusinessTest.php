@@ -477,7 +477,7 @@ try {
     $node = Business::jsonLd($kirby, $kirby->site()->homePage()) ?? [];
     expect(['+493023125040', '+493023125010'], [$node['telephone'] ?? null, $node['faxNumber'] ?? null], 'JSON-LD: telephone and faxNumber');
     [, $llms] = annai_request($kirby, 'llms.txt');
-    holds(str_contains($llms, "- Phone: +49 30 23125040 (+493023125040)\n"), 'llms.txt: the phone as written with its E.164 number');
+    holds(str_contains($llms, "- Phone: +49 30 23125040 (tel:+493023125040)\n"), 'llms.txt: the phone as written with its E.164 number');
     holds(!str_contains($log, 'Annai: field'), 'facts: a number within the contract logs nothing');
 
     // Outside the contract or no valid number: no number, logged with field, value and
@@ -648,6 +648,53 @@ bizSite(
     function (App $kirby): void {
         $description = Business::head($kirby, $kirby->site()->homePage())['description'];
         holds(mb_strlen($description) <= 20 && str_ends_with($description, '…'), 'head: description is excerpted to descriptionLength (20)');
+    }
+);
+
+// annai.descriptionFallback (off by default): an intro under the check's 50 characters gives way to the
+// site description, if that is longer. The hook and a long intro are not touched.
+$shortIntro = 'Gemüse vom eigenen Feld.';
+$siteLong = 'Bio-Hofladen mit Café, Gemüse vom eigenen Hof und Eier aus Freilandhaltung.';
+bizSite(
+    ['options' => bizOn(['annai.descriptionFallback' => true]), 'intro' => $shortIntro, 'site' => ['beschreibung' => $siteLong]],
+    function (App $kirby) use ($siteLong): void {
+        expect($siteLong, Business::head($kirby, $kirby->page('laden'))['description'],
+            'head: descriptionFallback on, short intro → the longer site description');
+    }
+);
+bizSite(
+    ['options' => bizOn(), 'intro' => $shortIntro, 'site' => ['beschreibung' => $siteLong]],
+    function (App $kirby) use ($shortIntro): void {
+        expect($shortIntro, Business::head($kirby, $kirby->page('laden'))['description'],
+            'head: descriptionFallback off (default) → the short intro, as before');
+    }
+);
+bizSite(
+    ['options' => bizOn(['annai.descriptionFallback' => true]), 'intro' => 'Gemüse vom eigenen Feld, jeden Samstag frisch geerntet und direkt im Hofladen verkauft.', 'site' => ['beschreibung' => $siteLong]],
+    function (App $kirby): void {
+        expect('Gemüse vom eigenen Feld, jeden Samstag frisch geerntet und direkt im Hofladen verkauft.', Business::head($kirby, $kirby->page('laden'))['description'],
+            'head: descriptionFallback on, intro of 50 characters or more → kept');
+    }
+);
+bizSite(
+    ['options' => bizOn(['annai.descriptionFallback' => true]), 'intro' => $shortIntro, 'site' => ['beschreibung' => 'Bio-Hofladen.']],
+    function (App $kirby) use ($shortIntro): void {
+        expect($shortIntro, Business::head($kirby, $kirby->page('laden'))['description'],
+            'head: descriptionFallback on, site text not longer than the intro → the intro is kept');
+    }
+);
+bizSite(
+    ['options' => bizOn(['annai.descriptionFallback' => true, 'annai.description' => fn (Page $page, array $facts): string => 'Hook text.']), 'intro' => $shortIntro, 'site' => ['beschreibung' => $siteLong]],
+    function (App $kirby): void {
+        expect('Hook text.', Business::head($kirby, $kirby->page('laden'))['description'],
+            'head: descriptionFallback on, the annai.description hook still wins');
+    }
+);
+bizSite(
+    ['options' => bizOn(['annai.descriptionFallback' => true]), 'site' => ['beschreibung' => $siteLong]],
+    function (App $kirby) use ($siteLong): void {
+        expect($siteLong, Business::head($kirby, $kirby->site()->homePage())['description'],
+            'head: descriptionFallback on, home page (no intro) → the site description, as before');
     }
 );
 
@@ -1007,7 +1054,7 @@ if ($norenPath === null) {
     expect('Bahnhofstraße 2', $departments[0]['address']['streetAddress'] ?? null, 'units: two locations, department address from its own page');
     expect('+493023125002', $departments[0]['telephone'] ?? null, 'units: two locations, department phone from its own page');
     // With units of two location pages the name is Noren's label ("<location> · <area>"), see below.
-    holds(str_contains($GLOBALS['bizTwoLocations'][4], "### Standort B · Praxis B\n\n- Adresse: Bahnhofstraße 2, Musterdorf\n- Telefon: 030 23125002 (+493023125002)\n\n- Montag: geschlossen\n- Dienstag: 9:00–17:00 Uhr"),
+    holds(str_contains($GLOBALS['bizTwoLocations'][4], "### Standort B · Praxis B\n\n- Adresse: Bahnhofstraße 2, Musterdorf\n- Telefon: 030 23125002 (tel:+493023125002)\n\n- Montag: geschlossen\n- Dienstag: 9:00–17:00 Uhr"),
         'units: two locations, llms.txt has location B\'s address and phone under its heading');
     expect(['Standort A · Laden A', 'Standort B · Praxis B'], array_column($units, 'name'), 'units: two locations, the names carry the location (Noren\'s label)');
 
@@ -1092,7 +1139,7 @@ if ($norenPath === null) {
     expect(['Praxis Nord · Praxis', 'Praxis Süd · Praxis'], array_column($units, 'name'), 'two locations, same area name: the names are Noren\'s labels');
     expect(['Praxis Muster — Praxis Süd · Praxis'], array_column($document['department'] ?? [], 'name'), 'two locations, same area name: the department name carries the location');
     holds(str_contains($llms, "### Praxis Nord · Praxis\n\n- Montag: 8:00–12:00 Uhr"), 'two locations, same area name: llms.txt heading of the first names its location');
-    holds(str_contains($llms, "### Praxis Süd · Praxis\n\n- Adresse: Südweg 3, 12346 Musterdorf\n- Telefon: 030 23125003 (+493023125003)\n\n- Montag: geschlossen\n- Dienstag: 9:00–17:00 Uhr"),
+    holds(str_contains($llms, "### Praxis Süd · Praxis\n\n- Adresse: Südweg 3, 12346 Musterdorf\n- Telefon: 030 23125003 (tel:+493023125003)\n\n- Montag: geschlossen\n- Dienstag: 9:00–17:00 Uhr"),
         'no business page: llms.txt has the second location\'s address and phone under its heading');
     expect(0, substr_count($llms, "### Praxis\n"), 'two locations, same area name: no bare duplicate heading');
 

@@ -200,7 +200,8 @@ final class LlmsTxt
         if ($phone !== '' || $e164 !== '') {
             $value = $phone !== '' ? $phone : $e164;
             if ($phone !== '' && $e164 !== '') {
-                $value .= ' (' . $e164 . ')';
+                // The tel: URI, so an agent gets the dialable target, not only the digits.
+                $value .= ' (tel:' . $e164 . ')';
             }
             $lines[] = '- ' . I18n::t('llms.phone') . ': ' . $value;
         }

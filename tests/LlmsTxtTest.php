@@ -66,7 +66,7 @@ I18n::setLanguage('de');
 $md = LlmsTxt::render(annai_test_model());
 holds(str_starts_with($md, "# Testhof\n\n> Bio-Hofladen mit Café\n\n## Kontakt\n\n"), 'H1 and quote, then the Kontakt section');
 holds(str_contains($md, "\n- Adresse: Musterweg 1, 12345 Musterstadt\n"), 'Adresse line');
-holds(str_contains($md, "\n- Telefon: 030 / 23125000 (+493023125000)\n"), 'Telefon line with E.164 in brackets');
+holds(str_contains($md, "\n- Telefon: 030 / 23125000 (tel:+493023125000)\n"), 'Telefon line with E.164 in brackets');
 holds(str_contains($md, "\n- E-Mail: hof@example.test\n"), 'E-Mail line');
 holds(str_contains($md, "\n- Online bestellen: https://shop.example/testhof\n"), 'action line uses its own name');
 holds(str_contains($md, "\n## Öffnungszeiten\n\n- Montag: 8:00–12:00, 14:00–18:00 Uhr\n"), 'Monday hours line');
@@ -160,7 +160,7 @@ $elsewhere = LlmsTxt::render(annai_test_model(['units' => [
     annai_test_unit('Praxis B', ['area' => 'praxis', 'primary' => false, 'location' => 'b',
         'place' => ['street' => 'Bahnhofstraße 2', 'postalCode' => '12346', 'city' => 'Musterdorf', 'phone' => '030 23125070', 'phoneE164' => '+493023125070']]),
 ]]));
-holds(str_contains($elsewhere, "\n### Praxis B\n\n- Adresse: Bahnhofstraße 2, 12346 Musterdorf\n- Telefon: 030 23125070 (+493023125070)\n\n- Montag: 8:00–12:00, 14:00–18:00 Uhr"),
+holds(str_contains($elsewhere, "\n### Praxis B\n\n- Adresse: Bahnhofstraße 2, 12346 Musterdorf\n- Telefon: 030 23125070 (tel:+493023125070)\n\n- Montag: 8:00–12:00, 14:00–18:00 Uhr"),
     'unit at another location: address and phone under its heading, then the hours');
 holds(str_contains($elsewhere, "### Laden A\n\n- Montag:"), 'unit at the business location: no address lines (the contact block has them)');
 

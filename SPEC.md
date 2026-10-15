@@ -597,7 +597,7 @@ final class LlmsTxt
      *   ## Kontakt                                  ← I18n llms.contact; whole section omitted when all empty
      *
      *   - Adresse: Musterweg 1, 12345 Musterstadt        ← llms.address
-     *   - Telefon: 030 / 23125000 (+493023125000)     ← llms.phone; "(E.164)" only when phoneE164 !== ''
+     *   - Telefon: 030 / 23125000 (tel:+493023125000)     ← llms.phone; "(E.164)" only when phoneE164 !== ''
      *   - E-Mail: hof@example.test                  ← llms.email
      *   - Online bestellen: https://shop.example/testhof   ← action name (fallback I18n llms.action) + target
      *
@@ -606,7 +606,7 @@ final class LlmsTxt
      *   ### Hofladen                                ← only when count(units) > 1 and the unit has a name
      *
      *   - Adresse: Bahnhofstraße 2, 12346 Musterdorf  ← only for a unit with `place` (another location):
-     *   - Telefon: 030 23125070 (+493023125070)                    its address and phone as in Kontakt, then a blank line
+     *   - Telefon: 030 23125070 (tel:+493023125070)                    its address and phone as in Kontakt, then a blank line
      *
      *   - Montag: 8:00–12:00, 14:00–18:00 Uhr       ← I18n::day(0) + ": " + t('llms.hoursLine', ['hours' => "8:00–12:00, 14:00–18:00"])
      *   - Dienstag: geschlossen                     ← llms.closed when blocks === []
@@ -764,8 +764,10 @@ final class Head
 - Description: page `intro` field (`einleitung`), else site `description`
   field (`beschreibung`), rendered with `$field->kirbytext()` (as the starter's
   `$field->excerpt()`: no raw Markdown or Kirbytags), then
-  `Text::excerpt(…, descriptionLength)`. Hook `annai.description` replaces the
-  rule: its result is plain text, passed through `Text::esc()` before
+  `Text::excerpt(…, descriptionLength)`. With `annai.descriptionFallback` on, an
+  intro whose plain text is shorter than `Check::DESCRIPTION_MIN` (50) gives way
+  to the site description, if that is longer (the check's minimum, one constant).
+  Hook `annai.description` replaces the rule: its result is plain text, passed through `Text::esc()` before
   `Text::excerpt()` (which strips tags and decodes entities for HTML input), so
   it is excerpted, not rendered — `Kinder <6 Jahre` keeps its text and an
   `&amp;` stays as written (`strip_tags()` used to eat everything
@@ -1330,6 +1332,7 @@ wherever one exists.
 | `phoneCountry` | `'49'` | `phoneCountry()` | Country code for national numbers: digits without leading zeros (`'+43'`, `'0043'` → `43`); its region (`49` → `DE`) is the one libphonenumber reads a national number for (§3.2) |
 | `title` | `null` | `hook()` | `Closure(Page $page, array $facts): string` replaces the title rule; a set value that is no Closure is warned and ignored (also `description`, `canonical`, `jsonld`, `llms.extra`) |
 | `description` | `null` | `hook()` | `Closure(Page $page, array $facts): string` replaces the description source: plain text, excerpted, not rendered (§3.7.2) |
+| `descriptionFallback` | `false` | `descriptionFallback()` | `true`: an intro shorter than `Check::DESCRIPTION_MIN` (50) gives way to the site description when that is longer; the hook is not affected (§3.7.2) |
 | `descriptionLength` | `155` | `descriptionLength()` | Excerpt length of the meta description (ellipsis included): int 20…320; anything else (`'abc'`, `'200'`) warned → 155; outside the range warned → clamped. `Check::descriptionMax()` = this + 5 |
 | `canonical` | `null` | `hook()` | `Closure(Page): string` |
 | `locale` | `null` | `locale()` | `og:locale`; null → multilang current language locale (`LC_ALL` or first), else Kirby `locale` option (`de_DE.utf8` → `de_DE`), else null (omitted). Normalised to `xx_YY` form; invalid → null |

@@ -11,6 +11,23 @@ All notable changes to this project are documented here. Versions follow
   **[privacy text]**. Every site using the plugin must then review its privacy
   policy.
 
+## [Unreleased]
+
+### Added
+
+- `annai.descriptionFallback` (boolean, default `false`): an intro shorter than
+  the check's 50 characters gives way to the site description (`beschreibung`)
+  when that is longer, so the meta description is not a stub. The
+  `annai.description` hook is not affected. Off, nothing changes.
+
+### Changed
+
+- **Default output of llms.txt:** the phone line shows the number as a `tel:`
+  URI, `- Telefon: 030 / 23125000 (tel:+493023125000)` (was `(+493023125000)`),
+  in the contact block and under unit and location headings. Agents get the dialable
+  target. Under the versioning rule above this is a **major** change: a site
+  updating its llms.txt sees the new form.
+
 ## [1.0.0] — 2026-10-14
 
 First release as a Composer package. Before 1.0.0 the same job lived as copies
