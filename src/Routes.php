@@ -19,7 +19,9 @@ final class Routes
     /**
      * Robots::render() input (SPEC.md §3.3, §3.9). The Sitemap line uses Kirby's
      * base URL: on a multi-language site $site->url() is the current language's
-     * URL (/de), and /de/sitemap.xml does not exist.
+     * URL (/de), and /de/sitemap.xml does not exist. blockAll only while
+     * Pages::hidden() (an explicit annai.noindex => true): a protected preview
+     * answers the normal file.
      */
     public static function robotsConfig(App $kirby): array
     {
@@ -28,7 +30,7 @@ final class Routes
             'sitemap'  => Pages::base($kirby) . '/sitemap.xml',
             'agents'   => Robots::agents(Options::robotsAi($kirby), Options::robotsAgents($kirby)),
             'extra'    => Options::robotsExtra($kirby),
-            'blockAll' => Pages::preview($kirby),
+            'blockAll' => Pages::hidden($kirby),
         ];
     }
 
@@ -44,11 +46,12 @@ final class Routes
     }
 
     /**
-     * Response headers: `Cache-Control: no-store` while the preview is on. The
-     * three files sit behind the protection, but a site that exempts them
-     * (so a crawler can read them) hands "Disallow: /" and an empty urlset to a
-     * CDN or proxy in front, which kept them until its TTL ran out — past the
-     * go-live. Kirby's `cache(false)` covers its own page cache only.
+     * Response headers: `Cache-Control: no-store` while the preview is on, also
+     * when the files are the normal ones. The three files sit behind the
+     * protection, but a site that exempts them (so a crawler can read them)
+     * hands the closed file or the page list to a CDN or proxy in front, which
+     * kept it until its TTL ran out — past the go-live. Kirby's `cache(false)`
+     * covers its own page cache only.
      *
      * @return ?array<string,string>
      */
@@ -60,9 +63,10 @@ final class Routes
     /**
      * $chunk null: one sitemap.xml when the entries fit into one file, else a
      * sitemapindex over sitemap-<n>.xml. $chunk n: the n-th file, or null when
-     * out of range or when only one file exists. While Pages::preview() is true:
+     * out of range or when only one file exists. While Pages::hidden() is true:
      * an empty urlset, sent with Cache-Control: no-store (headers()); every
-     * chunk is then null → 404 (nothing to split, so no header either).
+     * chunk is then null → 404 (nothing to split, so no header either). A
+     * protected preview (Pages::preview() alone) lists the entries as usual.
      * Response application/xml.
      */
     public static function sitemap(App $kirby, ?int $chunk = null): ?Response
@@ -70,14 +74,14 @@ final class Routes
         if (!Options::active($kirby)) {
             return null;
         }
-        // While the preview is protected the file lists nothing: robots.txt says
-        // Disallow: / anyway, and a sitemap a site exempts from the protection
-        // must not hand out the page list of a site that is not public yet.
-        $preview = Pages::preview($kirby);
-        $entries = $preview ? [] : Pages::entries($kirby);
+        // An explicit annai.noindex => true lists nothing: robots.txt says
+        // Disallow: / anyway. A protected preview lists the pages as the file
+        // is served after the go-live: Sudare answers unauthenticated requests
+        // before Kirby renders.
+        $entries = Pages::hidden($kirby) ? [] : Pages::entries($kirby);
         $size = Options::sitemapChunk($kirby);
         $parts = Sitemap::chunks($entries, $size);
-        $headers = $preview ? ['Cache-Control' => 'no-store'] : null;
+        $headers = Pages::preview($kirby) ? ['Cache-Control' => 'no-store'] : null;
 
         if ($chunk === null) {
             if (count($parts) <= 1) {
@@ -178,10 +182,10 @@ final class Routes
         return $model;
     }
 
-    /** LlmsTxt::render(llmsModel()); while the preview is protected only the H1 (see sitemap()). */
+    /** LlmsTxt::render(llmsModel()); while Pages::hidden() only the H1 (see sitemap()). */
     public static function llmsText(App $kirby): string
     {
-        if (Pages::preview($kirby)) {
+        if (Pages::hidden($kirby)) {
             // The name alone: no Noren call for a file that shows no hours.
             return LlmsTxt::heading(self::siteName($kirby, Business::facts($kirby, false))) . "\n";
         }

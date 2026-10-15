@@ -77,7 +77,7 @@ final class Robots
     /**
      * The robots.txt file. $config keys: disallow (list), sitemap (?string),
      * agents (agent → bool, from agents()), extra (raw lines as their own block),
-     * blockAll (bool, preview: everything closed). A "/" in disallow makes the
+     * blockAll (bool, Pages::hidden(): everything closed). A "/" in disallow makes the
      * * group "Disallow: /" alone (no Allow: /, which would win the tie).
      */
     public static function render(array $config): string

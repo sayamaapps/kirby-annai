@@ -95,6 +95,9 @@ final class Pages
     }
 
     /**
+     * The preview: every page carries the noindex meta (robots()), and the
+     * three files answer `Cache-Control: no-store` (Routes::headers()).
+     *
      * `annai.noindex`: true or false as set; null asks Sudare through the
      * contract `Sudare\Sudare::active(): bool`. Any other value ('true', 1 from
      * an env-driven config) is reported and counts as null: a typo must not
@@ -109,6 +112,11 @@ final class Pages
      * noarchive" in the cache file and was served with it after the preview had
      * ended, until someone flushed the cache (as Noren does for time-dependent
      * output).
+     *
+     * A preview is not necessarily closed: behind Sudare the requests that reach
+     * robots.txt, sitemap.xml and llms.txt are authenticated already, so they
+     * carry the normal content (hidden() is false). Only an explicit
+     * `annai.noindex => true` hides them.
      */
     public static function preview(App $kirby): bool
     {
@@ -117,6 +125,18 @@ final class Pages
             $kirby->response()->cache(false);
         }
         return $preview;
+    }
+
+    /**
+     * The explicit `annai.noindex => true`: the site must not be indexed and is
+     * hidden even where nothing protects it (an open page). robots.txt is
+     * `Disallow: /` without a sitemap line, sitemap.xml an empty urlset and
+     * llms.txt its H1 only (Routes). Implies preview(); a Sudare protection
+     * alone never does, because Sudare answers 401 before Kirby renders.
+     */
+    public static function hidden(App $kirby): bool
+    {
+        return Options::get($kirby, 'noindex') === true;
     }
 
     /** preview() without the cache side effect. */
@@ -193,8 +213,8 @@ final class Pages
      * the check tool and $site->annaiSitemap() count one entry per language
      * behind a preview too, as the file is served after the go-live. Built
      * from alternates(), which answers [] for every page while the preview is
-     * on, the sitemap count behind Sudare used to be one per page. The route serves no
-     * entries at all during the preview (Routes::sitemap()); drafts and
+     * on, the sitemap count behind Sudare used to be one per page. The route
+     * serves no entries while hidden() (Routes::sitemap()); drafts and
      * excluded pages never reach entries() (all()).
      *
      * @return array<string,string>

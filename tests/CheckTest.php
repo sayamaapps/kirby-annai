@@ -131,6 +131,8 @@ try {
     expect([Check::PREVIEW_PROBLEM], $report['problems'], 'preview: reported once as a site problem');
     expect('preview on: every page carries noindex', Check::PREVIEW_PROBLEM, 'preview: fixed wording');
     expect(true, $report['preview'], 'preview: flag set');
+    expect(true, $report['hidden'], 'preview: explicit annai.noindex true → hidden');
+    holds(str_contains(Check::render($report), "\npreview: on (everything closed)\n"), 'preview: render says everything closed when hidden');
     expect("User-agent: *\nDisallow: /\n", $report['robots']['text'], 'preview: robots.txt text as served');
     expect(1, count($report['robots']['warnings']), 'preview: one robots warning, for the configuration after the preview');
     holds(str_contains((string) ($report['robots']['warnings'][0] ?? ''), 'Blocks Claude-User'), 'preview: the blocked Claude-User is still warned about');
@@ -631,7 +633,7 @@ try {
     file_put_contents($tmp . '/site/config/config.php', "<?php\nreturn ['annai.active' => true, 'annai.type' => 'GroceryStore', 'annai.location' => fn () => null, 'annai.robots.agents' => ['Claude-User' => false]];\n");
     file_put_contents($tmp . '/site/config/sudare.php', "<?php\nreturn [];\n");
     [$code, $out] = $runCheck(['--root=' . $tmp, '--url=http://example.invalid']);
-    holds(str_contains($out, 'preview: on (everything closed)'), 'CLI behind Sudare: protects() true → preview on');
+    holds(str_contains($out, "preview: on (noindex, files as live)\n"), 'CLI behind Sudare: protects() true → preview on, files as live (not hidden)');
     holds(str_contains($out, 'sitemap.xml: 1 URLs'), 'CLI behind Sudare: sitemap count is what is served after the preview');
     holds(str_contains($out, 'sections: Contact, Pages'), 'CLI behind Sudare: llms.txt sections are what is served after the preview');
     holds(str_contains($out, '  ! Blocks Claude-User (user)'), 'CLI behind Sudare: the robots warning of the configuration after the preview is shown');

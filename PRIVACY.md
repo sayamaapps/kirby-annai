@@ -71,6 +71,9 @@ render any personal data of visitors.
   remove content that has already been collected, and it binds only those
   crawlers that respect robots.txt.
 - A preview lock keeps a site out of search results while it is protected
-  (Annai then answers `noindex` and `Disallow: /`). The lock itself sits in front
-  of Kirby, so the routes are behind it; Annai does not add or remove that
-  protection.
+  (Annai then answers `noindex` on every page). The lock itself sits in front
+  of Kirby, so the routes are behind it, and robots.txt, sitemap.xml and llms.txt
+  show the normal content to the requests that get through it. A route the site
+  exempts from the lock is readable by the crawler it is exempted for, so the
+  page list is visible to it during the preview. `annai.noindex => true` closes
+  the files (`Disallow: /`) instead. Annai does not add or remove that protection.

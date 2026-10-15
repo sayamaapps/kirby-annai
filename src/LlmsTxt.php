@@ -138,7 +138,7 @@ final class LlmsTxt
 
     /**
      * The H1 "# Name", the name through plain() like every Panel text. Also the
-     * whole file while the preview is protected (Routes::llmsText()).
+     * whole file while Pages::hidden() (Routes::llmsText()).
      */
     public static function heading(string $name): string
     {
