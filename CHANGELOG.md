@@ -13,7 +13,9 @@ All notable changes to this project are documented here. Versions follow
 
 ## [Unreleased]
 
-### Changed
+## [2.1.0] — 2026-10-15
+
+### Added
 
 - `annai.descriptionFallback` (opt-in) reads the page's own description field
   (`beschreibung`) as a second step: intro → page `beschreibung` → site
