@@ -83,7 +83,7 @@ function bizNorenFields(): array
 function bizFixture(string $tmp, array $setup): void
 {
     annai_page($tmp, '', 'site', array_merge(bizSiteDefaults(), $setup['site'] ?? []));
-    annai_page($tmp, '2_laden', 'default', ['title' => 'Hofladen', 'einleitung' => $setup['intro'] ?? 'Gemüse vom eigenen Feld.']);
+    annai_page($tmp, '2_laden', 'default', array_merge(['title' => 'Hofladen', 'einleitung' => $setup['intro'] ?? 'Gemüse vom eigenen Feld.'], $setup['page'] ?? []));
     annai_page($tmp, '_drafts/entwurf', 'betrieb', ['title' => 'Entwurf', 'strasse' => 'Entwurfsweg 9', 'plz' => '00000', 'ort' => 'Nirgendwo']);
     if (($setup['contact'] ?? []) === false) {
         return;
@@ -695,6 +695,47 @@ bizSite(
     function (App $kirby) use ($siteLong): void {
         expect($siteLong, Business::head($kirby, $kirby->site()->homePage())['description'],
             'head: descriptionFallback on, home page (no intro) → the site description, as before');
+    }
+);
+
+// The chain with descriptionFallback: intro, then the page's beschreibung, then the site's.
+// Each step gives way only while it is under 50 characters and the next one is longer.
+$pageLong = 'Hofladen mit Gemüse, Eiern und Brot aus eigener Herstellung, jeden Tag frisch.';
+$pageShort = 'Hofladen mit Eiern.';
+$pageMiddle = 'Hofladen mit Eiern und Gemüse vom Hof.';
+bizSite(
+    ['options' => bizOn(['annai.descriptionFallback' => true]), 'intro' => $shortIntro, 'page' => ['beschreibung' => $pageLong], 'site' => ['beschreibung' => $siteLong]],
+    function (App $kirby) use ($pageLong): void {
+        expect($pageLong, Business::head($kirby, $kirby->page('laden'))['description'],
+            'head: descriptionFallback on, short intro → the page beschreibung before the longer site description');
+    }
+);
+bizSite(
+    ['options' => bizOn(['annai.descriptionFallback' => true]), 'intro' => '', 'page' => ['beschreibung' => $pageShort], 'site' => ['beschreibung' => $siteLong]],
+    function (App $kirby) use ($siteLong): void {
+        expect($siteLong, Business::head($kirby, $kirby->page('laden'))['description'],
+            'head: descriptionFallback on, empty intro, short page beschreibung → the longer site description');
+    }
+);
+bizSite(
+    ['options' => bizOn(['annai.descriptionFallback' => true]), 'intro' => '', 'page' => ['beschreibung' => $pageLong], 'site' => ['beschreibung' => $siteLong]],
+    function (App $kirby) use ($pageLong): void {
+        expect($pageLong, Business::head($kirby, $kirby->page('laden'))['description'],
+            'head: descriptionFallback on, empty intro, page beschreibung of 50 characters or more → it, not the site');
+    }
+);
+bizSite(
+    ['options' => bizOn(['annai.descriptionFallback' => true]), 'intro' => $shortIntro, 'page' => ['beschreibung' => $pageMiddle], 'site' => ['beschreibung' => $siteLong]],
+    function (App $kirby) use ($siteLong): void {
+        expect($siteLong, Business::head($kirby, $kirby->page('laden'))['description'],
+            'head: descriptionFallback on, the minimum applies to the page step too: short page beschreibung → the longer site description');
+    }
+);
+bizSite(
+    ['options' => bizOn(), 'intro' => '', 'page' => ['beschreibung' => $pageLong], 'site' => ['beschreibung' => $siteLong]],
+    function (App $kirby) use ($siteLong): void {
+        expect($siteLong, Business::head($kirby, $kirby->page('laden'))['description'],
+            'head: descriptionFallback off (default) → the page beschreibung is ignored, the site description as before');
     }
 );
 

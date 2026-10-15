@@ -703,8 +703,8 @@ final class Business
      * decodes entities, so "Kinder <6 Jahre …" keeps its text (strip_tags() ate
      * everything from the "<" on) and "&amp;" stays as the hook wrote it.
      *
-     * `annai.descriptionFallback`: an intro shorter than Check::DESCRIPTION_MIN
-     * gives way to the site description, if that is longer. The hook is not
+     * `annai.descriptionFallback`: the chain is intro, then the page's description
+     * field, then the site description (fallbackSource()). The hook is not
      * affected: what it writes is what the description says.
      */
     private static function description(App $kirby, Page $page, array $facts): string
@@ -717,21 +717,43 @@ final class Business
             $source = Text::esc($source);
         } else {
             $fields = Options::fields($kirby);
-            $fallback = Options::descriptionFallback($kirby);
             $intro = $page->content()->get($fields['intro']);
-            $field = $intro;
-            if ($field->isEmpty()) {
-                $field = $kirby->site()->content()->get($fields['description']);
-            }
-            $source = self::kirbytext($field);
-            if ($fallback && !$intro->isEmpty() && mb_strlen(Text::plain($source)) < Check::DESCRIPTION_MIN) {
-                $site = self::kirbytext($kirby->site()->content()->get($fields['description']));
-                if (mb_strlen(Text::plain($site)) > mb_strlen(Text::plain($source))) {
-                    $source = $site;
-                }
+            if (Options::descriptionFallback($kirby)) {
+                $source = self::fallbackSource($kirby, $page, $fields);
+            } else {
+                $source = self::kirbytext($intro->isEmpty() ? $kirby->site()->content()->get($fields['description']) : $intro);
             }
         }
         return Text::excerpt($source, Options::descriptionLength($kirby));
+    }
+
+    /**
+     * The chain of `annai.descriptionFallback` (rendered, not excerpted): the page's
+     * intro, else the page's description field (the same field name as the site's,
+     * `annai.fields` description), else the site description. Each step gives way to
+     * the next one only while it is shorter than Check::DESCRIPTION_MIN and the next
+     * one is longer, so the minimum applies to every step. A text that is shorter than
+     * the minimum and has no longer successor stays as it is.
+     *
+     * @param array<string, mixed> $fields Options::fields()
+     */
+    private static function fallbackSource(App $kirby, Page $page, array $fields): string
+    {
+        $source = self::kirbytext($page->content()->get($fields['intro']));
+        $steps = [
+            $page->content()->get($fields['description']),
+            $kirby->site()->content()->get($fields['description']),
+        ];
+        foreach ($steps as $field) {
+            if (mb_strlen(Text::plain($source)) >= Check::DESCRIPTION_MIN) {
+                break;
+            }
+            $next = self::kirbytext($field);
+            if (mb_strlen(Text::plain($next)) > mb_strlen(Text::plain($source))) {
+                $source = $next;
+            }
+        }
+        return $source;
     }
 
     /**
