@@ -355,6 +355,16 @@ final class Options
     }
 
     /**
+     * `annai.descriptionFallback`: when the page's intro is shorter than the
+     * check's minimum (Check::DESCRIPTION_MIN), the meta description is taken from
+     * the site description instead, if that is longer. Off by default.
+     */
+    public static function descriptionFallback(App $kirby): bool
+    {
+        return self::flag($kirby, 'descriptionFallback', false);
+    }
+
+    /**
      * `og:locale` in `xx_YY` form: the option, else the current language's
      * locale on a multilang site (LC_ALL or the first entry), else Kirby's
      * `locale` option ("de_DE.utf8" → "de_DE"), else null.

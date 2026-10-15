@@ -702,6 +702,10 @@ final class Business
      * plain text, not HTML: it is escaped before Text::excerpt() strips tags and
      * decodes entities, so "Kinder <6 Jahre …" keeps its text (strip_tags() ate
      * everything from the "<" on) and "&amp;" stays as the hook wrote it.
+     *
+     * `annai.descriptionFallback`: an intro shorter than Check::DESCRIPTION_MIN
+     * gives way to the site description, if that is longer. The hook is not
+     * affected: what it writes is what the description says.
      */
     private static function description(App $kirby, Page $page, array $facts): string
     {
@@ -713,11 +717,19 @@ final class Business
             $source = Text::esc($source);
         } else {
             $fields = Options::fields($kirby);
-            $field = $page->content()->get($fields['intro']);
+            $fallback = Options::descriptionFallback($kirby);
+            $intro = $page->content()->get($fields['intro']);
+            $field = $intro;
             if ($field->isEmpty()) {
                 $field = $kirby->site()->content()->get($fields['description']);
             }
             $source = self::kirbytext($field);
+            if ($fallback && !$intro->isEmpty() && mb_strlen(Text::plain($source)) < Check::DESCRIPTION_MIN) {
+                $site = self::kirbytext($kirby->site()->content()->get($fields['description']));
+                if (mb_strlen(Text::plain($site)) > mb_strlen(Text::plain($source))) {
+                    $source = $site;
+                }
+            }
         }
         return Text::excerpt($source, Options::descriptionLength($kirby));
     }
