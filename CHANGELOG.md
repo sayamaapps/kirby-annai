@@ -11,6 +11,15 @@ All notable changes to this project are documented here. Versions follow
   **[privacy text]**. Every site using the plugin must then review its privacy
   policy.
 
+## [Unreleased]
+
+### Changed
+
+- `annai.descriptionFallback` (opt-in) reads the page's own description field
+  (`beschreibung`) as a second step: intro → page `beschreibung` → site
+  `beschreibung`. Each step gives way to the next only while it is shorter than
+  50 characters and the next one is longer. Off, nothing changes.
+
 ## [2.0.0] — 2026-10-15
 
 Major under the rule above: the default output of llms.txt changes (the phone

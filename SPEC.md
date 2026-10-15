@@ -765,8 +765,11 @@ final class Head
   field (`beschreibung`), rendered with `$field->kirbytext()` (as the starter's
   `$field->excerpt()`: no raw Markdown or Kirbytags), then
   `Text::excerpt(…, descriptionLength)`. With `annai.descriptionFallback` on, an
-  intro whose plain text is shorter than `Check::DESCRIPTION_MIN` (50) gives way
-  to the site description, if that is longer (the check's minimum, one constant).
+  chain is intro, then the page's description field (the same name as the site's
+  `description`, `annai.fields`), then the site description. Each step gives way to
+  the next only while its plain text is shorter than `Check::DESCRIPTION_MIN` (50)
+  and the next one is longer (the check's minimum, one constant). Without the option
+  the page's description field is not read.
   Hook `annai.description` replaces the rule: its result is plain text, passed through `Text::esc()` before
   `Text::excerpt()` (which strips tags and decodes entities for HTML input), so
   it is excerpted, not rendered — `Kinder <6 Jahre` keeps its text and an
@@ -1333,7 +1336,7 @@ wherever one exists.
 | `phoneCountry` | `'49'` | `phoneCountry()` | Country code for national numbers: digits without leading zeros (`'+43'`, `'0043'` → `43`); its region (`49` → `DE`) is the one libphonenumber reads a national number for (§3.2) |
 | `title` | `null` | `hook()` | `Closure(Page $page, array $facts): string` replaces the title rule; a set value that is no Closure is warned and ignored (also `description`, `canonical`, `jsonld`, `llms.extra`) |
 | `description` | `null` | `hook()` | `Closure(Page $page, array $facts): string` replaces the description source: plain text, excerpted, not rendered (§3.7.2) |
-| `descriptionFallback` | `false` | `descriptionFallback()` | `true`: an intro shorter than `Check::DESCRIPTION_MIN` (50) gives way to the site description when that is longer; the hook is not affected (§3.7.2) |
+| `descriptionFallback` | `false` | `descriptionFallback()` | `true`: intro → page description field → site description; a step under `Check::DESCRIPTION_MIN` (50) gives way to the next when that is longer; the hook is not affected (§3.7.2) |
 | `descriptionLength` | `155` | `descriptionLength()` | Excerpt length of the meta description (ellipsis included): int 20…320; anything else (`'abc'`, `'200'`) warned → 155; outside the range warned → clamped. `Check::descriptionMax()` = this + 5 |
 | `canonical` | `null` | `hook()` | `Closure(Page): string` |
 | `locale` | `null` | `locale()` | `og:locale`; null → multilang current language locale (`LC_ALL` or first), else Kirby `locale` option (`de_DE.utf8` → `de_DE`), else null (omitted). Normalised to `xx_YY` form; invalid → null |
