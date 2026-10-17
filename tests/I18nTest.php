@@ -69,4 +69,10 @@ expect('Hof?31m', I18n::printable("Hof\x9b31m"), 'printable turns a raw C1 byte 
 expect('Gem?se[2J', I18n::printable("Gem\xfcse\e[2J"), 'printable on Latin-1 text: invalid byte ?, ESC dropped');
 expect('Gemüse', I18n::printable('Gemüse'), 'printable leaves valid UTF-8 alone');
 
+// annai.labels: Überschrift ersetzen, Rückfall auf die Tabelle nach dem Zurücksetzen
+I18n::setLabels(['llms.hours' => 'Sprechzeiten']);
+expect('Sprechzeiten', I18n::t('llms.hours'), 'label replaces the table text');
+I18n::setLabels([]);
+expect($en['llms.hours'], I18n::t('llms.hours'), 'label reset: table text again');
+
 finish('Annai I18n');
