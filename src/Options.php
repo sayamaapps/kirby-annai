@@ -293,6 +293,16 @@ final class Options
     public static function action(App $kirby): ?array
     {
         $value = self::get($kirby, 'action');
+        // A Closure(): ?array is read when the page renders, for a target that
+        // lives in the Panel (a booking address). A throwing one counts as unset.
+        if ($value instanceof Closure) {
+            try {
+                $value = $value();
+            } catch (\Throwable $error) {
+                self::warn($kirby, 'Annai: annai.action threw ' . get_class($error) . ': ' . $error->getMessage() . ' — no action.');
+                return null;
+            }
+        }
         if (!is_array($value)) {
             return null;
         }
@@ -597,10 +607,48 @@ final class Options
         return 'en';
     }
 
-    /** Sets I18n's language for this request from language(). Called before any text is produced. */
+    /** Sets I18n's language for this request from language(), and its labels. Called before any text is produced. */
     public static function applyLanguage(App $kirby): void
     {
         I18n::setLanguage(self::language($kirby));
+        I18n::setLabels(self::labels($kirby));
+    }
+
+    /**
+     * Heading and label overrides (`annai.labels`), e.g. `['llms.hours' => 'Sprechzeiten']`.
+     * Only keys of the plugin's own tables, and only texts that keep the placeholders
+     * of the English text (`{hours}`); anything else is logged and left out. The keys
+     * are those of translations/en.php.
+     *
+     * @return array<string,string>
+     */
+    public static function labels(App $kirby): array
+    {
+        $value = self::get($kirby, 'labels', []);
+        if (!is_array($value)) {
+            self::warn($kirby, 'Annai: annai.labels must be an array of key => text, not '
+                . get_debug_type($value) . ' — ignored.');
+            return [];
+        }
+        $known = I18n::table('en');
+        $placeholders = static function (string $text): array {
+            preg_match_all('/\{(\w+)\}/', $text, $m);
+            $names = array_unique($m[1]);
+            sort($names);
+            return $names;
+        };
+        $labels = [];
+        foreach ($value as $key => $text) {
+            $text = is_string($text) ? trim(preg_replace('/\s+/u', ' ', I18n::printable($text)) ?? '') : '';
+            if (!is_string($key) || !isset($known[$key]) || $text === ''
+                || $placeholders($text) !== $placeholders($known[$key])) {
+                self::warn($kirby, 'Annai: annai.labels entry ' . var_export($key, true)
+                    . ' is no known key with a text of the same placeholders — ignored.');
+                continue;
+            }
+            $labels[$key] = $text;
+        }
+        return $labels;
     }
 
     /** Non-empty trimmed strings of a list, re-indexed. @return list<string> */

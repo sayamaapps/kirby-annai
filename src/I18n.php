@@ -24,6 +24,20 @@ final class I18n
     /** @var array<string, array<string,string>> */
     private static array $tables = [];
 
+    /** @var array<string,string> Überschriften aus annai.labels, je Anfrage gesetzt. */
+    private static array $labels = [];
+
+    /**
+     * Replaces texts by key (`annai.labels`). Options checks the keys and the
+     * placeholders before it calls this.
+     *
+     * @param array<string,string> $labels
+     */
+    public static function setLabels(array $labels): void
+    {
+        self::$labels = $labels;
+    }
+
     public static function setLanguage(string $language): void
     {
         self::$language = in_array($language, self::LANGUAGES, true) ? $language : 'en';
@@ -58,7 +72,7 @@ final class I18n
     /** `{name}` placeholders are replaced with the given values, unescaped. */
     public static function t(string $key, array $values = []): string
     {
-        $text = self::table(self::$language)[$key] ?? self::table('en')[$key] ?? $key;
+        $text = self::$labels[$key] ?? self::table(self::$language)[$key] ?? self::table('en')[$key] ?? $key;
         if ($values === []) {
             return $text;
         }

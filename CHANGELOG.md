@@ -11,7 +11,17 @@ All notable changes to this project are documented here. Versions follow
   **[privacy text]**. Every site using the plugin must then review its privacy
   policy.
 
-## [Unreleased]
+## [2.2.0] — 2026-10-17
+
+### Added
+
+- `annai.labels` (array, default `[]`): texts of Annai's own headings and labels by
+  key, e.g. `['llms.hours' => 'Sprechzeiten']` for a practice that says *Sprechzeiten*.
+  Only known keys whose text keeps the placeholders of the English text; anything
+  else is logged and left out. Off, nothing changes.
+- `annai.action` also takes a `Closure(): ?array`, read when the page renders, so a
+  booking target can come from a Panel field. A throwing Closure counts as unset.
+  A plain array works as before.
 
 ## [2.1.0] — 2026-10-15
 
