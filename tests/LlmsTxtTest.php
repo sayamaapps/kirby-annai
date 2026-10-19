@@ -73,8 +73,8 @@ holds(str_contains($md, "\n## Öffnungszeiten\n\n- Montag: 8:00–12:00, 14:00�
 holds(str_contains($md, "\n- Dienstag: geschlossen\n"), 'Tuesday closed');
 holds(str_contains($md, "\n- Samstag: 8:00–12:00 Uhr (nur Verkauf)\n"), 'Saturday with note');
 holds(str_contains($md, "\n- Gesetzliche Feiertage: geschlossen\n"), 'holidays line');
-holds(str_contains($md, "\n- 2027-12-31 (Silvester): geschlossen\n"), 'Silvester closure');
-holds(str_contains($md, "\n- 2027-12-24 (Heiligabend): nur 8:30–12:00 Uhr\n"), 'Heiligabend shortened hours');
+holds(str_contains($md, "\n- 31.12.2027 (Silvester): geschlossen\n"), 'Silvester closure');
+holds(str_contains($md, "\n- 24.12.2027 (Heiligabend): nur 8:30–12:00 Uhr\n"), 'Heiligabend shortened hours');
 holds(!str_contains($md, '### '), 'one unit: no ### heading');
 holds(str_contains($md, "\n## Seiten\n\n- [Startseite](https://example.test)\n- [Hofladen](https://example.test/laden): Gemüse vom eigenen Feld.\n"), 'home first, then the note of a page');
 
@@ -111,8 +111,8 @@ $expected = implode("\n", [
     '- Samstag: 8:00–12:00 Uhr (nur Verkauf)',
     '- Sonntag: geschlossen',
     '- Gesetzliche Feiertage: geschlossen',
-    '- 2027-08-02 bis 2027-08-15 (Betriebsferien): geschlossen, Sommerpause',
-    '- 2027-12-24 (Heiligabend): nur 8:30–12:00 Uhr',
+    '- 2.8.2027 bis 15.8.2027 (Betriebsferien): geschlossen, Sommerpause',
+    '- 24.12.2027 (Heiligabend): nur 8:30–12:00 Uhr',
     '',
     '## Termine',
     '',
@@ -173,7 +173,7 @@ holds(str_contains($en, "\n- Monday: 8:00–12:00, 14:00–18:00\n"), 'English: 
 holds(str_contains($en, "\n- Tuesday: closed\n"), 'English: Tuesday closed');
 holds(str_contains($en, "\n- Public holidays: closed\n"), 'English: holidays line');
 holds(str_contains($en, "\n- Address: Musterweg 1, 12345 Musterstadt\n"), 'English: Address label');
-holds(str_contains($en, "\n- 2027-12-24 (Heiligabend): only 8:30–12:00\n"), 'English: only hours');
+holds(str_contains($en, "\n- 24 Dec 2027 (Heiligabend): only 8:30–12:00\n"), 'English: only hours');
 holds(str_contains($en, "\n## Pages\n"), 'English: Pages heading');
 I18n::setLanguage('de');
 
@@ -214,7 +214,7 @@ holds(str_contains($actionFallback, "- Haupthandlung: https://shop.example\n"), 
 $closureRange = LlmsTxt::render(annai_test_model(['units' => [annai_test_unit('Hofladen', ['closures' => [
     ['from' => '2027-08-02', 'to' => '2027-08-15', 'label' => 'Betriebsferien', 'hours' => null, 'note' => 'Sommerpause'],
 ]])]]));
-holds(str_contains($closureRange, "- 2027-08-02 bis 2027-08-15 (Betriebsferien): geschlossen, Sommerpause\n"), 'closure range with note');
+holds(str_contains($closureRange, "- 2.8.2027 bis 15.8.2027 (Betriebsferien): geschlossen, Sommerpause\n"), 'closure range with note');
 
 $sections = LlmsTxt::render(annai_test_model(['sections' => [
     ['title' => 'Im Notfall', 'lines' => ['- 112: Notruf']],
@@ -244,7 +244,7 @@ expect('- Montag: 8:00–12:00, 14:00–18:00 Uhr', $lines[0], 'unitLines: Monda
 expect('- Samstag: 8:00–12:00 Uhr (nur Verkauf)', $lines[5], 'unitLines: Saturday with note');
 expect('- Sonntag: geschlossen', $lines[6], 'unitLines: Sunday');
 expect('- Gesetzliche Feiertage: geschlossen', $lines[7], 'unitLines: holidays after the days');
-expect('- 2027-12-31 (Silvester): geschlossen', $lines[8], 'unitLines: closure after holidays');
+expect('- 31.12.2027 (Silvester): geschlossen', $lines[8], 'unitLines: closure after holidays');
 
 // The summary is the raw site description: no HTML, and a link keeps its target
 // only when it is on the allowlist (http, https, mailto, tel, /, #), checked after

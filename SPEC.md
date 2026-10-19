@@ -618,9 +618,9 @@ final class LlmsTxt
      *   - Dienstag: geschlossen                     ← llms.closed when blocks === []
      *   - Samstag: 8:00–12:00 Uhr (nur Verkauf)     ← note appended as " (…)" (Text::line)
      *   - Gesetzliche Feiertage: geschlossen        ← llms.holidaysClosed when unit.holidays
-     *   - 2027-12-31 (Silvester): geschlossen       ← closure: from === to → date; else t('llms.range', from, to)
-     *   - 2027-12-24 (Heiligabend): nur 8:30–12:00 Uhr   ← hours !== null → t('llms.onlyHours', ['hours' => range])
-     *   - 2027-08-02 bis 2027-08-15 (Betriebsferien): geschlossen, Hinweistext   ← ", " + note when note
+     *   - 31.12.2027 (Silvester): geschlossen       ← closure: from === to → I18n::date(from); else t('llms.range', from, to)
+     *   - 24.12.2027 (Heiligabend): nur 8:30–12:00 Uhr   ← hours !== null → t('llms.onlyHours', ['hours' => range])
+     *   - 2.8.2027 bis 15.8.2027 (Betriebsferien): geschlossen, Hinweistext   ← ", " + note when note
      *
      *   ## Termine                                  ← llms.events; omitted without events
      *
@@ -1590,10 +1590,10 @@ Set `I18n::setLanguage('de')` for the main case and reproduce the starter's
 expectations (the 41-check fixture): title/summary, `## Kontakt` with the four
 lines, `### Hofladen` only with two units, `- Montag: 8:00–12:00, 14:00–18:00 Uhr`,
 `- Dienstag: geschlossen`, `- Samstag: 8:00–12:00 Uhr (nur Verkauf)`,
-`- 2027-12-31 (Silvester): geschlossen`, `- 2027-12-24 (Heiligabend): nur 8:30–12:00 Uhr`,
+`- 31.12.2027 (Silvester): geschlossen`, `- 24.12.2027 (Heiligabend): nur 8:30–12:00 Uhr`,
 `- [Hofladen](https://…/laden): Gemüse vom eigenen Feld.`, home first. Then:
 - English: `## Contact`, `- Monday: 8:00–12:00` (no "Uhr"), `- Tuesday: closed`
-- one unit → no `###`; holidays true → holidays line after the days; closure range → `2027-08-02 bis 2027-08-15 (Betriebsferien): geschlossen, Sommerpause`
+- one unit → no `###`; holidays true → holidays line after the days; closure range → `2.8.2027 bis 15.8.2027 (Betriebsferien): geschlossen, Sommerpause`
 - `contact.extra`: `"  - Fax:\n   030 23125099  "` → `- Fax: 030 23125099` (Text::line), `"\t"` dropped; `- Fax: <b>0</b> [x](y)` written as given (no escaping)
 - events section with venue and a cancelled one; sections placement before Pages; optional section; empty contact → no `## Kontakt`
 - all links absolute (regex from auslieferung.spec.ts), file ends with one `"\n"`, no `\n\n\n`
