@@ -5,9 +5,9 @@ Everything search engines and AI agents read from a [Kirby CMS](https://getkirby
 *Annai* (案内) is the word for guidance, the one who shows the way. The plugin shows search engines and agents where things are: the pages, the address, the phone number, the opening hours and the one action that matters, with the real target URL.
 
 - **Served at runtime.** `robots.txt`, `sitemap.xml` and `llms.txt` are routes, not files in `public/`, so they stay behind whatever protects the site before Kirby boots (for example a preview lock) and always name the current domain.
-- **JSON-LD from the same content.** The business node is built from the site's own fields and the opening hours of [Noren](https://github.com/simsimmal/kirby-noren), so the markup cannot drift from the page. Hooks add or replace nodes for multi-location or multi-entity sites.
+- **JSON-LD from the same content.** The business node is built from the site's own fields and the opening hours of [Noren](https://github.com/sayamaapps/kirby-noren), so the markup cannot drift from the page. Hooks add or replace nodes for multi-location or multi-entity sites.
 - **AI agents on purpose.** Agents that act for a person (`Claude-User`, `ChatGPT-User`, `Perplexity-User`) and AI search engines stay allowed. Training crawlers are a per-site decision with two presets and per-bot overrides.
-- **Events from Koyomi.** When [Koyomi](https://github.com/simsimmal/kirby-koyomi) is installed and active, upcoming events appear in `llms.txt`, and past event pages carry a sensible `lastmod`.
+- **Events from Koyomi.** When [Koyomi](https://github.com/sayamaapps/kirby-koyomi) is installed and active, upcoming events appear in `llms.txt`, and past event pages carry a sensible `lastmod`.
 - **A check tool.** `vendor/bin/annai-check` shows per page what engines and agents see and lists the problems (title, description, canonical, og:image, JSON-LD, noindex, robots warnings).
 - **Off by default.** Without `'annai.active' => true` every route falls through to Kirby and every method returns nothing.
 - **No cookies, no browser storage, no requests to third parties.** See [Privacy](#privacy).
@@ -32,7 +32,7 @@ Composer installs the plugin into `site/plugins/annai/` (via `getkirby/composer-
 Until the package is on Packagist, add the repository first:
 
 ```json
-"repositories": [{ "type": "vcs", "url": "https://github.com/simsimmal/kirby-annai" }]
+"repositories": [{ "type": "vcs", "url": "https://github.com/sayamaapps/kirby-annai" }]
 ```
 
 **Composer is the supported installation.** It also installs `giggsey/libphonenumber-for-php-lite`, which reads the phone numbers, into the site's `vendor/`; Kirby and `annai-check` load it through the site's `vendor/autoload.php`. A copy of the plugin without Composer (a ZIP or a download into `site/plugins/annai/`) runs, but publishes no `telephone` and no `faxNumber`: it logs `Annai: phone numbers need giggsey/libphonenumber-for-php-lite, which is not installed — nothing is published as E.164; install Annai with Composer (README, Installation).`; with Kirby's `debug` option on, that message is thrown on every page instead, as for a broken option ([Options](#options)). The check reports it on a site whose Kirby comes from Composer; next to a ZIP Kirby the check needs a `vendor/autoload.php` and does not run. A site whose Kirby comes from Composer but whose plugins are copied by hand adds the library with `composer require giggsey/libphonenumber-for-php-lite`. Not next to a ZIP Kirby: once a `vendor/autoload.php` exists in the site root, `kirby/bootstrap.php` loads that one instead of Kirby's own.
@@ -506,7 +506,7 @@ Each unit (`$site->annaiUnits()`, also `facts['units']`) is:
 
 ## Preview
 
-While the site is in a preview protected by the [Sudare](https://github.com/simsimmal/kirby-sudare) package, Annai answers the protection's status:
+While the site is in a preview protected by the [Sudare](https://github.com/sayamaapps/kirby-sudare) package, Annai answers the protection's status:
 
 - every page gets `<meta name="robots" content="noindex, nofollow, noarchive">`;
 - `robots.txt`, `sitemap.xml` and `llms.txt` are the normal files, as they are after the go-live. Sudare answers a request without credentials with 401 before Kirby renders, so these requests are authenticated. A route that Sudare's configuration exempts for the request stays closed (see below);
