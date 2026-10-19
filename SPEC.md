@@ -516,7 +516,8 @@ final class Robots
 ```php
 final class Sitemap
 {
-    public const MAX_URLS = 50000;   // sitemaps.org limit per file (also 50 MB, which we do not measure)
+    public const MAX_URLS = 50000;   // sitemaps.org limit per file
+    public const MAX_BYTES = 52428800;   // sitemaps.org limit per file, uncompressed
     public const NS = 'http://www.sitemaps.org/schemas/sitemap/0.9';
     public const NS_XHTML = 'http://www.w3.org/1999/xhtml';
 
@@ -544,8 +545,13 @@ final class Sitemap
     /** W3C datetime as sitemaps.org takes it: YYYY, YYYY-MM, YYYY-MM-DD, or date + time + zone (Z, ±hh:mm). */
     public static function validLastmod(string $lastmod): bool;
 
-    /** Splits into lists of at most $size entries (default MAX_URLS); [] → [[]] (one empty file). */
-    public static function chunks(array $entries, int $size = self::MAX_URLS): array;
+    /**
+     * Splits into lists of at most $size entries (default MAX_URLS) whose render() is at most
+     * $bytes long (default MAX_BYTES; the frame counted with the xhtml namespace, each entry as
+     * render() writes it, escaping and alternates included); [] → [[]] (one empty file). An
+     * entry longer than $bytes alone still gets a file of its own.
+     */
+    public static function chunks(array $entries, int $size = self::MAX_URLS, int $bytes = self::MAX_BYTES): array;
 
     /**
      * <sitemapindex> for several files. $sitemaps: list<array{loc: string, lastmod?: ?string}>.
@@ -1133,7 +1139,7 @@ final class Routes
      * (compared as instants; "2000" counts as 2000-01-01, "2000-05" as 2000-05-01 — PHP reads a bare year as a time today).
      * $chunk n: the n-th chunk (1-based), or null (→ 404 via $this->next()) when out of range or when only one file exists.
      * Chunk size: `annai.sitemap.chunk` (default and cap Sitemap::MAX_URLS, an int from 1 — small values are for tests;
-     * anything else is warned and gives the default, it used to be 1 URL per file).
+     * anything else is warned and gives the default, it used to be 1 URL per file); every file also stays within Sitemap::MAX_BYTES.
      * Response application/xml.
      */
     public static function sitemap(App $kirby, ?int $chunk = null): ?Response;
