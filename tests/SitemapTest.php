@@ -66,6 +66,23 @@ expect([[]], Sitemap::chunks([]), 'no entries give one empty chunk');
 expect([$entries], Sitemap::chunks($entries), 'default size keeps a small list in one chunk');
 expect(Sitemap::MAX_URLS, 50000, 'MAX_URLS is the sitemaps.org limit');
 
+// Chunks also by bytes: sitemaps.org allows 52,428,800 bytes per file, uncompressed,
+// and many languages with hreflang alternates pass that long before 50,000 URLs.
+expect(52428800, Sitemap::MAX_BYTES, 'MAX_BYTES is the sitemaps.org limit');
+$long = array_map(fn (int $i): array => [
+    'loc' => 'https://example.test/' . str_repeat('x', 100) . "/$i",
+    'lastmod' => '2027-03-10',
+    'alternates' => ['de' => "https://example.test/de/$i", 'en' => "https://example.test/en/$i", 'x-default' => "https://example.test/$i"],
+], range(1, 10));
+$limit = strlen(Sitemap::render(array_slice($long, 0, 3)));
+$parts = Sitemap::chunks($long, 50000, $limit);
+expect([3, 3, 3, 1], array_map('count', $parts), 'byte limit of exactly three entries: files of three');
+holds(array_merge(...$parts) === $long, 'byte chunks keep every entry, in order');
+holds(max(array_map(fn (array $part): int => strlen(Sitemap::render($part)), $parts)) <= $limit, 'no file over the byte limit');
+expect([2, 2, 2, 2, 2], array_map('count', Sitemap::chunks($long, 50000, $limit - 1)), 'one byte less: files of two');
+expect([2, 2, 2, 2, 2], array_map('count', Sitemap::chunks($long, 2, $limit)), 'the URL count still caps a file');
+expect([1, 1], array_map('count', Sitemap::chunks(array_slice($long, 0, 2), 50000, 10)), 'an entry over the limit alone: a file of its own, nothing lost');
+
 // Sitemap index.
 expect(
     "$decl\n<sitemapindex xmlns=\"$ns\">\n"

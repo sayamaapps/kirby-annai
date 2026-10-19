@@ -8,6 +8,7 @@ namespace Annai;
 final class Sitemap
 {
     public const MAX_URLS = 50000;   // sitemaps.org limit per file
+    public const MAX_BYTES = 52428800;   // sitemaps.org limit per file, uncompressed
     public const NS = 'http://www.sitemaps.org/schemas/sitemap/0.9';
     public const NS_XHTML = 'http://www.w3.org/1999/xhtml';
 
@@ -26,34 +27,68 @@ final class Sitemap
                 break;
             }
         }
-        $lines = [
-            self::DECLARATION,
-            '<urlset xmlns="' . self::NS . '"' . ($hasAlternates ? ' xmlns:xhtml="' . self::NS_XHTML . '"' : '') . '>',
-        ];
+        $lines = [self::DECLARATION, self::open($hasAlternates)];
         foreach ($entries as $entry) {
-            $lines[] = '  <url>';
-            $lines[] = '    <loc>' . Text::xml((string) $entry['loc']) . '</loc>';
-            $lastmod = (string) ($entry['lastmod'] ?? '');
-            if ($lastmod !== '') {
-                $lines[] = '    <lastmod>' . Text::xml($lastmod) . '</lastmod>';
-            }
-            foreach ((array) ($entry['alternates'] ?? []) as $code => $href) {
-                $lines[] = '    <xhtml:link rel="alternate" hreflang="' . Text::xml((string) $code)
-                    . '" href="' . Text::xml((string) $href) . '"/>';
-            }
-            $lines[] = '  </url>';
+            array_push($lines, ...self::url($entry));
         }
         $lines[] = '</urlset>';
         return implode("\n", $lines) . "\n";
     }
 
-    /** Splits into lists of at most $size entries; [] → [[]] (one empty file). */
-    public static function chunks(array $entries, int $size = self::MAX_URLS): array
+    /**
+     * Splits into lists of at most $size entries whose render() is at most
+     * $bytes long; [] → [[]] (one empty file). An entry longer than $bytes on
+     * its own still gets a file: nothing is dropped.
+     */
+    public static function chunks(array $entries, int $size = self::MAX_URLS, int $bytes = self::MAX_BYTES): array
     {
         if ($entries === []) {
             return [[]];
         }
-        return array_chunk($entries, max(1, $size));
+        $size = max(1, $size);
+        // The frame as render() writes it, with the xhtml namespace: never short.
+        $frame = strlen(self::DECLARATION) + strlen(self::open(true)) + strlen('</urlset>') + 3;
+        $parts = [];
+        $part = [];
+        $used = $frame;
+        foreach ($entries as $entry) {
+            $length = strlen(implode("\n", self::url($entry))) + 1;
+            if ($part !== [] && (count($part) >= $size || $used + $length > $bytes)) {
+                $parts[] = $part;
+                $part = [];
+                $used = $frame;
+            }
+            $part[] = $entry;
+            $used += $length;
+        }
+        $parts[] = $part;
+        return $parts;
+    }
+
+    /** The <urlset> start tag; the xhtml namespace only when an entry has alternates. */
+    private static function open(bool $alternates): string
+    {
+        return '<urlset xmlns="' . self::NS . '"' . ($alternates ? ' xmlns:xhtml="' . self::NS_XHTML . '"' : '') . '>';
+    }
+
+    /**
+     * The lines of one <url> element.
+     *
+     * @return list<string>
+     */
+    private static function url(array $entry): array
+    {
+        $lines = ['  <url>', '    <loc>' . Text::xml((string) $entry['loc']) . '</loc>'];
+        $lastmod = (string) ($entry['lastmod'] ?? '');
+        if ($lastmod !== '') {
+            $lines[] = '    <lastmod>' . Text::xml($lastmod) . '</lastmod>';
+        }
+        foreach ((array) ($entry['alternates'] ?? []) as $code => $href) {
+            $lines[] = '    <xhtml:link rel="alternate" hreflang="' . Text::xml((string) $code)
+                . '" href="' . Text::xml((string) $href) . '"/>';
+        }
+        $lines[] = '  </url>';
+        return $lines;
     }
 
     /**

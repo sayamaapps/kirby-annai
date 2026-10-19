@@ -11,6 +11,16 @@ All notable changes to this project are documented here. Versions follow
   **[privacy text]**. Every site using the plugin must then review its privacy
   policy.
 
+## [Unreleased]
+
+### Fixed
+
+- `sitemap.xml` was split by URL count alone. sitemaps.org also limits a file to
+  52,428,800 bytes uncompressed, and a multi-language site with hreflang passes that
+  long before 50,000 URLs (ten languages at about 3,800 pages: one 79 MB file for
+  4,500 pages). Files are now split by both limits; `annai.sitemap.chunk` stays an
+  upper bound on URLs. Small sites see no change.
+
 ## [2.2.0] — 2026-10-17
 
 ### Added
