@@ -11,6 +11,15 @@ All notable changes to this project are documented here. Versions follow
   **[privacy text]**. Every site using the plugin must then review its privacy
   policy.
 
+## [2.2.2] — 2026-10-20
+
+### Fixed
+
+- **Closures in llms.txt showed ISO dates on German sites**: `2027-12-24 (Heiligabend)` instead of
+  `24.12.2027 (Heiligabend)`, and ranges read `2027-08-02 bis 2027-08-15` (now `2.8.2027 bis 15.8.2027`).
+  Closure dates use the site language's date format, as I18n::date() does. On English sites the
+  dates change too (`24 Dec 2027`). This changes the text of llms.txt by default.
+
 ## [2.2.1] — 2026-10-19
 
 ### Fixed

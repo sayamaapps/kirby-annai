@@ -366,7 +366,7 @@ Use the real target, never the URL of a redirect (such as `/anruf`) that robots.
 
 - Montag: 8:00–12:00, 14:00–18:00 Uhr
 - Dienstag: geschlossen
-- 2027-12-24 (Heiligabend): nur 8:30–12:00 Uhr
+- 24.12.2027 (Heiligabend): nur 8:30–12:00 Uhr
 
 ## Termine
 

@@ -171,6 +171,9 @@ final class LlmsTxt
             if ($to === '') {
                 $to = $from;
             }
+            // The site language's date format (I18n::date(): 31.12.2027 on a German site).
+            $from = I18n::date($from);
+            $to = I18n::date($to);
             $date = $from === $to ? $from : I18n::t('llms.range', ['from' => $from, 'to' => $to]);
             $label = self::plain((string) ($closure['label'] ?? ''));
             $hours = $closure['hours'] ?? null;
