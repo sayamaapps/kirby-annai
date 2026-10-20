@@ -7,9 +7,12 @@ All notable changes to this project are documented here. Versions follow
   field names the Panel writes) **or to the default output** (what robots.txt,
   the sitemap, llms.txt and the head show without configuration) is a **major**
   version: a site would publish other data after a routine update.
-- **A change to the privacy text** (`DATENSCHUTZ.md` / `PRIVACY.md`) is marked
-  **[privacy text]**. Every site using the plugin must then review its privacy
-  policy.
+
+## [Unreleased]
+
+### Removed
+
+- **`DATENSCHUTZ.md` and `PRIVACY.md`.** Annai processes no visitor data, so it has no place in a site's privacy policy. The README says so under "Privacy".
 
 ## [2.2.2] — 2026-10-20
 

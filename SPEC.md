@@ -25,7 +25,7 @@ commit of 2026-10-11 (`site/plugins/suchmaschinen/index.php`, 220 lines).
   8.3+ functions). Run with `ASDF_PHP_VERSION=8.5.3 php …` when plain `php`
   says "No version is set".
 - Code, identifiers, comments, README in **English**. German only in
-  `translations/de.php` and `DATENSCHUTZ.md`. Legacy German option *keys*
+  `translations/de.php`. Legacy German option *keys*
   (`breite`, `ziel`) are accepted as input where §4 says so, never produced.
 - Every user-facing string comes from `I18n::t()` (keys in §5). Need a key
   that does not exist? Do NOT add it — write it into `NOTES-<task>.md` and use
@@ -65,7 +65,7 @@ commit of 2026-10-11 (`site/plugins/suchmaschinen/index.php`, 220 lines).
 | Site variants | older site copies: a `llms` snippet and `kanonisch.php` (host redirect); a `@graph` with noindex; og:image size and twitter card; an own llms route |
 | Noren | `../kirby-noren/README.md` ("Own markup", "Return shapes"), `src/SchemaOrg.php`, `src/Locations.php` (`units()`), `src/Schedule.php` (`blocks()`, `note()`, `upcomingClosures()`, `label()`) |
 | Koyomi | `../kirby-koyomi/README.md`, `src/Repository.php` (`calendar()`, `upcoming()`), `src/Event.php` (`isPast()`, `end`, `url`, `title`), `src/Models/EventPage.php` (`koyomi()`), `src/Format.php` (`when()`), `index.php` (`koyomi_i18n()`) |
-| Family conventions | `../kirby-noren` (index.php, Options, I18n, tests/helpers.php, README, CHANGELOG, PRIVACY, DATENSCHUTZ, ci.yml), `../kirby-koe/bin/koe-fetch` (CLI script shape) |
+| Family conventions | `../kirby-noren` (index.php, Options, I18n, tests/helpers.php, README, CHANGELOG, privacy notes, ci.yml), `../kirby-koe/bin/koe-fetch` (CLI script shape) |
 
 ### 0.1 What differs between the site copies (and what survives)
 
@@ -135,9 +135,7 @@ kirby-annai/
 │   ├── AgentReadyTest.php            routes    (§9.10, Kirby, port of the 41 checks)
 │   └── CheckTest.php                 tools     (§9.11, Kirby)
 ├── README.md                         tools   (§10)
-├── CHANGELOG.md                      tools
-├── PRIVACY.md                        tools
-└── DATENSCHUTZ.md                    tools
+└── CHANGELOG.md                      tools
 ```
 
 Dependency map (who calls whom): `Routes` → `Pages`, `Business`, `Robots`,
@@ -1697,9 +1695,4 @@ check messages as English sentences.
   `kopf.php` head lines → `annai/head`; behaviour changes D5–D9, D14),
   Privacy, Development, License.
 - `CHANGELOG.md`: Keep a Changelog, `## [1.0.0] — unreleased`, Added /
-  Changed (vs the starter copy, with the rename table) / [privacy text].
-- `PRIVACY.md` (English) and `DATENSCHUTZ.md` (German text block): what the
-  plugin does not do (no cookies, no storage, no third-party requests, no
-  visitor data), what it publishes (business facts, page list, opening hours
-  from the content), robots.txt and llms.txt are public documents (do not list
-  secret paths), "describes the implementation, not legal advice".
+  Changed (vs the starter copy, with the rename table).

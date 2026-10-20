@@ -261,7 +261,7 @@ The known agents and their role. The list was compiled on 2026-10-11 from the ve
 `annai.robots.extra` adds raw lines, for example a comment that gives the reason for a block. Under RFC 9309 a blank line does not end a group, so lines written after the last agent group would apply to that agent only. Annai therefore puts them into the `*` group as soon as agent groups exist, and repeats their rules (not the comments) in every allowed agent group, as it does with the `annai.disallow` paths. Without agent groups they stay a block of their own after the `*` group, which crawlers read as part of it. From the first `User-agent:` line on, the extra lines are groups of their own and come after the agent groups:
 
 ```php
-'annai.robots.extra' => ['# Training is blocked by decision of 2026-10-11, see DATENSCHUTZ.md'],
+'annai.robots.extra' => ['# Training is blocked by decision of 2026-10-11'],
 ```
 
 An entry may hold several lines (`"# reason\nUser-agent: Googlebot\nDisallow: /"`); it is read line by line, so its `User-agent:` line starts a group of its own like a separate entry would.
@@ -636,9 +636,7 @@ The starter's `suchmaschinen.*` keys in the site's `config.php` are simply not r
 
 ## Privacy
 
-Annai sets no cookies, uses no browser storage, makes no request to a third party and processes no visitor data. The head, the JSON-LD, robots.txt, the sitemap and llms.txt are computed on your server from the site's own content. [PRIVACY.md](PRIVACY.md) describes the implementation in English, and [DATENSCHUTZ.md](DATENSCHUTZ.md) holds the German text block for a site's privacy policy. Both describe the implementation and are not legal advice.
-
-robots.txt, sitemap.xml and llms.txt are **public documents**. They list the site's pages and the business's address, phone number and opening hours. Do not put anything into the `Disallow:` paths, the extra robots lines or the extra sitemap entries that you would not publish: a `Disallow:` path is public too.
+Annai processes no visitor data: it sets no cookies, uses no browser storage and makes no request to a third party. There is nothing to add to a site's privacy policy. robots.txt, sitemap.xml and llms.txt are **public documents**, so do not put anything into the `Disallow:` paths, the extra robots lines or the extra sitemap entries that you would not publish.
 
 ## Development
 
