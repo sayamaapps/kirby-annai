@@ -405,6 +405,22 @@ bizSite(
     }
 );
 
+// annai.action als Closure: gelesen wie ein Wert; ein werfender Closure zählt als nicht gesetzt
+bizSite(
+    ['options' => bizOn(['annai.action' => fn () => ['type' => 'ReserveAction', 'name' => 'Termin buchen', 'target' => 'https://booking.example/praxis']])],
+    function (App $kirby): void {
+        expect(
+            ['type' => 'ReserveAction', 'name' => 'Termin buchen', 'target' => 'https://booking.example/praxis'],
+            Business::facts($kirby)['action'],
+            'facts: action from a Closure'
+        );
+    }
+);
+
+bizSite(['options' => bizOn(['annai.action' => fn () => throw new RuntimeException('kaputt')])], function (App $kirby): void {
+    expect(null, Business::facts($kirby)['action'], 'facts: a throwing action Closure counts as unset');
+});
+
 bizSite(['options' => bizOn(['annai.type' => false])], function (App $kirby): void {
     expect(false, Business::facts($kirby)['type'], 'facts: type false is kept');
 });
@@ -1315,5 +1331,13 @@ if ($norenPath === null) {
 bizSite(['options' => bizOn(['noren.active' => true])], function (App $kirby): void {
     expect([], Business::units($kirby), 'units: no Noren plugin installed → []');
 });
+
+// annai.labels: bekannte Schlüssel mit gleichen Platzhaltern bleiben; der Rest fällt weg
+bizSite(
+    ['options' => bizOn(['annai.labels' => ['llms.hours' => 'Sprechzeiten', 'llms.hoursLine' => 'nur Uhr', 'llms.nope' => 'x', 'llms.closed' => '  ']])],
+    function (App $kirby): void {
+        expect(['llms.hours' => 'Sprechzeiten'], \Annai\Options::labels($kirby), 'labels: known keys only, placeholders kept');
+    }
+);
 
 finish('BusinessTest');

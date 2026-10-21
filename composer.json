@@ -4,7 +4,7 @@
     "type": "kirby-plugin",
     "license": "MIT",
     "keywords": ["kirby", "kirby-plugin", "kirby-5", "seo", "sitemap", "robots-txt", "llms-txt", "json-ld", "schema-org", "open-graph", "local-business"],
-    "homepage": "https://github.com/simsimmal/kirby-annai",
+    "homepage": "https://github.com/sayamaapps/kirby-annai",
     "authors": [
         {
             "name": "Simon Räder",
@@ -12,8 +12,8 @@
         }
     ],
     "support": {
-        "issues": "https://github.com/simsimmal/kirby-annai/issues",
-        "source": "https://github.com/simsimmal/kirby-annai"
+        "issues": "https://github.com/sayamaapps/kirby-annai/issues",
+        "source": "https://github.com/sayamaapps/kirby-annai"
     },
     "require": {
         "php": "^8.2",

@@ -25,7 +25,7 @@ commit of 2026-10-11 (`site/plugins/suchmaschinen/index.php`, 220 lines).
   8.3+ functions). Run with `ASDF_PHP_VERSION=8.5.3 php …` when plain `php`
   says "No version is set".
 - Code, identifiers, comments, README in **English**. German only in
-  `translations/de.php` and `DATENSCHUTZ.md`. Legacy German option *keys*
+  `translations/de.php`. Legacy German option *keys*
   (`breite`, `ziel`) are accepted as input where §4 says so, never produced.
 - Every user-facing string comes from `I18n::t()` (keys in §5). Need a key
   that does not exist? Do NOT add it — write it into `NOTES-<task>.md` and use
@@ -65,7 +65,7 @@ commit of 2026-10-11 (`site/plugins/suchmaschinen/index.php`, 220 lines).
 | Site variants | older site copies: a `llms` snippet and `kanonisch.php` (host redirect); a `@graph` with noindex; og:image size and twitter card; an own llms route |
 | Noren | `../kirby-noren/README.md` ("Own markup", "Return shapes"), `src/SchemaOrg.php`, `src/Locations.php` (`units()`), `src/Schedule.php` (`blocks()`, `note()`, `upcomingClosures()`, `label()`) |
 | Koyomi | `../kirby-koyomi/README.md`, `src/Repository.php` (`calendar()`, `upcoming()`), `src/Event.php` (`isPast()`, `end`, `url`, `title`), `src/Models/EventPage.php` (`koyomi()`), `src/Format.php` (`when()`), `index.php` (`koyomi_i18n()`) |
-| Family conventions | `../kirby-noren` (index.php, Options, I18n, tests/helpers.php, README, CHANGELOG, PRIVACY, DATENSCHUTZ, ci.yml), `../kirby-koe/bin/koe-fetch` (CLI script shape) |
+| Family conventions | `../kirby-noren` (index.php, Options, I18n, tests/helpers.php, README, CHANGELOG, privacy notes, ci.yml), `../kirby-koe/bin/koe-fetch` (CLI script shape) |
 
 ### 0.1 What differs between the site copies (and what survives)
 
@@ -135,9 +135,7 @@ kirby-annai/
 │   ├── AgentReadyTest.php            routes    (§9.10, Kirby, port of the 41 checks)
 │   └── CheckTest.php                 tools     (§9.11, Kirby)
 ├── README.md                         tools   (§10)
-├── CHANGELOG.md                      tools
-├── PRIVACY.md                        tools
-└── DATENSCHUTZ.md                    tools
+└── CHANGELOG.md                      tools
 ```
 
 Dependency map (who calls whom): `Routes` → `Pages`, `Business`, `Robots`,
@@ -516,7 +514,8 @@ final class Robots
 ```php
 final class Sitemap
 {
-    public const MAX_URLS = 50000;   // sitemaps.org limit per file (also 50 MB, which we do not measure)
+    public const MAX_URLS = 50000;   // sitemaps.org limit per file
+    public const MAX_BYTES = 52428800;   // sitemaps.org limit per file, uncompressed
     public const NS = 'http://www.sitemaps.org/schemas/sitemap/0.9';
     public const NS_XHTML = 'http://www.w3.org/1999/xhtml';
 
@@ -544,8 +543,13 @@ final class Sitemap
     /** W3C datetime as sitemaps.org takes it: YYYY, YYYY-MM, YYYY-MM-DD, or date + time + zone (Z, ±hh:mm). */
     public static function validLastmod(string $lastmod): bool;
 
-    /** Splits into lists of at most $size entries (default MAX_URLS); [] → [[]] (one empty file). */
-    public static function chunks(array $entries, int $size = self::MAX_URLS): array;
+    /**
+     * Splits into lists of at most $size entries (default MAX_URLS) whose render() is at most
+     * $bytes long (default MAX_BYTES; the frame counted with the xhtml namespace, each entry as
+     * render() writes it, escaping and alternates included); [] → [[]] (one empty file). An
+     * entry longer than $bytes alone still gets a file of its own.
+     */
+    public static function chunks(array $entries, int $size = self::MAX_URLS, int $bytes = self::MAX_BYTES): array;
 
     /**
      * <sitemapindex> for several files. $sitemaps: list<array{loc: string, lastmod?: ?string}>.
@@ -612,9 +616,9 @@ final class LlmsTxt
      *   - Dienstag: geschlossen                     ← llms.closed when blocks === []
      *   - Samstag: 8:00–12:00 Uhr (nur Verkauf)     ← note appended as " (…)" (Text::line)
      *   - Gesetzliche Feiertage: geschlossen        ← llms.holidaysClosed when unit.holidays
-     *   - 2027-12-31 (Silvester): geschlossen       ← closure: from === to → date; else t('llms.range', from, to)
-     *   - 2027-12-24 (Heiligabend): nur 8:30–12:00 Uhr   ← hours !== null → t('llms.onlyHours', ['hours' => range])
-     *   - 2027-08-02 bis 2027-08-15 (Betriebsferien): geschlossen, Hinweistext   ← ", " + note when note
+     *   - 31.12.2027 (Silvester): geschlossen       ← closure: from === to → I18n::date(from); else t('llms.range', from, to)
+     *   - 24.12.2027 (Heiligabend): nur 8:30–12:00 Uhr   ← hours !== null → t('llms.onlyHours', ['hours' => range])
+     *   - 2.8.2027 bis 15.8.2027 (Betriebsferien): geschlossen, Hinweistext   ← ", " + note when note
      *
      *   ## Termine                                  ← llms.events; omitted without events
      *
@@ -1133,7 +1137,7 @@ final class Routes
      * (compared as instants; "2000" counts as 2000-01-01, "2000-05" as 2000-05-01 — PHP reads a bare year as a time today).
      * $chunk n: the n-th chunk (1-based), or null (→ 404 via $this->next()) when out of range or when only one file exists.
      * Chunk size: `annai.sitemap.chunk` (default and cap Sitemap::MAX_URLS, an int from 1 — small values are for tests;
-     * anything else is warned and gives the default, it used to be 1 URL per file).
+     * anything else is warned and gives the default, it used to be 1 URL per file); every file also stays within Sitemap::MAX_BYTES.
      * Response application/xml.
      */
     public static function sitemap(App $kirby, ?int $chunk = null): ?Response;
@@ -1584,10 +1588,10 @@ Set `I18n::setLanguage('de')` for the main case and reproduce the starter's
 expectations (the 41-check fixture): title/summary, `## Kontakt` with the four
 lines, `### Hofladen` only with two units, `- Montag: 8:00–12:00, 14:00–18:00 Uhr`,
 `- Dienstag: geschlossen`, `- Samstag: 8:00–12:00 Uhr (nur Verkauf)`,
-`- 2027-12-31 (Silvester): geschlossen`, `- 2027-12-24 (Heiligabend): nur 8:30–12:00 Uhr`,
+`- 31.12.2027 (Silvester): geschlossen`, `- 24.12.2027 (Heiligabend): nur 8:30–12:00 Uhr`,
 `- [Hofladen](https://…/laden): Gemüse vom eigenen Feld.`, home first. Then:
 - English: `## Contact`, `- Monday: 8:00–12:00` (no "Uhr"), `- Tuesday: closed`
-- one unit → no `###`; holidays true → holidays line after the days; closure range → `2027-08-02 bis 2027-08-15 (Betriebsferien): geschlossen, Sommerpause`
+- one unit → no `###`; holidays true → holidays line after the days; closure range → `2.8.2027 bis 15.8.2027 (Betriebsferien): geschlossen, Sommerpause`
 - `contact.extra`: `"  - Fax:\n   030 23125099  "` → `- Fax: 030 23125099` (Text::line), `"\t"` dropped; `- Fax: <b>0</b> [x](y)` written as given (no escaping)
 - events section with venue and a cancelled one; sections placement before Pages; optional section; empty contact → no `## Kontakt`
 - all links absolute (regex from auslieferung.spec.ts), file ends with one `"\n"`, no `\n\n\n`
@@ -1691,9 +1695,4 @@ check messages as English sentences.
   `kopf.php` head lines → `annai/head`; behaviour changes D5–D9, D14),
   Privacy, Development, License.
 - `CHANGELOG.md`: Keep a Changelog, `## [1.0.0] — unreleased`, Added /
-  Changed (vs the starter copy, with the rename table) / [privacy text].
-- `PRIVACY.md` (English) and `DATENSCHUTZ.md` (German text block): what the
-  plugin does not do (no cookies, no storage, no third-party requests, no
-  visitor data), what it publishes (business facts, page list, opening hours
-  from the content), robots.txt and llms.txt are public documents (do not list
-  secret paths), "describes the implementation, not legal advice".
+  Changed (vs the starter copy, with the rename table).

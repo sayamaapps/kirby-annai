@@ -5,9 +5,9 @@ Everything search engines and AI agents read from a [Kirby CMS](https://getkirby
 *Annai* (案内) is the word for guidance, the one who shows the way. The plugin shows search engines and agents where things are: the pages, the address, the phone number, the opening hours and the one action that matters, with the real target URL.
 
 - **Served at runtime.** `robots.txt`, `sitemap.xml` and `llms.txt` are routes, not files in `public/`, so they stay behind whatever protects the site before Kirby boots (for example a preview lock) and always name the current domain.
-- **JSON-LD from the same content.** The business node is built from the site's own fields and the opening hours of [Noren](https://github.com/simsimmal/kirby-noren), so the markup cannot drift from the page. Hooks add or replace nodes for multi-location or multi-entity sites.
+- **JSON-LD from the same content.** The business node is built from the site's own fields and the opening hours of [Noren](https://github.com/sayamaapps/kirby-noren), so the markup cannot drift from the page. Hooks add or replace nodes for multi-location or multi-entity sites.
 - **AI agents on purpose.** Agents that act for a person (`Claude-User`, `ChatGPT-User`, `Perplexity-User`) and AI search engines stay allowed. Training crawlers are a per-site decision with two presets and per-bot overrides.
-- **Events from Koyomi.** When [Koyomi](https://github.com/simsimmal/kirby-koyomi) is installed and active, upcoming events appear in `llms.txt`, and past event pages carry a sensible `lastmod`.
+- **Events from Koyomi.** When [Koyomi](https://github.com/sayamaapps/kirby-koyomi) is installed and active, upcoming events appear in `llms.txt`, and past event pages carry a sensible `lastmod`.
 - **A check tool.** `vendor/bin/annai-check` shows per page what engines and agents see and lists the problems (title, description, canonical, og:image, JSON-LD, noindex, robots warnings).
 - **Off by default.** Without `'annai.active' => true` every route falls through to Kirby and every method returns nothing.
 - **No cookies, no browser storage, no requests to third parties.** See [Privacy](#privacy).
@@ -32,7 +32,7 @@ Composer installs the plugin into `site/plugins/annai/` (via `getkirby/composer-
 Until the package is on Packagist, add the repository first:
 
 ```json
-"repositories": [{ "type": "vcs", "url": "https://github.com/simsimmal/kirby-annai" }]
+"repositories": [{ "type": "vcs", "url": "https://github.com/sayamaapps/kirby-annai" }]
 ```
 
 **Composer is the supported installation.** It also installs `giggsey/libphonenumber-for-php-lite`, which reads the phone numbers, into the site's `vendor/`; Kirby and `annai-check` load it through the site's `vendor/autoload.php`. A copy of the plugin without Composer (a ZIP or a download into `site/plugins/annai/`) runs, but publishes no `telephone` and no `faxNumber`: it logs `Annai: phone numbers need giggsey/libphonenumber-for-php-lite, which is not installed — nothing is published as E.164; install Annai with Composer (README, Installation).`; with Kirby's `debug` option on, that message is thrown on every page instead, as for a broken option ([Options](#options)). The check reports it on a site whose Kirby comes from Composer; next to a ZIP Kirby the check needs a `vendor/autoload.php` and does not run. A site whose Kirby comes from Composer but whose plugins are copied by hand adds the library with `composer require giggsey/libphonenumber-for-php-lite`. Not next to a ZIP Kirby: once a `vendor/autoload.php` exists in the site root, `kirby/bootstrap.php` loads that one instead of Kirby's own.
@@ -78,7 +78,7 @@ The routes work at once: `/robots.txt`, `/sitemap.xml` and `/llms.txt` answer on
 | URL | Content type | Contents |
 |---|---|---|
 | `/robots.txt` | `text/plain` | `User-agent: *` group with `Allow: /` and the `annai.disallow` paths (`Disallow: /` alone when `/` is among them), one group per configured AI agent, the `annai.robots.extra` lines (in the `*` group), and an absolute `Sitemap:` line |
-| `/sitemap.xml` | `application/xml` | One `<urlset>` of all indexable pages, with `<lastmod>`, the `annai.sitemap.extra` entries and, with hreflang on, `xhtml:link` alternates. Above `annai.sitemap.chunk` URLs (default 50000) it is a `<sitemapindex>` |
+| `/sitemap.xml` | `application/xml` | One `<urlset>` of all indexable pages, with `<lastmod>`, the `annai.sitemap.extra` entries and, with hreflang on, `xhtml:link` alternates. Above `annai.sitemap.chunk` URLs (default 50000) or 52,428,800 bytes of XML it is a `<sitemapindex>` |
 | `/sitemap-<n>.xml` | `application/xml` | The n-th chunk, only when the sitemap is split and `n` is the number as the index writes it (`sitemap-1.xml`, not `sitemap-01.xml`). Otherwise 404 |
 | `/llms.txt` | `text/plain` | The [llms.txt](https://llmstxt.org) format: H1 with the name, a quote with the summary, contact, opening hours, events, pages, optional pages |
 
@@ -88,7 +88,7 @@ All four are `GET|HEAD`. Every absolute URL comes from Kirby, never from a hard-
 
 All read as `annai.<name>`; `null` counts as "not set". Boolean options take a real `true` or `false`; anything else is logged and the default is used. A broken value is logged once per process; with Kirby's `debug` option on it throws, so you see it on the page while you develop. Messages about the content work the same way: a phone or fax field that holds more than the number or no valid number, a `sameAs` profile field that is no http(s) URL or holds a space or a control character, and the missing phone library (see [Installation](#installation)) are logged once per process and thrown with `debug` on.
 
-**Hooks** (the Closure options: `title`, `description`, `canonical`, `image`, `location`, `sameAs`, `jsonld`, `sitemap.extra`, `llms.extra`, `exclude.pages`) cannot take a page down. A hook that throws, or returns a value of the wrong type (an array as a title), is logged like a broken option, and Annai's own result is used; with `debug` on it throws. A hook option that holds anything but a Closure (`'annai.title' => 'Eigener Titel'`, an array of nodes as `annai.jsonld`, `42` as `annai.location`) is logged the same way (`annai.title must be a Closure, not 'Eigener Titel' — ignored.`) and counts as unset; `image`, `sameAs`, `sitemap.extra` and `exclude.pages` take a plain value as well, see the table. `title`, `description` and `canonical` may return `null` for Annai's rule. The one exception is `exclude.pages`: a Closure that throws keeps the page **out** (fail closed), so a broken rule never lists what it was meant to hide. A `jsonld` result that cannot be encoded (a node with `NAN` or `INF`, or nested deeper than 512 levels) is logged the same way and the page renders without JSON-LD; the check tool reports it as `JSON-LD is not valid JSON`.
+**Hooks** (the Closure options: `title`, `description`, `canonical`, `image`, `location`, `sameAs`, `jsonld`, `sitemap.extra`, `llms.extra`, `exclude.pages`) cannot take a page down. A hook that throws, or returns a value of the wrong type (an array as a title), is logged like a broken option, and Annai's own result is used; with `debug` on it throws. A hook option that holds anything but a Closure (`'annai.title' => 'Eigener Titel'`, an array of nodes as `annai.jsonld`, `42` as `annai.location`) is logged the same way (`annai.title must be a Closure, not 'Eigener Titel' — ignored.`) and counts as unset; `image`, `sameAs`, `action`, `sitemap.extra` and `exclude.pages` take a plain value as well, see the table. `title`, `description` and `canonical` may return `null` for Annai's rule. The one exception is `exclude.pages`: a Closure that throws keeps the page **out** (fail closed), so a broken rule never lists what it was meant to hide. A `jsonld` result that cannot be encoded (a node with `NAN` or `INF`, or nested deeper than 512 levels) is logged the same way and the page renders without JSON-LD; the check tool reports it as `JSON-LD is not valid JSON`.
 
 Options can be written flat (`'annai.robots.ai' => 'blockTraining'`) or nested (`'annai' => ['robots' => ['ai' => 'blockTraining']]`). Defaults are passed at each read, never in an `options` block of the plugin.
 
@@ -106,7 +106,8 @@ Options can be written flat (`'annai.robots.ai' => 'blockTraining'`) or nested (
 | `area` | `null` | `area()` | Noren area key whose hours are the main hours |
 | `sameAs` | `[]` | `sameAs()` | List of profile URLs, or `Closure(): list`. Only `http://`/`https://` values without a space or a control character are published; a handle or a host without a scheme (`@testhof`, `facebook.com/testhof`) or a URL with an escape sequence in it is logged and left out, also from the profile fields |
 | `geo` | `null` | `geo()` | `['lat' => 52.52, 'lng' => 13.41]`; also `[52.52, 13.41]` and legacy `['breite' => …, 'laenge' => …]`; → `['lat' => float, 'lng' => float]` or null |
-| `action` | `null` | `action()` | `['type' => 'ReserveAction', 'name' => 'Termin buchen', 'target' => 'https://…']`; legacy keys `typ`, `ziel` accepted; → normalised array or null (no target = null) |
+| `action` | `null` | `action()` | `['type' => 'ReserveAction', 'name' => 'Termin buchen', 'target' => 'https://…']`; legacy keys `typ`, `ziel` accepted; → normalised array or null (no target = null). Also `Closure(): ?array`, read when the page renders, for a target held in the Panel; a throwing Closure counts as unset |
+| `labels` | `[]` | `labels()` | Texts of the plugin's own headings and labels by key, e.g. `['llms.hours' => 'Sprechzeiten']` (keys: `translations/en.php`). Only known keys whose text keeps the placeholders of the English text (`{hours}`); anything else is logged and left out |
 | `image` | `null` | `get()` | Share image: path (`'assets/teilen.jpg'`), absolute URL, `['url','width','height','alt']`, or `Closure(Page): string\|array\|null`. Without a `url` no `og:image:*` tag is printed |
 | `country` | `'DE'` | `country()` | `addressCountry` |
 | `phoneCountry` | `'49'` | `phoneCountry()` | Country code for national numbers, digits only: `'43'`; `'+43'` and `'0043'` are read as 43 (the international prefix is no part of the code). libphonenumber reads a national number for its region (`49` → Germany) |
@@ -260,7 +261,7 @@ The known agents and their role. The list was compiled on 2026-10-11 from the ve
 `annai.robots.extra` adds raw lines, for example a comment that gives the reason for a block. Under RFC 9309 a blank line does not end a group, so lines written after the last agent group would apply to that agent only. Annai therefore puts them into the `*` group as soon as agent groups exist, and repeats their rules (not the comments) in every allowed agent group, as it does with the `annai.disallow` paths. Without agent groups they stay a block of their own after the `*` group, which crawlers read as part of it. From the first `User-agent:` line on, the extra lines are groups of their own and come after the agent groups:
 
 ```php
-'annai.robots.extra' => ['# Training is blocked by decision of 2026-10-11, see DATENSCHUTZ.md'],
+'annai.robots.extra' => ['# Training is blocked by decision of 2026-10-11'],
 ```
 
 An entry may hold several lines (`"# reason\nUser-agent: Googlebot\nDisallow: /"`); it is read line by line, so its `User-agent:` line starts a group of its own like a separate entry would.
@@ -365,7 +366,7 @@ Use the real target, never the URL of a redirect (such as `/anruf`) that robots.
 
 - Montag: 8:00–12:00, 14:00–18:00 Uhr
 - Dienstag: geschlossen
-- 2027-12-24 (Heiligabend): nur 8:30–12:00 Uhr
+- 24.12.2027 (Heiligabend): nur 8:30–12:00 Uhr
 
 ## Termine
 
@@ -415,7 +416,7 @@ Extra entries (for example URLs of a shop that Kirby does not know):
 
 An entry whose `loc` is not an absolute `http(s)` URL (with a host, valid UTF-8, no spaces or control characters) is skipped and logged. A `lastmod` must be a W3C datetime (`2027-01-01` or `2027-01-01T08:00:00+01:00`); anything else (`'gestern'`) is left out and logged, the entry stays. Every value is escaped for XML, characters XML 1.0 does not allow are removed, so the file stays well-formed. A `Closure(): list` works too.
 
-When a site has more than `annai.sitemap.chunk` URLs (default 50000, the sitemaps.org limit), `sitemap.xml` becomes a `<sitemapindex>` of `sitemap-1.xml`, `sitemap-2.xml` and so on. Each file's entry in the index carries the newest `<lastmod>` of that file; an extra entry's `2000` counts as 1 January 2000 and `2000-05` as 1 May 2000.
+When a site has more than `annai.sitemap.chunk` URLs (default 50000, the sitemaps.org limit), or its XML would pass 52,428,800 bytes (the other sitemaps.org limit, uncompressed — with hreflang, ten languages reach it at about 3,800 pages), `sitemap.xml` becomes a `<sitemapindex>` of `sitemap-1.xml`, `sitemap-2.xml` and so on. Each file's entry in the index carries the newest `<lastmod>` of that file; an extra entry's `2000` counts as 1 January 2000 and `2000-05` as 1 May 2000.
 
 **Large page trees.** Every sitemap request (`sitemap.xml`, each `sitemap-<n>.xml`) first builds the complete entry list in memory: one Kirby page object per page plus its URL, `<lastmod>` and, with hreflang on, one URL per language. Measured on 2026-10-12: 50,000 entries with three alternates each render in about 120 ms to 19.8 MB of XML with a peak of 111 MB of memory. Chunking splits the output, not the build: a request for `sitemap-7.xml` still assembles all 50,000 entries and then serves the seventh slice. That is about 2 KB per entry with three alternates, Kirby's own footprint included; a single-language entry is smaller. As a guideline, a `memory_limit` of 128 MB carries the measured 50,000 entries with little headroom, so a multi-language site that lists more than about 40,000 URLs should raise the limit to 256 MB or keep the sitemap smaller with `annai.exclude.pages`. `$site->index()` is read on every request as well, so a very large site should also set `annai.location` (see [Content field contract](#content-field-contract)).
 
@@ -505,7 +506,7 @@ Each unit (`$site->annaiUnits()`, also `facts['units']`) is:
 
 ## Preview
 
-While the site is in a preview protected by the [Sudare](https://github.com/simsimmal/kirby-sudare) package, Annai answers the protection's status:
+While the site is in a preview protected by the [Sudare](https://github.com/sayamaapps/kirby-sudare) package, Annai answers the protection's status:
 
 - every page gets `<meta name="robots" content="noindex, nofollow, noarchive">`;
 - `robots.txt`, `sitemap.xml` and `llms.txt` are the normal files, as they are after the go-live. Sudare answers a request without credentials with 401 before Kirby renders, so these requests are authenticated. A route that Sudare's configuration exempts for the request stays closed (see below);
@@ -635,9 +636,7 @@ The starter's `suchmaschinen.*` keys in the site's `config.php` are simply not r
 
 ## Privacy
 
-Annai sets no cookies, uses no browser storage, makes no request to a third party and processes no visitor data. The head, the JSON-LD, robots.txt, the sitemap and llms.txt are computed on your server from the site's own content. [PRIVACY.md](PRIVACY.md) describes the implementation in English, and [DATENSCHUTZ.md](DATENSCHUTZ.md) holds the German text block for a site's privacy policy. Both describe the implementation and are not legal advice.
-
-robots.txt, sitemap.xml and llms.txt are **public documents**. They list the site's pages and the business's address, phone number and opening hours. Do not put anything into the `Disallow:` paths, the extra robots lines or the extra sitemap entries that you would not publish: a `Disallow:` path is public too.
+Annai processes no visitor data: it sets no cookies, uses no browser storage and makes no request to a third party. There is nothing to add to a site's privacy policy. robots.txt, sitemap.xml and llms.txt are **public documents**, so do not put anything into the `Disallow:` paths, the extra robots lines or the extra sitemap entries that you would not publish.
 
 ## Development
 

@@ -97,8 +97,8 @@ try {
     holds(str_contains($md, '- Dienstag: geschlossen'), 'closed day written out');
     holds(str_contains($md, '- Samstag: 8:00–12:00 Uhr (nur Verkauf)'), 'day note');
     holds(str_contains($md, '### Hofcafé') && str_contains($md, '- Sonntag: 13:00–17:00 Uhr'), 'second area');
-    holds(str_contains($md, "- $year-12-31 (Silvester): geschlossen"), 'upcoming closure, more than 14 days ahead');
-    holds(str_contains($md, "- $year-12-24 (Heiligabend): nur 8:30–12:00 Uhr"), 'shortened opening');
+    holds(str_contains($md, "- 31.12.$year (Silvester): geschlossen"), 'upcoming closure, more than 14 days ahead');
+    holds(str_contains($md, "- 24.12.$year (Heiligabend): nur 8:30–12:00 Uhr"), 'shortened opening');
     holds(str_contains($md, "- [Hofladen]($basis/laden): Gemüse vom eigenen Feld."), 'page with an absolute link and its intro');
     holds(!str_contains($md, 'Zum Shop'), 'redirect template left out, as in the sitemap');
     preg_match_all('#\]\(([^)]*)\)#', $md, $links);

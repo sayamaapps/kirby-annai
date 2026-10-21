@@ -7,11 +7,43 @@ All notable changes to this project are documented here. Versions follow
   field names the Panel writes) **or to the default output** (what robots.txt,
   the sitemap, llms.txt and the head show without configuration) is a **major**
   version: a site would publish other data after a routine update.
-- **A change to the privacy text** (`DATENSCHUTZ.md` / `PRIVACY.md`) is marked
-  **[privacy text]**. Every site using the plugin must then review its privacy
-  policy.
 
 ## [Unreleased]
+
+### Removed
+
+- **`DATENSCHUTZ.md` and `PRIVACY.md`.** Annai processes no visitor data, so it has no place in a site's privacy policy. The README says so under "Privacy".
+
+## [2.2.2] — 2026-10-20
+
+### Fixed
+
+- **Closures in llms.txt showed ISO dates on German sites**: `2027-12-24 (Heiligabend)` instead of
+  `24.12.2027 (Heiligabend)`, and ranges read `2027-08-02 bis 2027-08-15` (now `2.8.2027 bis 15.8.2027`).
+  Closure dates use the site language's date format, as I18n::date() does. On English sites the
+  dates change too (`24 Dec 2027`). This changes the text of llms.txt by default.
+
+## [2.2.1] — 2026-10-19
+
+### Fixed
+
+- `sitemap.xml` was split by URL count alone. sitemaps.org also limits a file to
+  52,428,800 bytes uncompressed, and a multi-language site with hreflang passes that
+  long before 50,000 URLs (ten languages at about 3,800 pages: one 79 MB file for
+  4,500 pages). Files are now split by both limits; `annai.sitemap.chunk` stays an
+  upper bound on URLs. Small sites see no change.
+
+## [2.2.0] — 2026-10-17
+
+### Added
+
+- `annai.labels` (array, default `[]`): texts of Annai's own headings and labels by
+  key, e.g. `['llms.hours' => 'Sprechzeiten']` for a practice that says *Sprechzeiten*.
+  Only known keys whose text keeps the placeholders of the English text; anything
+  else is logged and left out. Off, nothing changes.
+- `annai.action` also takes a `Closure(): ?array`, read when the page renders, so a
+  booking target can come from a Panel field. A throwing Closure counts as unset.
+  A plain array works as before.
 
 ## [2.1.0] — 2026-10-15
 
