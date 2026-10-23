@@ -1,6 +1,6 @@
 {
     "name": "sayamaapps/kirby-annai",
-    "description": "Everything search engines and AI agents read from a Kirby CMS 5 site: robots.txt, sitemap.xml, llms.txt, JSON-LD for a local business, meta description, canonical, Open Graph, noindex and hreflang. Opening hours from Noren, events from Koyomi when installed. No styling.",
+    "description": "Search and AI-agent discovery for Kirby 5 sites: robots.txt, sitemap, llms.txt, JSON-LD, meta tags.",
     "type": "kirby-plugin",
     "license": "MIT",
     "keywords": ["kirby", "kirby-plugin", "kirby-5", "seo", "sitemap", "robots-txt", "llms-txt", "json-ld", "schema-org", "open-graph", "local-business"],
