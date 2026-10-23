@@ -25,12 +25,6 @@ Annai builds these from the site's own content, so they cannot drift from the pa
 composer require sayamaapps/kirby-annai
 ```
 
-Until the package is on Packagist, add the repository to `composer.json` first:
-
-```json
-"repositories": [{ "type": "vcs", "url": "https://github.com/sayamaapps/kirby-annai" }]
-```
-
 Composer installs to `site/plugins/annai/`. Add that path to `.gitignore` and deploy it like `vendor/`. Without Composer, no phone numbers are published.
 
 ## Usage
