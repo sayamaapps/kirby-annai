@@ -56,7 +56,7 @@ It prints the title, meta description, robots, canonical, hreflang, Open Graph a
 
 **Content fields.** Annai reads these from the site, or from the business page (`annai.location`, Noren's location, else the first `betrieb` page; an empty field falls back to the site): `marke` (brand), `zusatz` (tagline), `beschreibung` (description), `einleitung` (intro), `strasse`, `plz`, `ort`, `telefon`, `fax`, `email`, and `profiles` (`instagram`, `facebook`, added to `sameAs`). Rename them with `annai.fields`.
 
-A phone field holds only the number, such as `030 / 23125000`, which is published as E.164 (`+493023125000`). A label or note in it publishes nothing, and the check reports it.
+A phone field holds only the number, such as `030 / 34567000`, which is published as E.164 (`+493034567000`). A label or note in it publishes nothing, and the check reports it.
 
 **Hooks.** Closure options (see [Options](#options)) can replace Annai's values. A throwing hook is logged and Annai's own value is used; a throwing `exclude.pages` hook excludes the page. For example:
 

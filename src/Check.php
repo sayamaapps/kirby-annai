@@ -7,7 +7,6 @@ use Kirby\Cms\Page;
 
 /**
  * What search engines and agents see, per page and per site (SPEC.md §3.11).
- * OWNER: task `tools`.
  *
  * Never fetches over HTTP: everything is read from the same methods the
  * site uses for its own output, so the report cannot disagree with the
@@ -28,7 +27,7 @@ final class Check
     /** Site-level problem (sprintf with the message) for an option Options::warn() reported during the run. */
     public const CONFIGURATION_PROBLEM = 'configuration: %s';
 
-    /** Site-level problem when the starter's plugin is still installed next to Annai. */
+    /** Site-level problem when the previous plugin is still installed next to Annai. */
     public const OLD_PLUGIN_PROBLEM = 'old plugin site/plugins/suchmaschinen is still installed: it and Annai both register robots.txt, sitemap.xml and llms.txt; remove it';
 
     /**
@@ -252,7 +251,7 @@ final class Check
             $problems[] = sprintf(self::NAME_PROBLEM, Options::fields($kirby)['brand']);
         }
         // Every phone and fax field with its raw value and its result (SPEC §3.2, the input
-        // contract, decision 2026-10-13): the E.164 number Annai publishes, or why it publishes
+        // contract): the E.164 number Annai publishes, or why it publishes
         // none — so a person sees each field before the go-live. Printed, not counted; a field
         // that gives no number is logged as well and so is a configuration problem below.
         $country = Options::phoneCountry($kirby);
@@ -335,7 +334,7 @@ final class Check
     /**
      * Human-readable text: one block per page, problems prefixed "  ! ",
      * robots warnings prefixed "  ! " too, phone and fax with the raw value as
-     * JSON ("  ~ phone: \"030 / 23125000\" → +493023125000", "→ (none: more than
+     * JSON ("  ~ phone: \"030 / 34567000\" → +493034567000", "→ (none: more than
      * the number)" when nothing is published, PHONE_PROBLEMS; a further
      * location's phone with its page id, "  ~ phone (b): …") and notes
      * (site and page) prefixed "  ~ " (not counted), and a summary line

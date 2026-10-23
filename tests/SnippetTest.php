@@ -3,7 +3,6 @@
  * snippets/annai/head.php rendered by a booted Kirby (SPEC.md §3.7.3, §9.7).
  * Kirby loads the plugin through annai_site(); no src file is required here.
  *   php tests/SnippetTest.php
- * Owner: task `markup`.
  */
 require_once __DIR__ . '/helpers.php';
 
@@ -110,7 +109,7 @@ try {
         'strasse'      => 'Musterweg 1',
         'plz'          => '12345',
         'ort'          => 'Musterstadt',
-        'telefon'      => '030 / 23125000',
+        'telefon'      => '030 / 34567000',
     ]);
     $kirby = annai_kirby($tmp, ['annai.active' => true]);
     [$code, $body] = annai_request($kirby, '/');
@@ -122,7 +121,7 @@ try {
     expect(1, count($blocks), 'page: exactly one JSON-LD block on the home page');
     expect('LocalBusiness', $blocks[0]['@type'] ?? null, 'page: business node type');
     expect('Testhof', $blocks[0]['name'] ?? null, 'page: business node name');
-    expect('+493023125000', $blocks[0]['telephone'] ?? null, 'page: telephone in E.164');
+    expect('+493034567000', $blocks[0]['telephone'] ?? null, 'page: telephone in E.164');
     expect('http://example.invalid/#business', $blocks[0]['@id'] ?? null, 'page: business @id');
 } finally {
     annai_remove_tree($tmp);

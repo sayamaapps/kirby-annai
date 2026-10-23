@@ -88,8 +88,8 @@ jobs:
       # ANNAI_KOYOMI_PATH). Without them the Noren and Koyomi checks print SKIP.
       - name: Fetch Noren and Koyomi as fixtures
         run: |
-          git clone --depth 1 https://github.com/simsimmal/kirby-noren ../kirby-noren || true
-          git clone --depth 1 https://github.com/simsimmal/kirby-koyomi ../kirby-koyomi || true
+          git clone --depth 1 https://github.com/sayamaapps/kirby-noren ../kirby-noren || true
+          git clone --depth 1 https://github.com/sayamaapps/kirby-koyomi ../kirby-koyomi || true
 
       - name: Tests
         run: sh tests/run.sh || echo "::warning title=Kirby 6::Tests fail against the Kirby 6 pre-release, see the log"

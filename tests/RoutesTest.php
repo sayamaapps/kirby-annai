@@ -7,7 +7,7 @@
  *
  *   ASDF_PHP_VERSION=8.5.3 php tests/RoutesTest.php
  *
- * The fake Sudare class below is the contract of SPEC.md §7 / D2:
+ * The fake Sudare class below is the contract of SPEC.md §7:
  * Pages::preview() asks `Sudare\Sudare::active()`, on the CLI also
  * `Sudare\Sudare::protects()`. Declared here, so the
  * file uses braced namespace blocks (a file cannot mix them with a global
@@ -145,7 +145,7 @@ function rtFixture(string $tmp): void
     annai_page($tmp, '2_laden', 'default', ['title' => 'Hofladen', 'einleitung' => 'Gemüse vom eigenen Feld.']);
     annai_page($tmp, '3_kontakt', 'betrieb', [
         'title' => 'Kontakt', 'strasse' => 'Musterweg 1', 'plz' => '12345', 'ort' => 'Musterstadt',
-        'telefon' => '030 / 23125000', 'email' => 'hof@example.test',
+        'telefon' => '030 / 34567000', 'email' => 'hof@example.test',
     ]);
     annai_page($tmp, '4_weiter', 'weiter', ['title' => 'Zum Shop']);
     annai_page($tmp, 'impressum', 'rechtstext', ['title' => 'Impressum']);
@@ -240,7 +240,7 @@ rtRun(['annai.active' => 'true'], function (App $kirby, string $tmp): void {
 rtRun(rtOn(), function (App $kirby): void {
     foreach (['robots.txt', 'sitemap.xml', 'llms.txt'] as $path) {
         [$code] = annai_request($kirby, $path, 'HEAD');
-        expect(200, $code, "HEAD $path is 200 (D7)");
+        expect(200, $code, "HEAD $path is 200");
         [$code, $body, $type] = annai_request($kirby, $path, 'GET');
         expect(200, $code, "GET $path is 200");
         holds(str_starts_with((string) $type, $path === 'sitemap.xml' ? 'application/xml' : 'text/plain'),
@@ -1042,7 +1042,7 @@ try {
 rtRun(rtOn(['languages' => true]), function (App $kirby): void {
     [, $xml] = annai_request($kirby, 'sitemap.xml');
     expect(false, str_contains($xml, 'xmlns:xhtml'), 'multilang without hreflang: no xhtml namespace');
-    expect(3, substr_count($xml, '<url>'), 'multilang without hreflang: one url per page (D15)');
+    expect(3, substr_count($xml, '<url>'), 'multilang without hreflang: one url per page');
 }, 'rtMultilang');
 
 // A page that says noindex offers no hreflang alternates. An excluded

@@ -7,7 +7,7 @@ use libphonenumber\PhoneNumberFormat;
 use libphonenumber\PhoneNumberUtil;
 
 /**
- * Kirby-free text helpers (SPEC.md §3.2). OWNER: task `formats`. phone() needs
+ * Kirby-free text helpers (SPEC.md §3.2). phone() needs
  * giggsey/libphonenumber-for-php-lite (composer.json `require`).
  */
 final class Text
@@ -112,8 +112,8 @@ final class Text
     }
 
     /**
-     * The E.164 number of a phone or fax field ("+493023125000"), or '' (SPEC §3.2, the input
-     * contract, decision 2026-10-13). The field holds the number and nothing else: trimmed, only
+     * The E.164 number of a phone or fax field ("+493034567000"), or '' (SPEC §3.2, the input
+     * contract). The field holds the number and nothing else: trimmed, only
      * the characters of PHONE_GATE. A field with any other character — a letter, markup, a
      * Kirbytag, a note, a dot, a line break — gives '' and the reason 'characters'
      * (phoneProblem()), whatever digits it holds: Annai does not look for a number in text.
@@ -144,15 +144,15 @@ final class Text
      * The character gate of the input contract (SPEC §3.2): after trim() the field holds
      * only these, each for a reason —
      *   digits "0"–"9"   the number;
-     *   " "              between groups: "030 23125000", "0171 123 45 67";
-     *   "+" first        the country code: "+49 30 23125000" ("0049 …" needs none);
-     *   "/"              between area code and number: "030 / 23125000";
-     *   "-"              between groups and before an extension: "0171-1234567", "23125-0";
-     *   "(" and ")"      around the trunk prefix or the area code: "+49 (0)30 23125000",
-     *                    "(030) 23125000".
+     *   " "              between groups: "030 34567000", "0171 123 45 67";
+     *   "+" first        the country code: "+49 30 34567000" ("0049 …" needs none);
+     *   "/"              between area code and number: "030 / 34567000";
+     *   "-"              between groups and before an extension: "0171-1234567", "34567-0";
+     *   "(" and ")"      around the trunk prefix or the area code: "+49 (0)30 34567000",
+     *                    "(030) 34567000".
      * Not ".": dates and times are digits and dots ("12.12.2010", "9.00"), and with the dot
      * they would pass the gate — libphonenumber reads "0351 / 12.12.2010" as +4935112122010,
-     * a valid German number. "030.23125000" gives '' and 'characters'. No letter ("Tel.",
+     * a valid German number. "030.34567000" gives '' and 'characters'. No letter ("Tel.",
      * "ext.", a Kirbytag, HTML, a note), no line break, no tab, no other dash. A no-break space
      * counts as " " (PHONE_SPACES).
      */
@@ -192,7 +192,7 @@ final class Text
     }
 
     /**
-     * A field value as a JSON string for a log line or the check ("030 23125000\n0171 1234567"):
+     * A field value as a JSON string for a log line or the check ("030 34567000\n0171 1234567"):
      * every control character shows as an escape — C0 by json_encode(), C1 (U+0080–U+009F,
      * which JSON_UNESCAPED_UNICODE would keep raw) here — so a line break is visible and an
      * escape sequence from a Panel field cannot reach a terminal. Invalid UTF-8 becomes U+FFFD.

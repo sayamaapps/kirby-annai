@@ -77,7 +77,7 @@ expect(
 expect([0, 'a'], Text::prune([0, null, 'a', '']), 'prune keeps 0 inside a list and re-indexes it');
 expect([], Text::prune([]), 'prune of an empty array is empty');
 
-// phone() — the input contract (SPEC §3.2, decision 2026-10-13): the field holds only the
+// phone() — the input contract (SPEC §3.2): the field holds only the
 // number; a character outside the gate gives '' and 'characters', libphonenumber reads the
 // rest (parse with the region of the calling code, isValidNumber, E.164).
 $phoneCheck = static function (array $cases, string $why): void {
@@ -89,31 +89,31 @@ $phoneCheck = static function (array $cases, string $why): void {
     }
 };
 
-// The golden table: seven phone and fax fields written as on real sites (the numbers are
+// The golden table: seven phone and fax fields in common spellings (the numbers are
 // fictional), each with the E.164 number libphonenumber 9.0.41 gives.
 $phoneCheck([
-    ['01512 3456789', '+4915123456789', null], ['030 23125020', '+493023125020', null], ['+49 30 23125040', '+493023125040', null],
-    ['030 23125060', '+493023125060', null], ['030 / 23125000', '+493023125000', null], ['+49 1512 3456788', '+4915123456788', null],
-    ['030 23125010', '+493023125010', null],
+    ['01512 3456789', '+4915123456789', null], ['030 34567020', '+493034567020', null], ['+49 30 34567040', '+493034567040', null],
+    ['030 34567060', '+493034567060', null], ['030 / 34567000', '+493034567000', null], ['+49 1512 3456788', '+4915123456788', null],
+    ['030 34567010', '+493034567010', null],
 ], 'a real field gives its number');
 
 // The phone pair the Kirby-free fixtures and SPEC §3.5 use for a further location (LlmsTxtTest,
 // JsonLdTest) is one the contract gives (a pair used before turned out 'invalid' under it).
-$phoneCheck([['030 23125070', '+493023125070', null]], 'the fixture pair of a further location is a valid number');
+$phoneCheck([['030 34567070', '+493034567070', null]], 'the fixture pair of a further location is a valid number');
 
 // Within the gate, as operators write a number: every allowed character (SPEC §3.2), a
 // leading 00, the trunk in parentheses, the no-break spaces, whitespace around the number.
 $phoneCheck([
-    ['0049 30 23125000', '+493023125000', null], ['+49 (0)30 23125000', '+493023125000', null], ['+49 (0) 30 23125000', '+493023125000', null],
-    ['(030) 23125000', '+493023125000', null], ['0171-1234567', '+491711234567', null], ['+49 30 23125000-0', '+4930231250000', null],
-    ["030\u{A0}23125000", '+493023125000', null], ["030\u{202F}23125000", '+493023125000', null], [" 030 23125000\n", '+493023125000', null],
+    ['0049 30 34567000', '+493034567000', null], ['+49 (0)30 34567000', '+493034567000', null], ['+49 (0) 30 34567000', '+493034567000', null],
+    ['(030) 34567000', '+493034567000', null], ['0171-1234567', '+491711234567', null], ['+49 30 34567000-0', '+4930345670000', null],
+    ["030\u{A0}34567000", '+493034567000', null], ["030\u{202F}34567000", '+493034567000', null], [" 030 34567000\n", '+493034567000', null],
 ], 'an allowed spelling is read');
 
 // A number from abroad with "+", and a national number read with the configured country.
 $phoneCheck([
     ['+43 1 234 56', '+43123456', null], ['+43 (0)1 234 56', '+43123456', null], ['+41 44 123 45 67', '+41441234567', null],
     ['+44 20 7946 0958', '+442079460958', null], ['+39 06 1234 5678', '+390612345678', null], ['+1 (212) 555-0123', '+12125550123', null],
-    ['+49 30 23125000', '+493023125000', null, '43'],
+    ['+49 30 34567000', '+493034567000', null, '43'],
     ['01 234 56', '+43123456', null, '43'], ['06 1234 5678', '+390612345678', null, '39'], ['0471 123456', '+390471123456', null, '39'],
     ['(212) 555-0123', '+12125550123', null, '1'],
 ], 'a foreign number with "+" and a national number of the configured country');
@@ -121,17 +121,17 @@ $phoneCheck([
 // Outside the gate: text, markup, Kirbytags, notes, a dot, a line break — '' and 'characters',
 // also when the field holds a number libphonenumber would find.
 $phoneCheck(array_map(static fn (string $field): array => [$field, '', 'characters'], [
-    'Tel. 030 23125000', 'Telefon: 030 23125000', '030 23125000 (Zentrale)', 'folgt', 'Fax folgt', 'abc',
-    '<a href="tel:+493023125000">030 23125000</a>', '<b>030 23125000</b>', '(tel: 030 23125000)', '(link: tel:+493023125040 text: +49 30 23125040)',
-    '030 23125000, 0171 1234567', "030 23125000\n0171 1234567", "030\t23125000", '0351 / 12.12.2010', '089 1234 - 1.10.2026',
-    '0351 12345 9.00 Uhr', '030.23125000', '+33.1.23.45.67.89', '030 23125000 ext. 12', '030 +23125000', '(+49) 30 23125000',
-    '030 – 23125000', '０３０ ２３１２５０００', "030 23125000\x1b",
+    'Tel. 030 34567000', 'Telefon: 030 34567000', '030 34567000 (Zentrale)', 'folgt', 'Fax folgt', 'abc',
+    '<a href="tel:+493034567000">030 34567000</a>', '<b>030 34567000</b>', '(tel: 030 34567000)', '(link: tel:+493034567040 text: +49 30 34567040)',
+    '030 34567000, 0171 1234567', "030 34567000\n0171 1234567", "030\t34567000", '0351 / 12.12.2010', '089 1234 - 1.10.2026',
+    '0351 12345 9.00 Uhr', '030.34567000', '+33.1.23.45.67.89', '030 34567000 ext. 12', '030 +34567000', '(+49) 30 34567000',
+    '030 – 34567000', '０３０ ２３１２５０００', "030 34567000\x1b",
 ]), 'a field with more than the number gives no number');
 
 // Within the gate, but no valid number: '' and 'invalid'.
 $phoneCheck(array_map(static fn (array $c): array => [$c[0], '', 'invalid', $c[1] ?? '49'], [
-    ['23125'], ['0351'], ['+49'], ['+'], ['0'], ['(0)'], ['-'], ['()'], ['+49 12345678901234'], ['+1 (555) 123-4567'],
-    ['030 1'], ['0171 123'], ['030 23125000', '999'], [str_repeat('1', 300)],
+    ['34567'], ['0351'], ['+49'], ['+'], ['0'], ['(0)'], ['-'], ['()'], ['+49 12345678901234'], ['+1 (555) 123-4567'],
+    ['030 1'], ['0171 123'], ['030 34567000', '999'], [str_repeat('1', 300)],
 ]), 'a field within the gate that is no valid number');
 
 // Empty: '' without a reason, nothing to report.
@@ -140,13 +140,13 @@ $phoneCheck([['', '', null], ['   ', '', null], ["\n\t", '', null], ["\u{A0}", '
 // The limit of the contract (SPEC §3.2): a note written only with allowed characters is read as
 // libphonenumber reads it. annai-check shows the result before the go-live, so this is the
 // documented limit, not a bug.
-$phoneCheck([['030 23125000 (12)', '+49302312500012', null], ['030 23125000 0815', '+4930231250000815', null]],
+$phoneCheck([['030 34567000 (12)', '+49303456700012', null], ['030 34567000 0815', '+4930345670000815', null]],
     'digits in allowed characters are read as the number');
 
 // Without the library (Annai copied without Composer): every other field gives '' and
 // 'library', the gate still answers first. A child process without the autoloader.
 $phoneProbe = 'require ' . var_export(__DIR__ . '/../src/I18n.php', true) . '; require ' . var_export(__DIR__ . '/../src/Text.php', true) . ';'
-    . ' $out = []; foreach (["030 23125000", "Tel. 030 23125000", ""] as $field) { $out[] = [Annai\Text::phone($field), Annai\Text::phoneProblem($field)]; }'
+    . ' $out = []; foreach (["030 34567000", "Tel. 030 34567000", ""] as $field) { $out[] = [Annai\Text::phone($field), Annai\Text::phoneProblem($field)]; }'
     . ' echo json_encode([class_exists("libphonenumber\\\\PhoneNumberUtil"), $out]);';
 $process = proc_open([PHP_BINARY, '-r', $phoneProbe], [1 => ['pipe', 'w'], 2 => ['pipe', 'w']], $pipes);
 $phoneWithout = null;
@@ -169,7 +169,7 @@ holds($phoneTime < 0.25, 'phone: four fields of 50,000 characters take well unde
 
 // shown(): a field value for a log line or the check (Business::e164(), Check::render()): a line
 // break and every control character as an escape, C1 too (JSON_UNESCAPED_UNICODE keeps it raw).
-expect('"030 23125000\\n0171 1234567"', Text::shown("030 23125000\n0171 1234567"), 'shown: a line break as \\n');
+expect('"030 34567000\\n0171 1234567"', Text::shown("030 34567000\n0171 1234567"), 'shown: a line break as \\n');
 expect('"a\\u001bb\\u009bc Büro / ' . "\u{FFFD}" . '"', Text::shown("a\x1bb\u{9B}c Büro / \xFF"), 'shown: ESC and CSI as escapes, letters and "/" as they are, an invalid byte as U+FFFD');
 
 // time() and range()

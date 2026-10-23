@@ -116,7 +116,7 @@ Annai adds these to Kirby's site and page objects. They return `null`, `[]`, `''
 [
     'name' => 'Gasthaus Muster', 'tagline' => 'Regionale Küche', 'description' => '…', 'url' => 'https://example.test',
     'image' => 'https://example.test/assets/teilen.jpg' | null,
-    'phone' => '030 / 23125000', 'phoneE164' => '+493023125000', 'fax' => '', 'faxE164' => '', 'email' => '…',
+    'phone' => '030 / 34567000', 'phoneE164' => '+493034567000', 'fax' => '', 'faxE164' => '', 'email' => '…',
     'street' => 'Musterweg 1', 'postalCode' => '12345', 'city' => 'Musterstadt', 'country' => 'DE',
     'geo' => ['lat' => 52.52, 'lng' => 13.41] | null,
     'sameAs' => ['https://www.instagram.com/…'],
@@ -143,7 +143,7 @@ Each unit (`$site->annaiUnits()`, also `facts['units']`):
 
 ## Rename table
 
-For sites that ran the `site/plugins/suchmaschinen` copy, with its `strukturdaten` snippet and `kopf.php` head lines.
+For sites that ran the `site/plugins/suchmaschinen` plugin, with its `strukturdaten` snippet and `kopf.php` head lines.
 
 | Before | Now |
 |---|---|

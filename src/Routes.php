@@ -8,7 +8,6 @@ use Kirby\Http\Response;
 
 /**
  * The route bodies: robots.txt, sitemap.xml, llms.txt (SPEC.md §3.9).
- * OWNER: task `routes`.
  *
  * Every absolute URL comes from the site or page (never a hard-coded host).
  * Each public method returns null or a plain text when Annai is off; index.php

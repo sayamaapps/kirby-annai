@@ -34,14 +34,13 @@ use Annai\Routes;
  * Off by default: without `'annai.active' => true` every route falls through
  * to Kirby, every method returns null/[]/'' and the snippet prints nothing.
  *
- * Shared file — owned by the architect (SPEC.md §2, §3.10). Builders never
- * edit it; all logic lives in src/.
+ * Registration only: all logic lives in src/ (SPEC.md §3.10).
  *
  * Defaults are passed as fallback values directly at each option call, NOT
  * in an 'options' block (Kirby would file them under sayamaapps.annai.*
- * otherwise — the exact bug site/plugins/suchmaschinen documents).
+ * otherwise).
  *
- * site/plugins/suchmaschinen (the copy this package replaces) must NOT stay
+ * site/plugins/suchmaschinen (the plugin this package replaces) must NOT stay
  * installed next to it: both register the same route patterns, and Kirby
  * takes the first match in plugin load order (README, "Upgrading"). Nothing
  * here can detect that at load time without recursing into plugins(); the
@@ -84,8 +83,7 @@ App::plugin('sayamaapps/annai', [
     /**
      * Every route names GET|HEAD. Without `method` Kirby registers only GET,
      * a HEAD falls through to the page lookup and ends as 404 — crawlers and
-     * checkers that look with HEAD first then believe the file is missing
-     * (kirby-starter docs/lernregeln.md D7, found 2026-10-06).
+     * checkers that look with HEAD first then believe the file is missing.
      *
      * Off → $this->next(): a site's own route or a real file still works.
      */

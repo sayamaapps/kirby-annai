@@ -6,7 +6,7 @@ use Closure;
 use Kirby\Cms\App;
 
 /**
- * Reads `annai.*` options. Shared file — owned by the architect (SPEC.md §3.1, §4).
+ * Reads `annai.*` options. (SPEC.md §3.1, §4).
  *
  * `null` counts as "not set", like Kirby's own option(), so `'annai.type' => null`
  * falls back to the default. Both spellings work, flat (`'annai.robots.ai' => …`)

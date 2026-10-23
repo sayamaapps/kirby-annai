@@ -457,7 +457,7 @@ final class Business
      * with an address of its own — even the business's — keeps its page id in
      * the fragment (`#b-cafe`), so two pages with the same area key never share
      * an @id. The fragment used to carry the page id whenever the Noren page was
-     * not the business page, and a changed @id is a new entity for Google (D5).
+     * not the business page, and a changed @id is a new entity for Google.
      */
     private static function atBusiness(App $kirby, ?Page $page, ?Page $business, ?array $place): bool
     {
@@ -695,8 +695,7 @@ final class Business
 
     /**
      * Meta description source (§3.7.2): page intro field, else site description; excerpted.
-     * The fields are rendered with kirbytext() first, as the starter's $field->excerpt()
-     * did: Markdown and Kirbytags (`**x**`, `(link: …)`) become plain text, not raw syntax.
+     * The fields are rendered with kirbytext() first: Markdown and Kirbytags (`**x**`, `(link: …)`) become plain text, not raw syntax.
      * The hook `annai.description` replaces the source (still excerpted); null, an
      * error or a result that is not text falls back to the fields. The hook delivers
      * plain text, not HTML: it is escaped before Text::excerpt() strips tags and
@@ -757,7 +756,7 @@ final class Business
     }
 
     /**
-     * A field rendered with kirbytext(), as the starter's $field->excerpt() did.
+     * A field rendered with kirbytext().
      * Invalid UTF-8 is replaced first: kirbytext() makes "<p></p>" of a text with
      * one Latin-1 byte. HTML out — Text::excerpt() or Text::plain() make text of it.
      */
@@ -821,8 +820,7 @@ final class Business
 
     /**
      * Text::phone() of a raw field value. A field that is not empty and gives no number is
-     * logged with its reason (Text::phoneProblem(); SPEC §3.2, the input contract, decision
-     * 2026-10-13) — a site problem in the check that says which field to fix. The value is
+     * logged with its reason (Text::phoneProblem(); SPEC §3.2, the input contract) — a site problem in the check that says which field to fix. The value is
      * shown as stored (Text::shown()), so a line break or a tab in it is visible.
      */
     private static function e164(App $kirby, string $raw, string $country, string $field): string
