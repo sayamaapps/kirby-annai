@@ -3,10 +3,10 @@
 namespace Annai;
 
 /**
- * The <head> model and its tags (SPEC.md §3.7). OWNER: task `markup`.
+ * The <head> model and its tags (SPEC.md §3.7).
  *
- * The meta part of kirby-starter's site/snippets/kopf.php, the Open Graph and
- * twitter tags, and the noindex switch of older site copies. Nothing here decides
+ * The meta part of a page head: the Open Graph and twitter tags, and the
+ * noindex switch. Nothing here decides
  * a value: Business::head() (§3.8) does, this class only normalises it and prints
  * it in a fixed order.
  */

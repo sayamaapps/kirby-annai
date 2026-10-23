@@ -11,7 +11,7 @@ use Kirby\Content\PlainTextStorage;
 
 /**
  * Which pages count, exclusions, preview state, hreflang, lastmod, Koyomi
- * events (SPEC.md §3.9). OWNER: task `routes`.
+ * events (SPEC.md §3.9).
  *
  * Every public list method returns [] when Annai is off (SPEC.md §3.9). The
  * page-level checks (excluded, robots, alternates, lastmod) are plain
@@ -382,7 +382,7 @@ final class Pages
     /**
      * Sitemap lastmod (W3C datetime) from the INTEGER modified() (SPEC.md §3.9).
      * $language: the content file of this language code (hreflang entries);
-     * null is the current language. Koyomi rule (D10): an event page whose
+     * null is the current language. Koyomi rule: an event page whose
      * event is past gets the later of its modified time and the event's end.
      * null when `annai.sitemap.lastmod` is false.
      */

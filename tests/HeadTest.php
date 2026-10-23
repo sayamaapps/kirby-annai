@@ -2,7 +2,6 @@
 /**
  * The <head> model and its tags (SPEC.md §3.7, §9.6). Kirby-free.
  *   php tests/HeadTest.php
- * Owner: task `markup`.
  */
 require_once __DIR__ . '/helpers.php';
 require_once __DIR__ . '/../src/I18n.php';

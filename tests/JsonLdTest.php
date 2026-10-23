@@ -2,7 +2,6 @@
 /**
  * JSON-LD arrays and encoding (SPEC.md §3.6, §9.5). Kirby-free.
  *   php tests/JsonLdTest.php
- * Owner: task `markup`.
  */
 require_once __DIR__ . '/helpers.php';
 require_once __DIR__ . '/../src/I18n.php';
@@ -21,8 +20,8 @@ function jsonld_testhof_facts(): array
         'description' => 'Bio-Hofladen mit Café',
         'url'         => 'https://x',
         'image'       => null,
-        'phone'       => '030 / 23125000',
-        'phoneE164'   => '+493023125000',
+        'phone'       => '030 / 34567000',
+        'phoneE164'   => '+493034567000',
         'fax'         => '',
         'faxE164'     => '',
         'email'       => '',
@@ -76,7 +75,7 @@ expect([
     'name'                      => 'Testhof',
     'description'               => 'Bio-Hofladen mit Café',
     'url'                       => 'https://x',
-    'telephone'                 => '+493023125000',
+    'telephone'                 => '+493034567000',
     'address'                   => [
         '@type'           => 'PostalAddress',
         'streetAddress'   => 'Musterweg 1',
@@ -100,7 +99,7 @@ expect([
                 'addressLocality' => 'Musterstadt',
                 'addressCountry'  => 'DE',
             ],
-            'telephone'                 => '+493023125000',
+            'telephone'                 => '+493034567000',
             'openingHoursSpecification' => [
                 ['@type' => 'OpeningHoursSpecification', 'dayOfWeek' => ['https://schema.org/Sunday'], 'opens' => '10:00', 'closes' => '17:00'],
             ],
@@ -123,7 +122,7 @@ holds(!in_array('', $node['sameAs'], true), 'localBusiness: sameAs has no empty 
 $facts = jsonld_testhof_facts();
 $facts['units'][1] += [
     'location' => 'standorte/sued',
-    'place'    => ['street' => 'Bahnhofstraße 2', 'postalCode' => '12346', 'city' => 'Musterdorf', 'phone' => '030 23125070', 'phoneE164' => '+493023125070'],
+    'place'    => ['street' => 'Bahnhofstraße 2', 'postalCode' => '12346', 'city' => 'Musterdorf', 'phone' => '030 34567070', 'phoneE164' => '+493034567070'],
 ];
 $facts['units'][] = ['area' => null, 'location' => 'nord', 'name' => 'Nord', 'primary' => false, 'schema' => [], 'place' => ['street' => 'Nordweg 3', 'city' => 'Musterstadt']];
 $facts['units'][] = ['area' => null, 'name' => 'Ohne Ort', 'primary' => false, 'schema' => []];
@@ -135,7 +134,7 @@ expect(
     $departments[0]['address'],
     'localBusiness: a department at another location has its own address'
 );
-expect('+493023125070', $departments[0]['telephone'], 'localBusiness: a department at another location has its own phone');
+expect('+493034567070', $departments[0]['telephone'], 'localBusiness: a department at another location has its own phone');
 holds(!array_key_exists('telephone', $departments[1]), 'localBusiness: no phone at the other location → no telephone (never the main one)');
 
 /* --- Variants ------------------------------------------------------------ */
@@ -153,12 +152,12 @@ $geo = JsonLd::localBusiness(array_merge(jsonld_testhof_facts(), ['geo' => ['lat
 expect(['@type' => 'GeoCoordinates', 'latitude' => 52.52, 'longitude' => 13.41], $geo['geo'] ?? null, 'localBusiness: geo as GeoCoordinates floats');
 expect(true, is_float($geo['geo']['latitude']) && is_float($geo['geo']['longitude']), 'localBusiness: geo values are floats');
 
-$fax = JsonLd::localBusiness(array_merge(jsonld_testhof_facts(), ['faxE164' => '+493023125099']));
-expect('+493023125099', $fax['faxNumber'] ?? null, 'localBusiness: faxNumber from faxE164');
+$fax = JsonLd::localBusiness(array_merge(jsonld_testhof_facts(), ['faxE164' => '+493034567099']));
+expect('+493034567099', $fax['faxNumber'] ?? null, 'localBusiness: faxNumber from faxE164');
 
 // A phone or fax field that gives no number (SPEC §3.2, the input contract): the display string
 // stays for llms.txt, the JSON-LD has no telephone and no faxNumber.
-$unread = JsonLd::localBusiness(array_merge(jsonld_testhof_facts(), ['phone' => 'Tel. 030 23125000', 'phoneE164' => '', 'fax' => 'folgt', 'faxE164' => '']));
+$unread = JsonLd::localBusiness(array_merge(jsonld_testhof_facts(), ['phone' => 'Tel. 030 34567000', 'phoneE164' => '', 'fax' => 'folgt', 'faxE164' => '']));
 holds(!array_key_exists('telephone', $unread) && !array_key_exists('faxNumber', $unread), 'localBusiness: no telephone and no faxNumber when the E.164 number is ""');
 
 $emailed = JsonLd::localBusiness(array_merge(jsonld_testhof_facts(), ['email' => 'hof@example.invalid']));

@@ -69,7 +69,7 @@ line). Everything else is additive or affects a protected preview only.
 ### Changed
 
 - **Default output of llms.txt:** the phone line shows the number as a `tel:`
-  URI, `- Telefon: 030 / 23125000 (tel:+493023125000)` (was `(+493023125000)`),
+  URI, `- Telefon: 030 / 34567000 (tel:+493034567000)` (was `(+493034567000)`),
   in the contact block and under unit and location headings. Agents get the dialable
   target. Under the versioning rule above this is a **major** change: a site
   updating its llms.txt sees the new form.
@@ -92,21 +92,19 @@ line). Everything else is additive or affects a protected preview only.
 
 ### Documentation
 
-- README (Preview: Hidden, How the protection is detected), SPEC §7 and the
-  preview wording of `PRIVACY.md` and `DATENSCHUTZ.md`. The statement in the
-  privacy texts is unchanged (pages carry noindex, the files sit behind the
-  protection, an exempted route stays closed), so they carry no
-  `[privacy text]` marker.
+- README (Sitemap, llms.txt and preview), SPEC §7 and the
+  preview wording of the privacy texts. The statement in them is unchanged (pages
+  carry noindex, the files sit behind the protection, an exempted route stays
+  closed).
 
 ## [1.0.0] — 2026-10-14
 
 First release as a Composer package. Before 1.0.0 the same job lived as copies
-in each site: `site/plugins/suchmaschinen` (the three routes), the snippet
-`site/snippets/strukturdaten.php` (JSON-LD) and the head part of
-`site/snippets/kopf.php` in kirby-starter, with variants in older site copies
-(`llms` snippet, `kanonisch.php`), another copy (`@graph`, noindex), a third
-(`WebSite`, `Person`) and a fourth (own llms route). The changes below are
-measured against kirby-starter's copy.
+in each site: the plugin `site/plugins/suchmaschinen` (the three routes), the
+snippet `site/snippets/strukturdaten.php` (JSON-LD) and the head part of
+`site/snippets/kopf.php`, with variants in other copies (`llms` snippet,
+`kanonisch.php`, `@graph` with noindex, `WebSite` and `Person`, an own llms
+route). The changes below refer to the first of these copies.
 
 ### Changed — renamed and restructured (breaking)
 
@@ -114,7 +112,7 @@ Options, snippets and plugin names are Annai's. There are no fallbacks for the
 old names: a site switching from the copy updates its config and snippets once,
 using the table below.
 
-| Before (kirby-starter copy) | Now (Annai) |
+| Before (the copy in a site) | Now (Annai) |
 |---|---|
 | plugin `site/plugins/suchmaschinen` (routes `robots.txt`, `sitemap.xml`, `llms.txt`) | plugin `sayamaapps/annai`, routes of the same paths, `GET\|HEAD` |
 | `suchmaschinen.ausgeschlossen` | `annai.exclude.templates` |
@@ -130,19 +128,19 @@ using the table below.
 | `kopf.php` head lines (title, description, canonical, og:title, og:description, og:type, og:url, og:image) | `snippet('annai/head')` |
 | `kopf.sticky`, `themenfarbe`, `favicon`, `schriften` | unchanged, stay with the site |
 
-### Changed — behaviour (starter output)
+### Changed — behaviour (output of the earlier copies)
 
-- **D5** The business `@id` ends in `#business`; the starter printed `#betrieb`.
+- The business `@id` ends in `#business`; earlier copies printed `#betrieb`.
   Option `annai.entityId`; a live site keeps `#betrieb` with
   `'annai.entityId' => 'betrieb'` (a changed `@id` is a new entity for Google).
-- **D6** The llms.txt texts follow `annai.language` (then the site language,
+- The llms.txt texts follow `annai.language` (then the site language,
   the default language, Kirby's `locale`, English). A German site without
   `locale` needs `'annai.language' => 'de'`.
-- **D7** `og:site_name` and `og:locale` are printed whenever they are known.
-- **D8** Excluded templates (`annai.exclude.templates`, default `error`) get
+- `og:site_name` and `og:locale` are printed whenever they are known.
+- Excluded templates (`annai.exclude.templates`, default `error`) get
   `noindex, follow` (`annai.noindexExcluded`).
-- **D9** `teilbild` is not read; the share image is `annai.image`.
-- **D14** robots.txt keeps `Allow: /` in the `*` group, except when `/` is in
+- `teilbild` is not read; the share image is `annai.image`.
+- robots.txt keeps `Allow: /` in the `*` group, except when `/` is in
   `annai.disallow`: then the group is `Disallow: /` alone (RFC 9309 §2.2.2 lets
   an `Allow: /` of equal length win, so the site stayed open); an explicitly
   allowed agent keeps `Allow: /` and the other paths.
@@ -151,7 +149,7 @@ using the table below.
   a space.
 - The profile fields `instagram` and `facebook` are appended to `sameAs` by
   default (`annai.fields.profiles`); `faxNumber` is new in the business node.
-- **D2** While the Sudare preview protection is on, every page is noindex,
+- While the Sudare preview protection is on, every page is noindex,
   robots.txt is `Disallow: /`, sitemap.xml is an empty urlset and llms.txt holds
   only the name. On the command line Annai asks `Sudare\Sudare::protects()`, so
   the check tool sees the preview too. A non-boolean `annai.noindex` is logged
@@ -164,7 +162,7 @@ using the table below.
   `Cache-Control: no-store` (the chunk files `sitemap-<n>.xml` answer 404
   while the preview is on), so a CDN or proxy in front of an exempted route
   does not keep the closed file past the go-live.
-- Drafts (preview links) get `noindex, nofollow`; the starter printed nothing.
+- Drafts (preview links) get `noindex, nofollow`; earlier copies printed nothing.
   A page below a draft (Kirby's `isDraft()` is false for it, but only an editor
   can open it) is treated as the draft: `noindex, nofollow`, not indexable, no
   hreflang, never the business page.
@@ -176,16 +174,16 @@ using the table below.
 - `sameAs` publishes `http(s)` URLs only. A handle (`@testhof`) or a host
   without a scheme in `annai.sameAs` or a profile field is logged and left out.
 - **Phone fields hold only the number: an input contract, read by Google's
-  libphonenumber (decision 2026-10-13).** The starter dialled every
-  digit of the field (`030 23125000 (Mo–Fr 9–12)` → `+493023125000912`, two
-  numbers → one 22-digit `telephone`, `Tel. 23125` → `+4923125`) and dropped
+  libphonenumber.** Earlier copies dialled every
+  digit of the field (`030 34567000 (Mo–Fr 9–12)` → `+493034567000912`, two
+  numbers → one 22-digit `telephone`, `Tel. 34567` → `+4934567`) and dropped
   `(0)` only after `+49`/`0049`. Annai lets a field through a small character
   gate — digits, spaces (also U+00A0 and U+202F), a `+` as the first
   character, `/`, `-` and parentheses; no `.` — and has
   `giggsey/libphonenumber-for-php-lite` (new Composer requirement) read it:
   `parse()` with the region of `annai.phoneCountry` (`49` → DE),
-  `isValidNumber()`, E.164 (`+49 (0)30 23125000`, `(030) 23125000`,
-  `0049 30 23125000` → `+493023125000`; `+43 (0)1 234 56` → `+43123456`). A
+  `isValidNumber()`, E.164 (`+49 (0)30 34567000`, `(030) 34567000`,
+  `0049 30 34567000` → `+493034567000`; `+43 (0)1 234 56` → `+43123456`). A
   field with any other character — a label, a note, a Kirbytag, HTML, a date,
   a dot, a line break — or without a valid number publishes no `telephone` or
   `faxNumber`, logs `field telefon holds more than the number (…)` or
@@ -213,7 +211,7 @@ using the table below.
 - The hreflang check for the default language's content file reads Kirby's
   `@internal` `Version::contentFile()`; should a Kirby release close it,
   Kirby's own answer stands (hreflang stays) instead of an exception in the
-  head of every page. The README names the dependency.
+  head of every page.
 - A site without a brand field and without a site title: the llms.txt H1 is
   the host (it used to be `# ` alone; llmstxt.org requires a name), and the
   check reports the cause once as `name missing: set the brand field (marke)
@@ -271,7 +269,7 @@ using the table below.
 - llms.txt is served as `text/plain` (as before); the link targets are absolute.
 - The business page (template `betrieb`) is looked up on the top level, then
   on the second level, and only then in the whole page index, once per
-  request: the starter built `$site->index()` on every page view (seven to
+  request: earlier copies built `$site->index()` on every page view (seven to
   ten times the time of a page view with 2,000 blog posts). A top-level business page wins over
   one on the second level even where the index lists that one first. Without
   a business page in the top two levels the check reports it ("set
@@ -346,7 +344,7 @@ using the table below.
   so the other pages stay cacheable; the `annai.title` and
   `annai.description` hooks see `units` as `[]` there.
 - **Meta description** from the page intro or the site description, rendered
-  with `kirbytext()` like the starter and excerpted at a word boundary
+  with `kirbytext()` and excerpted at a word boundary
   (`annai.descriptionLength`, a whole number from 20 to 320; anything else is
   logged and gives 155); hooks `annai.title`, `annai.description`,
   `annai.canonical`. The `annai.description` hook delivers plain text: it is
@@ -354,7 +352,7 @@ using the table below.
   the hook writes stays as written. The llms.txt page notes are rendered the
   same way, and so are the JSON-LD `description` and the llms.txt summary: the
   site description as plain text (tags stripped, entities decoded, whitespace
-  collapsed), not shortened — the starter put `**Bio**` and `(link: …)` in as
+  collapsed), not shortened — earlier copies put `**Bio**` and `(link: …)` in as
   written. A byte that is not UTF-8 becomes U+FFFD before `kirbytext()`, which
   would return an empty paragraph.
 - **Open Graph** `og:image` with width, height and alt (`annai.image`), `og:locale`
@@ -400,7 +398,7 @@ using the table below.
   that is not UTF-8 (a `--page` id in Latin-1, a folder name from an import)
   as U+FFFD, as the JSON-LD does.
 - The check shows every phone and fax field with its stored value and its
-  result (`  ~ phone: "030 / 23125000" → +493023125000`,
+  result (`  ~ phone: "030 / 34567000" → +493034567000`,
   `  ~ fax: "Fax folgt" → (none: more than the number)`; `phones` in `--json`
   with `raw`, `e164` and `problem`), as a hint that is not counted, so a
   person sees each field before the go-live. The phone of every further Noren
@@ -421,7 +419,7 @@ using the table below.
 - Translations (`en`, `de`) registered as Kirby translations `annai.*`.
 - Noren, Koyomi and Sudare are suggested, never required.
 
-### [privacy text]
+### Privacy texts
 
 - `DATENSCHUTZ.md` (German text block for a site's privacy policy) and
   `PRIVACY.md` (English summary) are new. They state what the plugin does not

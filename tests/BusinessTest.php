@@ -24,7 +24,7 @@ use Annai\Text;
 use Kirby\Cms\App;
 use Kirby\Cms\Page;
 
-/** Default site.txt fields of the fixture (the Testhof of AgentReadyHttpTest). */
+/** Default site.txt fields of the fixture. */
 function bizSiteDefaults(): array
 {
     return [
@@ -44,7 +44,7 @@ function bizContactDefaults(): array
         'strasse' => 'Musterweg 1',
         'plz'     => '12345',
         'ort'     => 'Musterstadt',
-        'telefon' => '030 / 23125000',
+        'telefon' => '030 / 34567000',
         'email'   => 'info@testhof.example',
     ];
 }
@@ -307,8 +307,8 @@ bizSite(['options' => bizOn()], function (App $kirby): void {
     $facts = Business::facts($kirby);
     expect('Testhof', $facts['name'], 'facts: name from marke');
     expect('Bio-Hofladen', $facts['tagline'], 'facts: tagline from zusatz');
-    expect('030 / 23125000', $facts['phone'], 'facts: phone display string');
-    expect('+493023125000', $facts['phoneE164'], 'facts: phoneE164 via Text::phone() (depends on the formats task)');
+    expect('030 / 34567000', $facts['phone'], 'facts: phone display string');
+    expect('+493034567000', $facts['phoneE164'], 'facts: phoneE164 via Text::phone()');
     expect('info@testhof.example', $facts['email'], 'facts: email');
     expect('Musterweg 1', $facts['street'], 'facts: street');
     expect('12345', $facts['postalCode'], 'facts: postalCode');
@@ -472,7 +472,7 @@ bizSite(['options' => bizOn(), 'site' => ['marke' => "Test\e[31mhof", 'zusatz' =
     holds(preg_match('/[\x00-\x08\x0B-\x1F\x7F]/', $html) !== 1, 'head: no C0 control character in the rendered page');
 });
 
-// The phone field (SPEC §3.2, the input contract, decision 2026-10-13): the raw value goes to
+// The phone field (SPEC §3.2, the input contract): the raw value goes to
 // Text::phone(), the display string through line(). A field that is not empty and gives no
 // number is logged with its reason and is a site problem in the check; the JSON-LD then has
 // no telephone or faxNumber, llms.txt shows the field as written without "(+E.164)".
@@ -484,25 +484,25 @@ $tmp = annai_site();
 try {
     // Two fields of the golden table as phone and fax: telephone and faxNumber, "(+E.164)" in
     // llms.txt, no log line.
-    bizFixture($tmp, ['contact' => ['telefon' => '+49 30 23125040', 'fax' => '030 23125010']]);
+    bizFixture($tmp, ['contact' => ['telefon' => '+49 30 34567040', 'fax' => '030 34567010']]);
     $kirby = annai_kirby($tmp, bizOn());
     $log = annai_with_error_log($tmp, function () use ($kirby, &$facts): void {
         $facts = Business::facts($kirby);
     });
-    expect(['+493023125040', '+493023125010'], [$facts['phoneE164'], $facts['faxE164']], 'facts: phone and fax of the golden table as E.164');
+    expect(['+493034567040', '+493034567010'], [$facts['phoneE164'], $facts['faxE164']], 'facts: phone and fax of the golden table as E.164');
     $node = Business::jsonLd($kirby, $kirby->site()->homePage()) ?? [];
-    expect(['+493023125040', '+493023125010'], [$node['telephone'] ?? null, $node['faxNumber'] ?? null], 'JSON-LD: telephone and faxNumber');
+    expect(['+493034567040', '+493034567010'], [$node['telephone'] ?? null, $node['faxNumber'] ?? null], 'JSON-LD: telephone and faxNumber');
     [, $llms] = annai_request($kirby, 'llms.txt');
-    holds(str_contains($llms, "- Phone: +49 30 23125040 (tel:+493023125040)\n"), 'llms.txt: the phone as written with its E.164 number');
+    holds(str_contains($llms, "- Phone: +49 30 34567040 (tel:+493034567040)\n"), 'llms.txt: the phone as written with its E.164 number');
     holds(!str_contains($log, 'Annai: field'), 'facts: a number within the contract logs nothing');
 
     // Outside the contract or no valid number: no number, logged with field, value and
     // reason, the JSON-LD without telephone. The check gets the fax field: Options::warn()
     // says a message once per process, and the fax message is another one.
     foreach ([
-        ['Tel. 030 23125000', 'characters'], ['<a href="tel:+493023125000">030 23125000</a>', 'characters'],
-        ['(tel: 030 23125000)', 'characters'], ["030 23125000\n0171 1234567", 'characters'], ['0351 / 12.12.2010', 'characters'],
-        ['23125', 'invalid'], ['+49 12345678901234', 'invalid'],
+        ['Tel. 030 34567000', 'characters'], ['<a href="tel:+493034567000">030 34567000</a>', 'characters'],
+        ['(tel: 030 34567000)', 'characters'], ["030 34567000\n0171 1234567", 'characters'], ['0351 / 12.12.2010', 'characters'],
+        ['34567', 'invalid'], ['+49 12345678901234', 'invalid'],
     ] as [$field, $reason]) {
         bizFixture($tmp, ['contact' => ['telefon' => $field]]);
         $kirby = annai_kirby($tmp, bizOn());
@@ -521,9 +521,9 @@ try {
             'facts and JSON-LD: ' . $value . ' as fax publishes no faxNumber');
     }
     // llms.txt keeps the field as written, on one line, without an E.164 number.
-    bizFixture($tmp, ['contact' => ['telefon' => "Tel. 030 23125000\n(Zentrale)"]]);
+    bizFixture($tmp, ['contact' => ['telefon' => "Tel. 030 34567000\n(Zentrale)"]]);
     [, $llms] = annai_request(annai_kirby($tmp, bizOn()), 'llms.txt');
-    holds(str_contains($llms, "- Phone: Tel. 030 23125000 (Zentrale)\n"), 'llms.txt: a field outside the contract as written, without "(+E.164)"');
+    holds(str_contains($llms, "- Phone: Tel. 030 34567000 (Zentrale)\n"), 'llms.txt: a field outside the contract as written, without "(+E.164)"');
     // An empty field: no number, no log line, no problem (the log file starts empty).
     @unlink($tmp . '/php-error.log');
     bizFixture($tmp, ['contact' => ['telefon' => '']]);
@@ -533,7 +533,7 @@ try {
     });
     expect(['', ''], [$facts['phone'], $facts['phoneE164']], 'facts: an empty phone field gives no number');
     holds(!str_contains($log, 'Annai: field'), 'facts: an empty phone field logs nothing');
-    bizFixture($tmp, ['contact' => ['telefon' => '030 23125000']]);
+    bizFixture($tmp, ['contact' => ['telefon' => '030 34567000']]);
     expect([], Annai\Check::site(annai_kirby($tmp, bizOn()))['problems'], 'check: a number within the contract is no problem');
 } finally {
     annai_remove_tree($tmp);
@@ -578,8 +578,8 @@ try {
  * ------------------------------------------------------------------------- */
 bizSite(['options' => bizOn()], function (App $kirby): void {
     $document = Business::jsonLd($kirby, $kirby->site()->homePage());
-    holds(is_array($document) && ($document['@type'] ?? null) === 'LocalBusiness', 'jsonLd: home page gives one LocalBusiness node (depends on the markup task)');
-    holds(is_array($document) && ($document['@context'] ?? null) === 'https://schema.org', 'jsonLd: document carries @context (depends on the markup task)');
+    holds(is_array($document) && ($document['@type'] ?? null) === 'LocalBusiness', 'jsonLd: home page gives one LocalBusiness node');
+    holds(is_array($document) && ($document['@context'] ?? null) === 'https://schema.org', 'jsonLd: document carries @context');
     expect(null, Business::jsonLd($kirby, $kirby->page('laden')), 'jsonLd: a subpage gives null');
 });
 
@@ -590,7 +590,7 @@ bizSite(
     }])],
     function (App $kirby): void {
         $document = Business::jsonLd($kirby, $kirby->site()->homePage());
-        holds(is_array($document) && count($document['@graph'] ?? []) === 2, 'jsonLd: a hook node is added to the business node in a @graph (depends on the markup task)');
+        holds(is_array($document) && count($document['@graph'] ?? []) === 2, 'jsonLd: a hook node is added to the business node in a @graph');
         expect(
             ['@context' => 'https://schema.org', '@type' => 'WebSite', 'name' => 'Hook'],
             Business::jsonLd($kirby, $kirby->page('laden')),
@@ -755,7 +755,7 @@ bizSite(
     }
 );
 
-// Markdown and Kirbytags are rendered first, as the starter's $field->excerpt() did.
+// Markdown and Kirbytags are rendered first.
 bizSite(
     [
         'options' => bizOn(),
@@ -988,7 +988,7 @@ if ($norenPath === null) {
     $tmp = annai_site(['noren']);
     try {
         annai_page($tmp, '', 'site', ['title' => 'Hof', 'marke' => 'Hof']);
-        annai_page($tmp, '1_kontakt', 'default', ['title' => 'Kontakt', 'strasse' => 'Musterweg 1', 'plz' => '12345', 'ort' => 'Musterstadt', 'telefon' => '030 23125001']);
+        annai_page($tmp, '1_kontakt', 'default', ['title' => 'Kontakt', 'strasse' => 'Musterweg 1', 'plz' => '12345', 'ort' => 'Musterstadt', 'telefon' => '030 34567001']);
         annai_page($tmp, '2_zeiten', 'betrieb', ['title' => 'Zeiten',
             'bereiche' => [['schluessel' => 'laden', 'name' => 'Laden']],
             'zeiten' => [['bereich' => 'laden', 'tag' => 'Montag', 'von1' => '08:00', 'bis1' => '12:00']]]);
@@ -1025,7 +1025,7 @@ if ($norenPath === null) {
     // The address page is annai.location, the hours with two areas on another
     // page without an address of its own: the units are at the business, so the second
     // area is the department `#cafe` (README: the bare area key on the business), not
-    // `#zeiten-cafe` — a changed @id is a new entity for Google (D5). The same without a
+    // `#zeiten-cafe` — a changed @id is a new entity for Google. The same without a
     // business page (`fn () => null`) and with a business page that has no address ('home').
     foreach ([
         "annai.location => 'kontakt'" => ['annai.location' => 'kontakt'],
@@ -1035,7 +1035,7 @@ if ($norenPath === null) {
         $tmp = annai_site(['noren']);
         try {
             annai_page($tmp, '', 'site', ['title' => 'Hof', 'marke' => 'Hof']);
-            annai_page($tmp, '1_kontakt', 'default', ['title' => 'Kontakt', 'strasse' => 'Musterweg 1', 'plz' => '12345', 'ort' => 'Musterstadt', 'telefon' => '030 23125001']);
+            annai_page($tmp, '1_kontakt', 'default', ['title' => 'Kontakt', 'strasse' => 'Musterweg 1', 'plz' => '12345', 'ort' => 'Musterstadt', 'telefon' => '030 34567001']);
             annai_page($tmp, '2_zeiten', 'betrieb', ['title' => 'Zeiten',
                 'bereiche' => [['schluessel' => 'laden', 'name' => 'Laden'], ['schluessel' => 'cafe', 'name' => 'Café']],
                 'zeiten' => [['bereich' => 'laden', 'tag' => 'Montag', 'von1' => '08:00', 'bis1' => '12:00'],
@@ -1080,11 +1080,11 @@ if ($norenPath === null) {
         $tmp = annai_site(['noren']);
         try {
             annai_page($tmp, '', 'site', ['title' => 'Praxis', 'marke' => 'Praxis']);
-            annai_page($tmp, '1_a', 'betrieb', ['title' => 'Standort A', 'strasse' => 'Musterweg 1', 'ort' => 'Musterstadt', 'telefon' => '030 23125001',
+            annai_page($tmp, '1_a', 'betrieb', ['title' => 'Standort A', 'strasse' => 'Musterweg 1', 'ort' => 'Musterstadt', 'telefon' => '030 34567001',
                 'bereiche' => [['schluessel' => 'laden', 'name' => 'Laden A']],
                 'zeiten' => [['bereich' => 'laden', 'tag' => 'Montag', 'von1' => '08:00', 'bis1' => '12:00']]]);
             // $second may replace a field of location B (its telefon, for example).
-            annai_page($tmp, '2_b', 'betrieb', array_merge(['title' => 'Standort B', 'strasse' => 'Bahnhofstraße 2', 'ort' => 'Musterdorf', 'telefon' => '030 23125002'], $second));
+            annai_page($tmp, '2_b', 'betrieb', array_merge(['title' => 'Standort B', 'strasse' => 'Bahnhofstraße 2', 'ort' => 'Musterdorf', 'telefon' => '030 34567002'], $second));
             $kirby = annai_kirby($tmp, bizOn(['noren.active' => true, 'noren.language' => 'de', 'annai.language' => 'de'] + $options));
             $log = annai_with_error_log($tmp, function () use ($kirby, &$units, &$document): void {
                 $units = Business::units($kirby);
@@ -1109,9 +1109,9 @@ if ($norenPath === null) {
     expect(['https://schema.org/Tuesday'], $days($departments[0] ?? []), 'units: two locations, department carries location B\'s Tuesday');
     expect('http://example.invalid/#b-praxis', $departments[0]['@id'] ?? null, 'units: two locations, department @id from location and area');
     expect('Bahnhofstraße 2', $departments[0]['address']['streetAddress'] ?? null, 'units: two locations, department address from its own page');
-    expect('+493023125002', $departments[0]['telephone'] ?? null, 'units: two locations, department phone from its own page');
+    expect('+493034567002', $departments[0]['telephone'] ?? null, 'units: two locations, department phone from its own page');
     // With units of two location pages the name is Noren's label ("<location> · <area>"), see below.
-    holds(str_contains($GLOBALS['bizTwoLocations'][4], "### Standort B · Praxis B\n\n- Adresse: Bahnhofstraße 2, Musterdorf\n- Telefon: 030 23125002 (tel:+493023125002)\n\n- Montag: geschlossen\n- Dienstag: 9:00–17:00 Uhr"),
+    holds(str_contains($GLOBALS['bizTwoLocations'][4], "### Standort B · Praxis B\n\n- Adresse: Bahnhofstraße 2, Musterdorf\n- Telefon: 030 34567002 (tel:+493034567002)\n\n- Montag: geschlossen\n- Dienstag: 9:00–17:00 Uhr"),
         'units: two locations, llms.txt has location B\'s address and phone under its heading');
     expect(['Standort A · Laden A', 'Standort B · Praxis B'], array_column($units, 'name'), 'units: two locations, the names carry the location (Noren\'s label)');
 
@@ -1125,12 +1125,12 @@ if ($norenPath === null) {
     expect(['laden', 'praxis'], array_column($units, 'area'), 'units: annai.area at another location → the business location\'s unit stays first');
     expect([true, false], array_column($units, 'primary'), 'units: annai.area at another location → that unit is not primary');
     expect(
-        ['Musterweg 1', '+493023125001', ['https://schema.org/Monday']],
+        ['Musterweg 1', '+493034567001', ['https://schema.org/Monday']],
         [$document['address']['streetAddress'] ?? null, $document['telephone'] ?? null, $days($document)],
         'units: annai.area at another location → business node pairs location A\'s address, phone and hours'
     );
     expect(
-        [['http://example.invalid/#b-praxis', 'Bahnhofstraße 2', '+493023125002', ['https://schema.org/Tuesday']]],
+        [['http://example.invalid/#b-praxis', 'Bahnhofstraße 2', '+493034567002', ['https://schema.org/Tuesday']]],
         array_map(fn ($d) => [$d['@id'] ?? null, $d['address']['streetAddress'] ?? null, $d['telephone'] ?? null, $days($d)], $departments),
         'units: annai.area at another location → Praxis B is the department with location B\'s address, phone and hours'
     );
@@ -1138,12 +1138,12 @@ if ($norenPath === null) {
 
     // A location page's phone follows the input contract like the business phone (SPEC §3.2):
     // within it the department has its number, a note around it gives none.
-    $twoLocations(['telefon' => '030 23125030', 'zeiten' => [['tag' => 'Dienstag', 'von1' => '09:00', 'bis1' => '17:00']]]);
+    $twoLocations(['telefon' => '030 34567030', 'zeiten' => [['tag' => 'Dienstag', 'von1' => '09:00', 'bis1' => '17:00']]]);
     [, $departments] = $GLOBALS['bizTwoLocations'];
-    expect('+493023125030', $departments[0]['telephone'] ?? null, 'units: a department phone "030 23125030" is read');
-    $twoLocations(['telefon' => '(Tel. 030 23125030)', 'zeiten' => [['tag' => 'Dienstag', 'von1' => '09:00', 'bis1' => '17:00']]]);
+    expect('+493034567030', $departments[0]['telephone'] ?? null, 'units: a department phone "030 34567030" is read');
+    $twoLocations(['telefon' => '(Tel. 030 34567030)', 'zeiten' => [['tag' => 'Dienstag', 'von1' => '09:00', 'bis1' => '17:00']]]);
     [, $departments] = $GLOBALS['bizTwoLocations'];
-    expect(null, $departments[0]['telephone'] ?? null, 'units: a department phone "(Tel. 030 23125030)" is outside the contract, no telephone');
+    expect(null, $departments[0]['telephone'] ?? null, 'units: a department phone "(Tel. 030 34567030)" is outside the contract, no telephone');
 
     $twoLocations(['zeiten' => [['tag' => 'Dienstag', 'von1' => '09:00', 'bis1' => '17:00']]]);
     [$units, $departments] = $GLOBALS['bizTwoLocations'];
@@ -1163,11 +1163,11 @@ if ($norenPath === null) {
     $twoNoren = function (array $site): void {
         $tmp = annai_site(['noren']);
         try {
-            annai_page($tmp, '', 'site', ['title' => 'Praxis', 'marke' => 'Praxis Muster', 'telefon' => '030 23125001'] + $site);
-            annai_page($tmp, '1_nord', 'betrieb', ['title' => 'Praxis Nord', 'strasse' => 'Nordweg 2', 'plz' => '12345', 'ort' => 'Musterstadt', 'telefon' => '030 23125002',
+            annai_page($tmp, '', 'site', ['title' => 'Praxis', 'marke' => 'Praxis Muster', 'telefon' => '030 34567001'] + $site);
+            annai_page($tmp, '1_nord', 'betrieb', ['title' => 'Praxis Nord', 'strasse' => 'Nordweg 2', 'plz' => '12345', 'ort' => 'Musterstadt', 'telefon' => '030 34567002',
                 'bereiche' => [['schluessel' => 'praxis', 'name' => 'Praxis']],
                 'zeiten' => [['bereich' => 'praxis', 'tag' => 'Montag', 'von1' => '08:00', 'bis1' => '12:00']]]);
-            annai_page($tmp, '2_sued', 'betrieb', ['title' => 'Praxis Süd', 'strasse' => 'Südweg 3', 'plz' => '12346', 'ort' => 'Musterdorf', 'telefon' => '030 23125003',
+            annai_page($tmp, '2_sued', 'betrieb', ['title' => 'Praxis Süd', 'strasse' => 'Südweg 3', 'plz' => '12346', 'ort' => 'Musterdorf', 'telefon' => '030 34567003',
                 'bereiche' => [['schluessel' => 'praxis', 'name' => 'Praxis']],
                 'zeiten' => [['bereich' => 'praxis', 'tag' => 'Dienstag', 'von1' => '09:00', 'bis1' => '17:00']]]);
             $kirby = annai_kirby($tmp, bizOn(['noren.active' => true, 'noren.language' => 'de', 'annai.language' => 'de',
@@ -1186,17 +1186,17 @@ if ($norenPath === null) {
     [$units, $document, $llms] = $GLOBALS['bizTwoNoren'];
     expect([null, 'Südweg 3'], array_map(fn (array $u) => $u['place']['street'] ?? null, $units), 'no business page: the unit at the site address has no place, the other its own');
     expect([true, false], array_column($units, 'primary'), 'no business page: the unit at the site address is primary');
-    expect(['Nordweg 2', '+493023125001', ['https://schema.org/Monday']], [$document['address']['streetAddress'] ?? null, $document['telephone'] ?? null, $days($document)],
+    expect(['Nordweg 2', '+493034567001', ['https://schema.org/Monday']], [$document['address']['streetAddress'] ?? null, $document['telephone'] ?? null, $days($document)],
         'no business page: the business node has the site address and phone with Nord\'s hours');
     expect(
-        [['http://example.invalid/#sued-praxis', 'Südweg 3', '+493023125003', ['https://schema.org/Tuesday']]],
+        [['http://example.invalid/#sued-praxis', 'Südweg 3', '+493034567003', ['https://schema.org/Tuesday']]],
         array_map(fn ($d) => [$d['@id'] ?? null, $d['address']['streetAddress'] ?? null, $d['telephone'] ?? null, $days($d)], $document['department'] ?? []),
         'no business page: the second location is a department with its OWN address and phone'
     );
     expect(['Praxis Nord · Praxis', 'Praxis Süd · Praxis'], array_column($units, 'name'), 'two locations, same area name: the names are Noren\'s labels');
     expect(['Praxis Muster — Praxis Süd · Praxis'], array_column($document['department'] ?? [], 'name'), 'two locations, same area name: the department name carries the location');
     holds(str_contains($llms, "### Praxis Nord · Praxis\n\n- Montag: 8:00–12:00 Uhr"), 'two locations, same area name: llms.txt heading of the first names its location');
-    holds(str_contains($llms, "### Praxis Süd · Praxis\n\n- Adresse: Südweg 3, 12346 Musterdorf\n- Telefon: 030 23125003 (tel:+493023125003)\n\n- Montag: geschlossen\n- Dienstag: 9:00–17:00 Uhr"),
+    holds(str_contains($llms, "### Praxis Süd · Praxis\n\n- Adresse: Südweg 3, 12346 Musterdorf\n- Telefon: 030 34567003 (tel:+493034567003)\n\n- Montag: geschlossen\n- Dienstag: 9:00–17:00 Uhr"),
         'no business page: llms.txt has the second location\'s address and phone under its heading');
     expect(0, substr_count($llms, "### Praxis\n"), 'two locations, same area name: no bare duplicate heading');
 
@@ -1217,11 +1217,11 @@ if ($norenPath === null) {
     $draftLocation = function (bool $draft) use ($year): void {
         $tmp = annai_site(['noren']);
         try {
-            annai_page($tmp, '', 'site', ['title' => 'Praxis', 'marke' => 'Praxis Muster', 'telefon' => '030 23125001', 'strasse' => 'Nordweg 2', 'plz' => '12345', 'ort' => 'Musterstadt']);
-            annai_page($tmp, '1_nord', 'betrieb', ['title' => 'Praxis Nord', 'strasse' => 'Nordweg 2', 'plz' => '12345', 'ort' => 'Musterstadt', 'telefon' => '030 23125002',
+            annai_page($tmp, '', 'site', ['title' => 'Praxis', 'marke' => 'Praxis Muster', 'telefon' => '030 34567001', 'strasse' => 'Nordweg 2', 'plz' => '12345', 'ort' => 'Musterstadt']);
+            annai_page($tmp, '1_nord', 'betrieb', ['title' => 'Praxis Nord', 'strasse' => 'Nordweg 2', 'plz' => '12345', 'ort' => 'Musterstadt', 'telefon' => '030 34567002',
                 'bereiche' => [['schluessel' => 'praxis', 'name' => 'Praxis']],
                 'zeiten' => [['bereich' => 'praxis', 'tag' => 'Montag', 'von1' => '08:00', 'bis1' => '12:00']]]);
-            annai_page($tmp, $draft ? '_drafts/sued' : '2_sued', 'betrieb', ['title' => 'Praxis Süd', 'strasse' => 'Südweg 3', 'plz' => '12346', 'ort' => 'Musterdorf', 'telefon' => '030 23125003',
+            annai_page($tmp, $draft ? '_drafts/sued' : '2_sued', 'betrieb', ['title' => 'Praxis Süd', 'strasse' => 'Südweg 3', 'plz' => '12346', 'ort' => 'Musterdorf', 'telefon' => '030 34567003',
                 'bereiche' => [['schluessel' => 'praxis', 'name' => 'Praxis']],
                 'zeiten' => [['bereich' => 'praxis', 'tag' => 'Dienstag', 'von1' => '09:00', 'bis1' => '17:00']],
                 'schliessungen' => [['anlass' => 'Umbau', 'von' => $year . '-03-01', 'bis' => $year . '-03-05']]]);
@@ -1244,7 +1244,7 @@ if ($norenPath === null) {
     expect(['nord'], array_column($units, 'location'), 'draft location: no unit of a draft location');
     expect(['Praxis'], array_column($units, 'name'), 'draft location: one visible location keeps the bare area name, not Noren\'s label');
     expect([true], array_column($units, 'primary'), 'draft location: the visible unit is primary');
-    holds(!str_contains($llms, 'Südweg') && !str_contains($llms, '030 23125003') && !str_contains($llms, 'Umbau'), 'draft location: llms.txt has neither the address, the phone nor the closure of the draft');
+    holds(!str_contains($llms, 'Südweg') && !str_contains($llms, '030 34567003') && !str_contains($llms, 'Umbau'), 'draft location: llms.txt has neither the address, the phone nor the closure of the draft');
     holds(!str_contains($llms, "### "), 'draft location: llms.txt has no unit heading for one unit');
     expect([], $document['department'] ?? [], 'draft location: the home page JSON-LD has no department of the draft');
     expect(['https://schema.org/Monday'], $days($document), 'draft location: the business node keeps the visible location\'s hours');
@@ -1271,7 +1271,7 @@ if ($norenPath === null) {
             'bereiche' => [['schluessel' => 'praxis', 'name' => 'Praxis']],
             'zeiten' => [['bereich' => 'praxis', 'tag' => 'Dienstag', 'von1' => '09:00', 'bis1' => '17:00']]]);
         // A value of its own: Options::warn() logs a message once per process.
-        annai_page($tmp, '3_west', 'betrieb', ['title' => 'Praxis West', 'strasse' => 'Westweg 4', 'plz' => '12346', 'ort' => 'Musterdorf', 'telefon' => '030 23125000 / 0171 1234569',
+        annai_page($tmp, '3_west', 'betrieb', ['title' => 'Praxis West', 'strasse' => 'Westweg 4', 'plz' => '12346', 'ort' => 'Musterdorf', 'telefon' => '030 34567000 / 0171 1234569',
             'bereiche' => [['schluessel' => 'praxis', 'name' => 'Praxis']],
             'zeiten' => [['bereich' => 'praxis', 'tag' => 'Mittwoch', 'von1' => '09:00', 'bis1' => '17:00']]]);
         $kirby = annai_kirby($tmp, bizOn(['noren.active' => true, 'noren.language' => 'de', 'annai.language' => 'de',
@@ -1280,9 +1280,9 @@ if ($norenPath === null) {
             $units = Business::units($kirby);
         });
         expect(['030 3 0171 4', ''], [$units[1]['place']['phone'] ?? null, $units[1]['place']['phoneE164'] ?? null], 'place(): the display string is one line; two numbers publish no E.164 number');
-        expect(['030 23125000 / 0171 1234569', ''], [$units[2]['place']['phone'] ?? null, $units[2]['place']['phoneE164'] ?? null], 'place(): two numbers joined by a slash publish no E.164 number');
+        expect(['030 34567000 / 0171 1234569', ''], [$units[2]['place']['phone'] ?? null, $units[2]['place']['phoneE164'] ?? null], 'place(): two numbers joined by a slash publish no E.164 number');
         holds(str_contains($log, 'Annai: field telefon holds more than the number ("030 3\\n0171 4")'), 'place(): two numbers on two lines are logged, the line break visible');
-        holds(str_contains($log, 'Annai: field telefon holds no valid phone number ("030 23125000 / 0171 1234569")'), 'place(): two numbers joined by a slash are logged');
+        holds(str_contains($log, 'Annai: field telefon holds no valid phone number ("030 34567000 / 0171 1234569")'), 'place(): two numbers joined by a slash are logged');
     } finally {
         annai_remove_tree($tmp);
     }

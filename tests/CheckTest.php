@@ -2,7 +2,7 @@
 /**
  * The check tool: Check::page(), Check::site(), render(), exitCode() and the
  * bin/annai-check CLI (SPEC.md §9.11). Kirby-booting; the CLI runs in a child
- * process against a throwaway site. Owner: task `tools`.
+ * process against a throwaway site.
  *
  *   php tests/CheckTest.php
  */
@@ -19,7 +19,7 @@ $goodSite = [
     'zusatz'      => 'Bio-Hofladen',
     'beschreibung' => 'Gemüse vom eigenen Feld, Eier vom Hof und ein Café mit Terrasse in Musterdorf.',
     'email'       => 'hof@example.test',
-    'telefon'     => '030 / 23125000',
+    'telefon'     => '030 / 34567000',
 ];
 
 /** Writes the site fields (content/site.txt) for the next Kirby boot. */
@@ -174,15 +174,15 @@ try {
     holds(str_contains(Check::render($report), "2 pages, 0 problems"), 'no host: the summary counts no problem for it');
 
     // Every phone and fax field with its raw value and its result (SPEC §3.2, the input
-    // contract, decision 2026-10-13): printed as a note, so a person sees each field before the
+    // contract): printed as a note, so a person sees each field before the
     // go-live; a field that gives no number is a configuration problem as well.
     $report = Check::site(annai_kirby($tmp, $base));
-    expect([['field' => 'phone', 'raw' => '030 / 23125000', 'e164' => '+493023125000', 'problem' => null]], $report['phones'] ?? null, 'phones: the phone field as stored and as E.164');
-    holds(str_contains(Check::render($report), "\npreview: off\n  ~ phone: \"030 / 23125000\" → +493023125000\n"), 'phones: render prints a "~" line after the preview line');
-    $writeSite($tmp, array_merge($goodSite, ['telefon' => "(0049) 30\u{A0}23125000", 'fax' => "Fax\x1b folgt"]));
+    expect([['field' => 'phone', 'raw' => '030 / 34567000', 'e164' => '+493034567000', 'problem' => null]], $report['phones'] ?? null, 'phones: the phone field as stored and as E.164');
+    holds(str_contains(Check::render($report), "\npreview: off\n  ~ phone: \"030 / 34567000\" → +493034567000\n"), 'phones: render prints a "~" line after the preview line');
+    $writeSite($tmp, array_merge($goodSite, ['telefon' => "(0049) 30\u{A0}34567000", 'fax' => "Fax\x1b folgt"]));
     $report = Check::site(annai_kirby($tmp, $base));
     expect([
-        ['field' => 'phone', 'raw' => "(0049) 30\u{A0}23125000", 'e164' => '+493023125000', 'problem' => null],
+        ['field' => 'phone', 'raw' => "(0049) 30\u{A0}34567000", 'e164' => '+493034567000', 'problem' => null],
         ['field' => 'fax', 'raw' => "Fax\x1b folgt", 'e164' => null, 'problem' => 'characters'],
     ], $report['phones'] ?? null, 'phones: the raw values; a no-break space is within the contract, a note gives no number and its reason');
     $text = Check::render($report);
@@ -192,15 +192,15 @@ try {
     expect(1, Check::exitCode($report), 'phones: the configuration problem sets the exit code');
     expect(Check::exitCode($report), Check::exitCode(['phones' => []] + $report), 'phones: the "~" lines do not change the exit code');
     holds(str_contains($text, "2 pages, 1 problems"), 'phones: the summary counts the configuration problem only');
-    $writeSite($tmp, array_merge($goodSite, ['telefon' => '23125']));
+    $writeSite($tmp, array_merge($goodSite, ['telefon' => '34567']));
     $report = Check::site(annai_kirby($tmp, $base));
-    expect([['field' => 'phone', 'raw' => '23125', 'e164' => null, 'problem' => 'invalid']], $report['phones'] ?? null, 'phones: a number without its area code is "invalid"');
-    holds(str_contains(Check::render($report), "  ~ phone: \"23125\" → (none: no valid number)\n"), 'phones: render prints "no valid number"');
+    expect([['field' => 'phone', 'raw' => '34567', 'e164' => null, 'problem' => 'invalid']], $report['phones'] ?? null, 'phones: a number without its area code is "invalid"');
+    holds(str_contains(Check::render($report), "  ~ phone: \"34567\" → (none: no valid number)\n"), 'phones: render prints "no valid number"');
     // A C1 control character (CSI) in the field: an escape in the line and in the problem, never raw.
-    $writeSite($tmp, array_merge($goodSite, ['telefon' => "030\u{9B}23125000"]));
+    $writeSite($tmp, array_merge($goodSite, ['telefon' => "030\u{9B}34567000"]));
     $report = Check::site(annai_kirby($tmp, $base));
-    holds(str_contains(Check::render($report), "  ~ phone: \"030\\u009b23125000\" → (none: more than the number)\n"), 'phones: a C1 control character is printed as an escape');
-    holds(str_contains($report['problems'][0] ?? '', '("030\\u009b23125000")') && !str_contains(implode('', $report['problems']), "\u{9B}"), 'phones: and the problem (the log line) holds the escape, not the character');
+    holds(str_contains(Check::render($report), "  ~ phone: \"030\\u009b34567000\" → (none: more than the number)\n"), 'phones: a C1 control character is printed as an escape');
+    holds(str_contains($report['problems'][0] ?? '', '("030\\u009b34567000")') && !str_contains(implode('', $report['problems']), "\u{9B}"), 'phones: and the problem (the log line) holds the escape, not the character');
     $writeSite($tmp, array_diff_key($goodSite, ['telefon' => true]));
     expect([], Check::site(annai_kirby($tmp, $base))['phones'] ?? null, 'phones: an empty phone field is no line');
     holds(!str_contains(Check::render(Check::site(annai_kirby($tmp, $base))), '  ~ phone'), 'phones: and render prints none');
@@ -230,7 +230,7 @@ try {
     unlink($tmp . '/content/cafe/default.txt');
     rmdir($tmp . '/content/cafe');
 
-    // The old starter plugin still installed.
+    // The old plugin still installed.
     mkdir($tmp . '/site/plugins/suchmaschinen', 0700, true);
     $kirby = annai_kirby($tmp, $base);
     $report = Check::site($kirby);
@@ -338,10 +338,10 @@ try {
         $twoTmp = annai_site(['noren']);
         try {
             annai_page($twoTmp, '', 'site', ['title' => 'Praxis', 'marke' => 'Praxis']);
-            annai_page($twoTmp, '1_a', 'betrieb', ['title' => 'Standort A', 'strasse' => 'Musterweg 1', 'ort' => 'Musterstadt', 'telefon' => '030 23125001',
+            annai_page($twoTmp, '1_a', 'betrieb', ['title' => 'Standort A', 'strasse' => 'Musterweg 1', 'ort' => 'Musterstadt', 'telefon' => '030 34567001',
                 'bereiche' => [['schluessel' => 'laden', 'name' => 'Laden A']],
                 'zeiten' => [['bereich' => 'laden', 'tag' => 'Montag', 'von1' => '08:00', 'bis1' => '12:00']]]);
-            annai_page($twoTmp, '2_b', 'betrieb', ['title' => 'Standort B', 'strasse' => 'Bahnhofstraße 2', 'ort' => 'Musterdorf', 'telefon' => '030 23125030',
+            annai_page($twoTmp, '2_b', 'betrieb', ['title' => 'Standort B', 'strasse' => 'Bahnhofstraße 2', 'ort' => 'Musterdorf', 'telefon' => '030 34567030',
                 'bereiche' => [['schluessel' => 'praxis', 'name' => 'Praxis B'], ['schluessel' => 'labor', 'name' => 'Labor B']],
                 'zeiten' => [['bereich' => 'praxis', 'tag' => 'Dienstag', 'von1' => '09:00', 'bis1' => '17:00'],
                     ['bereich' => 'labor', 'tag' => 'Mittwoch', 'von1' => '07:00', 'bis1' => '10:00']]]);
@@ -349,12 +349,12 @@ try {
                 'zeiten' => [['tag' => 'Freitag', 'von1' => '09:00', 'bis1' => '12:00']]]);
             $report = Check::site(annai_kirby($twoTmp, ['annai.active' => true, 'noren.active' => true, 'noren.language' => 'de', 'noren.locations' => ['a', 'b', 'c']]));
             expect([
-                ['field' => 'phone', 'raw' => '030 23125001', 'e164' => '+493023125001', 'problem' => null],
-                ['field' => 'phone', 'page' => 'b', 'raw' => '030 23125030', 'e164' => '+493023125030', 'problem' => null],
+                ['field' => 'phone', 'raw' => '030 34567001', 'e164' => '+493034567001', 'problem' => null],
+                ['field' => 'phone', 'page' => 'b', 'raw' => '030 34567030', 'e164' => '+493034567030', 'problem' => null],
                 ['field' => 'phone', 'page' => 'c', 'raw' => "folgt\nab Mai", 'e164' => null, 'problem' => 'characters'],
             ], $report['phones'] ?? null, 'phones: every further location page with its phone, once per page');
             $text = Check::render($report);
-            holds(str_contains($text, "\n  ~ phone: \"030 23125001\" → +493023125001\n  ~ phone (b): \"030 23125030\" → +493023125030\n  ~ phone (c): \"folgt\\nab Mai\" → (none: more than the number)\n"),
+            holds(str_contains($text, "\n  ~ phone: \"030 34567001\" → +493034567001\n  ~ phone (b): \"030 34567030\" → +493034567030\n  ~ phone (c): \"folgt\\nab Mai\" → (none: more than the number)\n"),
                 'phones: render prints a further location as "phone (<page id>)"');
             expect(['configuration: field telefon holds more than the number ("folgt\nab Mai") — nothing is published as E.164; write only the number: digits, spaces, a leading +, "/", "-" and parentheses. Notes go into another field.'],
                 $report['problems'], 'phones: a further location\'s phone outside the contract is a configuration problem');
@@ -567,9 +567,9 @@ try {
     [, $out] = $runCheck(['--root=' . $tmp, '--url=http://example.invalid']);
     // The phone line is a "~" line too, so this looks for the note itself.
     holds(!str_contains($out, '  ~ no host'), 'with --url: no note');
-    holds(str_contains($out, "\n  ~ phone: \"030 / 23125000\" → +493023125000\n"), 'CLI: the phone line is printed');
+    holds(str_contains($out, "\n  ~ phone: \"030 / 34567000\" → +493034567000\n"), 'CLI: the phone line is printed');
     [, $out] = $runCheck(['--root=' . $tmp, '--url=http://example.invalid', '--json']);
-    expect([['field' => 'phone', 'raw' => '030 / 23125000', 'e164' => '+493023125000', 'problem' => null]], json_decode($out, true)['phones'] ?? null, 'CLI --json: phone and fax under "phones"');
+    expect([['field' => 'phone', 'raw' => '030 / 34567000', 'e164' => '+493034567000', 'problem' => null]], json_decode($out, true)['phones'] ?? null, 'CLI --json: phone and fax under "phones"');
 
     // A site whose Composer did not install giggsey/libphonenumber-for-php-lite (Annai copied by
     // hand, README "Installation"): the package's autoloader without the libphonenumber classes.
@@ -582,12 +582,12 @@ try {
         . "    if (!str_starts_with(\$class, 'libphonenumber\\\\')) {\n        \$loader->loadClass(\$class);\n    }\n});\n"
         . "return \$loader;\n");
     [$code, $out] = $runCheck(['--root=' . $tmp, '--url=http://example.invalid']);
-    holds(str_contains($out, "\n  ~ phone: \"030 / 23125000\" → (none: libphonenumber is not installed)\n"), 'CLI without libphonenumber: the phone line says why there is no number');
+    holds(str_contains($out, "\n  ~ phone: \"030 / 34567000\" → (none: libphonenumber is not installed)\n"), 'CLI without libphonenumber: the phone line says why there is no number');
     holds(str_contains($out, '  ! configuration: phone numbers need giggsey/libphonenumber-for-php-lite, which is not installed — nothing is published as E.164; install Annai with Composer (README, Installation).'),
         'CLI without libphonenumber: a configuration problem');
     expect(1, $code, 'CLI without libphonenumber: exit 1');
     [, $out] = $runCheck(['--root=' . $tmp, '--url=http://example.invalid', '--json']);
-    expect([['field' => 'phone', 'raw' => '030 / 23125000', 'e164' => null, 'problem' => 'library']], json_decode($out, true)['phones'] ?? null, 'CLI --json without libphonenumber: problem "library"');
+    expect([['field' => 'phone', 'raw' => '030 / 34567000', 'e164' => null, 'problem' => 'library']], json_decode($out, true)['phones'] ?? null, 'CLI --json without libphonenumber: problem "library"');
     // The same site rendered with Kirby's `debug` on (README "Installation", SPEC §3.2 "The
     // library"): Options::warn() throws the library message on the page instead of logging it.
     $script = $tmp . '/render-debug.php';

@@ -1,6 +1,6 @@
 <?php
 /**
- * llms.txt (SPEC.md §3.5, §9.4): the starter's 41-check lines in German, English labels,
+ * llms.txt (SPEC.md §3.5, §9.4): the lines in German, English labels,
  * unit blocks, closures, events, sections, pages and link rules.
  *   php tests/LlmsTxtTest.php
  */
@@ -32,7 +32,7 @@ function annai_test_unit(string $name, array $overrides = []): array
     ], $overrides);
 }
 
-/** The starter's fixture as a full model (German texts). */
+/** The fixture as a full model (German texts). */
 function annai_test_model(array $overrides = []): array
 {
     return array_merge([
@@ -41,8 +41,8 @@ function annai_test_model(array $overrides = []): array
         'intro' => [],
         'contact' => [
             'address' => 'Musterweg 1, 12345 Musterstadt',
-            'phone' => '030 / 23125000',
-            'phoneE164' => '+493023125000',
+            'phone' => '030 / 34567000',
+            'phoneE164' => '+493034567000',
             'email' => 'hof@example.test',
             'action' => ['name' => 'Online bestellen', 'target' => 'https://shop.example/testhof'],
             'extra' => [],
@@ -61,12 +61,12 @@ function annai_test_model(array $overrides = []): array
     ], $overrides);
 }
 
-// ── German, the starter's expectations ─────────────────────────────────────
+// ── German, the expectations of the fixture ─────────────────────────────────────
 I18n::setLanguage('de');
 $md = LlmsTxt::render(annai_test_model());
 holds(str_starts_with($md, "# Testhof\n\n> Bio-Hofladen mit Café\n\n## Kontakt\n\n"), 'H1 and quote, then the Kontakt section');
 holds(str_contains($md, "\n- Adresse: Musterweg 1, 12345 Musterstadt\n"), 'Adresse line');
-holds(str_contains($md, "\n- Telefon: 030 / 23125000 (tel:+493023125000)\n"), 'Telefon line with E.164 in brackets');
+holds(str_contains($md, "\n- Telefon: 030 / 34567000 (tel:+493034567000)\n"), 'Telefon line with E.164 in brackets');
 holds(str_contains($md, "\n- E-Mail: hof@example.test\n"), 'E-Mail line');
 holds(str_contains($md, "\n- Online bestellen: https://shop.example/testhof\n"), 'action line uses its own name');
 holds(str_contains($md, "\n## Öffnungszeiten\n\n- Montag: 8:00–12:00, 14:00–18:00 Uhr\n"), 'Monday hours line');
@@ -158,9 +158,9 @@ expect(1, substr_count($unnamed, "\n### "), 'unnamed unit: one ### heading in to
 $elsewhere = LlmsTxt::render(annai_test_model(['units' => [
     annai_test_unit('Laden A'),
     annai_test_unit('Praxis B', ['area' => 'praxis', 'primary' => false, 'location' => 'b',
-        'place' => ['street' => 'Bahnhofstraße 2', 'postalCode' => '12346', 'city' => 'Musterdorf', 'phone' => '030 23125070', 'phoneE164' => '+493023125070']]),
+        'place' => ['street' => 'Bahnhofstraße 2', 'postalCode' => '12346', 'city' => 'Musterdorf', 'phone' => '030 34567070', 'phoneE164' => '+493034567070']]),
 ]]));
-holds(str_contains($elsewhere, "\n### Praxis B\n\n- Adresse: Bahnhofstraße 2, 12346 Musterdorf\n- Telefon: 030 23125070 (tel:+493023125070)\n\n- Montag: 8:00–12:00, 14:00–18:00 Uhr"),
+holds(str_contains($elsewhere, "\n### Praxis B\n\n- Adresse: Bahnhofstraße 2, 12346 Musterdorf\n- Telefon: 030 34567070 (tel:+493034567070)\n\n- Montag: 8:00–12:00, 14:00–18:00 Uhr"),
     'unit at another location: address and phone under its heading, then the hours');
 holds(str_contains($elsewhere, "### Laden A\n\n- Montag:"), 'unit at the business location: no address lines (the contact block has them)');
 
@@ -193,19 +193,19 @@ $noHolidays = LlmsTxt::render(annai_test_model(['units' => [annai_test_unit('Hof
 holds(!str_contains($noHolidays, 'Feiertage'), 'holidays false: no holidays line');
 
 $extraContact = LlmsTxt::render(annai_test_model(['contact' => ['address' => '', 'phone' => '', 'phoneE164' => '',
-    'email' => '', 'action' => null, 'extra' => ['- Fax: 030 23125099', '  ']]]));
-holds(str_contains($extraContact, "## Kontakt\n\n- Fax: 030 23125099\n"), 'extra contact lines are appended unescaped');
+    'email' => '', 'action' => null, 'extra' => ['- Fax: 030 34567099', '  ']]]));
+holds(str_contains($extraContact, "## Kontakt\n\n- Fax: 030 34567099\n"), 'extra contact lines are appended unescaped');
 // contact.extra lines go through Text::line() like sections and intro (SPEC §3.5);
 // rtrim() alone used to keep a leading indent and a line feed inside the line.
 $extraLined = LlmsTxt::render(annai_test_model(['contact' => ['address' => '', 'phone' => '', 'phoneE164' => '',
-    'email' => '', 'action' => null, 'extra' => ["  - Fax:\n   030 23125099  ", "\t"]]]));
-holds(str_contains($extraLined, "## Kontakt\n\n- Fax: 030 23125099\n\n## "), 'extra contact line: whitespace collapsed to one line and trimmed, a blank line dropped');
+    'email' => '', 'action' => null, 'extra' => ["  - Fax:\n   030 34567099  ", "\t"]]]));
+holds(str_contains($extraLined, "## Kontakt\n\n- Fax: 030 34567099\n\n## "), 'extra contact line: whitespace collapsed to one line and trimmed, a blank line dropped');
 holds(str_contains($extraLined, '<b>') === false && str_contains(LlmsTxt::render(annai_test_model(['contact' => ['address' => '', 'phone' => '', 'phoneE164' => '',
     'email' => '', 'action' => null, 'extra' => ['- Fax: <b>0</b> [x](y)']]])), "- Fax: <b>0</b> [x](y)\n"), 'extra contact line: not escaped (hook text, like sections)');
 
-$phoneOnly = LlmsTxt::render(annai_test_model(['contact' => ['address' => '', 'phone' => '', 'phoneE164' => '+493023125000',
+$phoneOnly = LlmsTxt::render(annai_test_model(['contact' => ['address' => '', 'phone' => '', 'phoneE164' => '+493034567000',
     'email' => '', 'action' => null, 'extra' => []]]));
-holds(str_contains($phoneOnly, "- Telefon: +493023125000\n"), 'E.164 alone is shown as the phone');
+holds(str_contains($phoneOnly, "- Telefon: +493034567000\n"), 'E.164 alone is shown as the phone');
 
 $actionFallback = LlmsTxt::render(annai_test_model(['contact' => ['address' => '', 'phone' => '', 'phoneE164' => '',
     'email' => '', 'action' => ['name' => '', 'target' => 'https://shop.example'], 'extra' => []]]));

@@ -3,7 +3,7 @@
 namespace Annai;
 
 /**
- * llms.txt per llmstxt.org (SPEC.md §3.5). OWNER: task `formats`.
+ * llms.txt per llmstxt.org (SPEC.md §3.5).
  *
  * Plain arrays in, markdown out. Every title, note and name from the Panel
  * goes through plain() (no markup, no links), the summary through summary();
@@ -283,7 +283,7 @@ final class LlmsTxt
     /**
      * The summary comes raw from the site description (a Panel textarea), and
      * the file reaches agents that render Markdown. Markdown stays, as the
-     * starter wrote it, but no HTML and no link that is not on the allowlist
+     * site wrote it, but no HTML and no link that is not on the allowlist
      * LINK_TARGETS: a link keeps its target only when the target, after entity
      * decoding and with whitespace and control characters removed, starts with
      * one of them in lower case; otherwise only its label is left

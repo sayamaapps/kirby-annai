@@ -2,8 +2,7 @@
 /**
  * What an agent fetches, with real Kirby (SPEC.md §9.10): llms.txt, robots
  * and JSON-LD of the home page, against fixture content with two opening-hour
- * areas, an upcoming closure and a `</script>` in the description. A one-to-one
- * port of kirby-starter/tests/AgentReadyHttpTest.php (41 checks), without the
+ * areas, an upcoming closure and a `</script>` in the description. The 41 checks of the agent-ready run, without the
  * PHP server: every request goes through annai_request().
  *
  *   ASDF_PHP_VERSION=8.5.3 php tests/AgentReadyTest.php
@@ -21,7 +20,7 @@ if (annai_sibling('noren') === null) {
     finish('Annai agent-ready');
 }
 
-/** Fixture content: the starter's fixture, through the content helpers. */
+/** Fixture content, through the content helpers. */
 function arFixture(string $tmp, int $year): void
 {
     annai_page($tmp, '', 'site', [
@@ -30,7 +29,7 @@ function arFixture(string $tmp, int $year): void
     ]);
     annai_page($tmp, '1_kontakt', 'betrieb', [
         'title' => 'Kontakt', 'strasse' => 'Musterweg 1', 'plz' => '12345', 'ort' => 'Musterstadt',
-        'telefon' => '030 / 23125000', 'email' => '',
+        'telefon' => '030 / 34567000', 'email' => '',
         'bereiche' => [
             ['schluessel' => 'laden', 'name' => 'Hofladen'],
             ['schluessel' => 'cafe', 'name' => 'Hofcafé'],
@@ -50,7 +49,7 @@ function arFixture(string $tmp, int $year): void
     annai_page($tmp, 'impressum', 'rechtstext', ['title' => 'Impressum']);
 }
 
-/** The options of the main run: starter config as annai.* keys. */
+/** The options of the main run as annai.* keys. */
 function arOptions(array $extra = []): array
 {
     // array_merge, not "+": the overrides must win over the defaults
@@ -78,10 +77,10 @@ try {
     [$homeStatus, $html] = annai_request($kirby, '/');
     holds($homeStatus === 200, 'the fixture site answers on /');
 
-    // ── HEAD on the machine-readable files (D7) ────────────────────────
+    // ── HEAD on the machine-readable files ────────────────────────
     foreach (['robots.txt', 'sitemap.xml', 'llms.txt'] as $file) {
         [$status] = annai_request($kirby, $file, 'HEAD');
-        holds($status === 200, "HEAD $file answers 200 (D7)");
+        holds($status === 200, "HEAD $file answers 200");
     }
 
     // ── llms.txt ────────────────────────────────────────────────────────
@@ -90,7 +89,7 @@ try {
     holds(str_starts_with((string) $type, 'text/plain'), 'llms.txt is text/plain');
     holds(str_starts_with($md, "# Testhof\n\n> Bio-Hofladen mit Café"), 'H1 and summary as a quote, line break flattened');
     holds(str_contains($md, '- Adresse: Musterweg 1, 12345 Musterstadt'), 'address from the location page');
-    holds(str_contains($md, '- Telefon: 030 / 23125000 (tel:+493023125000)'), 'phone shown and international');
+    holds(str_contains($md, '- Telefon: 030 / 34567000 (tel:+493034567000)'), 'phone shown and international');
     holds(!str_contains($md, 'E-Mail'), 'empty email does not appear');
     holds(str_contains($md, '- Online bestellen: https://shop.example/testhof'), 'main action with the real target URL');
     holds(str_contains($md, "### Hofladen\n\n- Montag: 8:00–12:00, 14:00–18:00 Uhr"), 'hours per area, both blocks');
@@ -112,10 +111,10 @@ try {
     $ld = $blocks[0] ?? [];
     holds(($ld['@context'] ?? null) === 'https://schema.org' && ($ld['@type'] ?? null) === 'GroceryStore', 'context and configured type');
     holds(($ld['@id'] ?? null) === "$basis/#business" && ($ld['url'] ?? null) === $basis, 'stable @id and URL');
-    // The starter kept the raw field ("… </script><b>x</b>"); Annai's description is the
+    // The former copy kept the raw field ("… </script><b>x</b>"); Annai's description is the
     // rendered field as plain text, so the tags are gone and the text after them ("x") proves it is whole.
     holds(($ld['description'] ?? '') === 'Bio-Hofladen mit Café x', 'description complete');
-    holds(($ld['telephone'] ?? null) === '+493023125000', 'telephone international');
+    holds(($ld['telephone'] ?? null) === '+493034567000', 'telephone international');
     holds(!array_key_exists('email', $ld) && !array_key_exists('geo', $ld) && !array_key_exists('image', $ld), 'empty facts omitted');
     expect(
         ['@type' => 'PostalAddress', 'streetAddress' => 'Musterweg 1', 'postalCode' => '12345', 'addressLocality' => 'Musterstadt', 'addressCountry' => 'DE'],

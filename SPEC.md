@@ -8,31 +8,25 @@ description, canonical, Open Graph, `noindex`, hreflang. **No styling.**
 Package `sayamaapps/kirby-annai`, plugin id `sayamaapps/annai`, namespace
 `Annai`, option prefix `annai.`, directory: this repository.
 
-It replaces, in kirby-starter, `site/plugins/suchmaschinen` (the three routes),
+It replaces the earlier per-site copies of the same job: the plugin
+`site/plugins/suchmaschinen` (the three routes), the snippet
 `site/snippets/strukturdaten.php` (JSON-LD) and the `<head>` meta part of
 `site/snippets/kopf.php`. Opening hours come from Noren, events from Koyomi;
 both are optional (`suggest`, never `require`).
 
 This document is the contract. Section numbers are referenced from code
-comments and task prompts. Where it says "today", it means kirby-starter at
-commit of 2026-10-11 (`site/plugins/suchmaschinen/index.php`, 220 lines).
+comments.
 
 ---
 
-## 1. Ground rules for every builder
+## 1. Ground rules for contributors
 
 - PHP 8.2 compatible (no typed class constants, no `readonly` classes, no
-  8.3+ functions). Run with `ASDF_PHP_VERSION=8.5.3 php …` when plain `php`
-  says "No version is set".
+  8.3+ functions).
 - Code, identifiers, comments, README in **English**. German only in
   `translations/de.php`. Legacy German option *keys*
   (`breite`, `ziel`) are accepted as input where §4 says so, never produced.
-- Every user-facing string comes from `I18n::t()` (keys in §5). Need a key
-  that does not exist? Do NOT add it — write it into `NOTES-<task>.md` and use
-  the closest existing key.
-- Only edit files your task owns (§2). Need a change in a file you do not
-  own? Write it into `NOTES-<task>.md` in the plugin root: file, problem,
-  proposed change. Never work around it with a copy of the logic.
+- Every user-facing string comes from `I18n::t()` (keys in §5).
 - Tests: standalone PHP scripts `tests/<Name>Test.php`, exit code 0 = pass, no
   PHPUnit. Use `tests/helpers.php` (`expect()`, `holds()`, `finish()`,
   `annai_site()`, `annai_kirby()`, `annai_page()`, `annai_remove_tree()`,
@@ -48,101 +42,77 @@ commit of 2026-10-11 (`site/plugins/suchmaschinen/index.php`, 220 lines).
 - Drafts never appear anywhere (sitemap, llms.txt, hreflang, check tool).
 - Never hard-code a host. Every absolute URL comes from `Pages::base()` (Kirby's base URL, `$kirby->url()`),
   `$page->url()` or Kirby's `url()`.
-- Do not push, do not create GitHub repos, do not touch any other repository
-  (the sources in §0 are read-only). Never delete files outside this
-  directory. Do not run `git commit` (the integrator commits).
-- Throwaway scripts go to the scratchpad directory named in your task prompt,
-  never into this repo.
+- Do not touch any other repository (the sources in §0 are read-only). Never
+  delete files outside this directory.
 
-### 0. Sources (read-only)
+### 0. Related packages (read-only sources)
 
 | What | Path |
 |---|---|
-| Original routes (today) | `../kirby-starter/site/plugins/suchmaschinen/index.php` |
-| Original JSON-LD, head | `../kirby-starter/site/snippets/strukturdaten.php`, `../kirby-starter/site/snippets/kopf.php` (lines 1–62) |
-| Phone normalisation | `../kirby-starter/site/plugins/betrieb/src/Telefon.php`, `index.php` (`betriebsangabe`) |
-| Original tests | `../kirby-starter/tests/AgentReadyHttpTest.php` (41 checks), `tests/auslieferung.spec.ts` (robots/sitemap/llms/JSON-LD shape) |
-| Site variants | older site copies: a `llms` snippet and `kanonisch.php` (host redirect); a `@graph` with noindex; og:image size and twitter card; an own llms route |
 | Noren | `../kirby-noren/README.md` ("Own markup", "Return shapes"), `src/SchemaOrg.php`, `src/Locations.php` (`units()`), `src/Schedule.php` (`blocks()`, `note()`, `upcomingClosures()`, `label()`) |
 | Koyomi | `../kirby-koyomi/README.md`, `src/Repository.php` (`calendar()`, `upcoming()`), `src/Event.php` (`isPast()`, `end`, `url`, `title`), `src/Models/EventPage.php` (`koyomi()`), `src/Format.php` (`when()`), `index.php` (`koyomi_i18n()`) |
-| Family conventions | `../kirby-noren` (index.php, Options, I18n, tests/helpers.php, README, CHANGELOG, privacy notes, ci.yml), `../kirby-koe/bin/koe-fetch` (CLI script shape) |
 
-### 0.1 What differs between the site copies (and what survives)
+### 0.1 Earlier copies
 
-| Difference | Site config or improvement? | Annai |
-|---|---|---|
-| two older copies use `Betrieb\Oeffnungszeiten` and `bereicheMitZeiten()`; the starter and a third site use Noren | older copy; Noren is current | Noren only (§3.7). No own hours logic |
-| A site's llms.txt is a site snippet `llms`, served as `text/markdown`, with "Optional" (Impressum, Datenschutz) and social links | improvement (structure), site content (texts) | `annai.llms.optional` templates (§4), `annai.llms.extra` hook; `text/plain` stays (llmstxt.org serves plain) |
-| Two older copies print `<meta name="robots" content="noindex…">` for templates excluded from the sitemap | improvement | `annai.noindexExcluded` (default true, §4, §8) |
-| Three older copies print `og:site_name`, `og:locale` | improvement | always printed when known (§3.6, §8) |
-| Two older copies print `og:image:width/height/alt`, `twitter:card` | improvement | `annai.image` array form, `annai.twitterCard` (§4) |
-| One older copy: one `MedicalClinic` per location in a `@graph`; another: `WebSite`+`Person`+`Service`+`BreadcrumbList` graph | site specific | `annai.jsonld` callback adds/replaces nodes; `annai.type => false` drops the business node (§3.5, §3.8) |
-| An older copy: `<lastmod>` via `date('Y-m-d', $page->modified())` because the `intl` date handler turns `modified('c')` into an ICU pattern | bug fix | `Sitemap::lastmod()` formats the integer timestamp itself (§3.3) |
-| An older copy: own llms route with `werkstattZeiten()`; `strukturdaten.geo` as a list `[lat, lng]` | site specific / config | `annai.geo` accepts `[lat, lng]`, `['lat','lng']`, legacy `['breite','laenge']` |
-| A site: `potentialAction` is a `tel:` target; `identifier` (Öko-Kontrollnummer); `hasMenu` on the department | site specific | `annai.action` with `tel:` target works; the rest via `annai.jsonld` callback |
-| A site: `sameAs` from site fields `facebook`, `instagram` | improvement | `annai.fields.profiles` (default `['instagram','facebook']`) read like any business field (§6) |
-| A site's llms.txt: "Abweichende Tage (Stand …)" with the dated upcoming public holidays (`$schedule->upcomingHolidays()`) next to the closures | site content | not built in (Annai lists "Public holidays: closed" and the closures); a site adds the dated list through `annai.llms.extra` with a Noren call (`$site->norenSchedule()->upcomingHolidays()`) |
-| A site's `kanonisch.php` (host redirect before Kirby) | out of scope: runs before Kirby, belongs to Sudare/Hikkoshi | not ported; README mentions it |
-| languages on their own domains in one installation (`url` per language in `site/languages/*.php`) | out of scope for 1.0 (decision 2026-10-12: no site needs it yet) | not supported, README „Requirements“ says so and names the 301 to the language prefix. An earlier version filtered the sitemap per host; that made such a site worse (fixed `url` → a page in no sitemap) and was reverted. Build it with a real site as the test case |
-| Two older copies compute titles and descriptions per template | site specific | `annai.title`, `annai.description` closures (§4) |
-| all: `GET|HEAD` on every route | must survive (D7, 2026-10-06) | every route `'method' => 'GET|HEAD'` (§3.9) |
+Before 1.0.0 the same job lived as copies in each site: the plugin `site/plugins/suchmaschinen`
+(the three routes), the snippet `strukturdaten` (JSON-LD) and the head lines of `kopf.php`, with
+variants per site. Annai replaces them. CHANGELOG.md (1.0.0) lists the renamed options and the
+behaviour changes. The options that carry the variants are `annai.jsonld` (`@graph` sites),
+`annai.geo`, `annai.action`, `annai.title`, `annai.description`, `annai.llms.extra`,
+`annai.llms.optional`, `annai.image`, `annai.twitterCard`, `annai.noindexExcluded` and
+`annai.fields.profiles` (§3–§4). Languages on their own domains are not supported (README,
+Requirements).
 
 ---
 
-## 2. File tree and owners
-
-`architect` = written before the build, shared, **builders never edit**.
-`stub → <task>` = a compilable stub with the exact signatures of §3, replaced
-by the task that owns it.
+## 2. File tree
 
 ```
 kirby-annai/
-├── composer.json                     architect
-├── .gitignore, .gitattributes        architect
-├── .github/workflows/ci.yml          architect
-├── LICENSE                           architect
-├── SPEC.md                           architect
-├── index.php                         architect   (complete registration, §3.10)
+├── composer.json
+├── .gitignore, .gitattributes
+├── .github/workflows/ci.yml
+├── LICENSE
+├── SPEC.md
+├── index.php   (complete registration, §3.10)
 ├── src/
-│   ├── I18n.php                      architect   (§3.1)
-│   ├── Options.php                   architect   (§3.1, §4)
-│   ├── Text.php                      stub → formats     (§3.2)
-│   ├── Robots.php                    stub → formats     (§3.3)
-│   ├── Sitemap.php                   stub → formats     (§3.4)
-│   ├── LlmsTxt.php                   stub → formats     (§3.5)
-│   ├── JsonLd.php                    stub → markup      (§3.6)
-│   ├── Head.php                      stub → markup      (§3.7)
-│   ├── Business.php                  stub → business    (§3.8)
-│   ├── Pages.php                     stub → routes      (§3.9)
-│   ├── Routes.php                    stub → routes      (§3.9)
-│   └── Check.php                     stub → tools       (§3.11)
-├── snippets/annai/head.php           placeholder → markup (§3.7.3)
-├── bin/annai-check                   placeholder → tools  (§3.11)
-├── translations/en.php, de.php       architect   (§5)
+│   ├── I18n.php   (§3.1)
+│   ├── Options.php   (§3.1, §4)
+│   ├── Text.php   (§3.2)
+│   ├── Robots.php   (§3.3)
+│   ├── Sitemap.php   (§3.4)
+│   ├── LlmsTxt.php   (§3.5)
+│   ├── JsonLd.php   (§3.6)
+│   ├── Head.php   (§3.7)
+│   ├── Business.php   (§3.8)
+│   ├── Pages.php   (§3.9)
+│   ├── Routes.php   (§3.9)
+│   └── Check.php   (§3.11)
+├── snippets/annai/head.php   (§3.7.3)
+├── bin/annai-check   (§3.11)
+├── translations/en.php, de.php   (§5)
 ├── tests/
-│   ├── run.sh                        architect
-│   ├── helpers.php                   architect
-│   ├── I18nTest.php                  architect
-│   ├── TextTest.php                  formats   (§9.1)
-│   ├── RobotsTest.php                formats   (§9.2)
-│   ├── SitemapTest.php               formats   (§9.3)
-│   ├── LlmsTxtTest.php               formats   (§9.4)
-│   ├── JsonLdTest.php                markup    (§9.5)
-│   ├── HeadTest.php                  markup    (§9.6)
-│   ├── SnippetTest.php               markup    (§9.7, Kirby)
-│   ├── BusinessTest.php              business  (§9.8, Kirby)
-│   ├── RoutesTest.php                routes    (§9.9, Kirby)
-│   ├── AgentReadyTest.php            routes    (§9.10, Kirby, port of the 41 checks)
-│   └── CheckTest.php                 tools     (§9.11, Kirby)
-├── README.md                         tools   (§10)
-└── CHANGELOG.md                      tools
+│   ├── run.sh
+│   ├── helpers.php
+│   ├── I18nTest.php
+│   ├── TextTest.php   (§9.1)
+│   ├── RobotsTest.php   (§9.2)
+│   ├── SitemapTest.php   (§9.3)
+│   ├── LlmsTxtTest.php   (§9.4)
+│   ├── JsonLdTest.php   (§9.5)
+│   ├── HeadTest.php   (§9.6)
+│   ├── SnippetTest.php   (§9.7, Kirby)
+│   ├── BusinessTest.php   (§9.8, Kirby)
+│   ├── RoutesTest.php   (§9.9, Kirby)
+│   ├── AgentReadyTest.php   (§9.10, Kirby, port of the 41 checks)
+│   └── CheckTest.php   (§9.11, Kirby)
+├── README.md   (§10)
+└── CHANGELOG.md
 ```
 
 Dependency map (who calls whom): `Routes` → `Pages`, `Business`, `Robots`,
 `Sitemap`, `LlmsTxt`; `Business` → `Text`, `JsonLd`, `Pages`; `Head` → `JsonLd`;
-`Check` → everything. The stubs make the plugin boot before any task is done.
-A test that fails only because a dependency is still a stub is noted in
-`NOTES-<task>.md`; the integrator reruns the suite when all tasks are in.
+`Check` → everything.
 
 ---
 
@@ -162,7 +132,7 @@ every site and page method returns `null`/`[]`/`''`, and the snippet prints
 nothing. `Options::active()` is the only switch; every public Kirby-side
 method checks it first.
 
-### 3.1 `Annai\I18n`, `Annai\Options` (written, architect)
+### 3.1 `Annai\I18n`, `Annai\Options`
 
 Same shape as Noren. `I18n::LANGUAGES = ['en', 'de']`, English default and
 fallback, `I18n::t($key, $values)` with `{name}` placeholders,
@@ -192,7 +162,7 @@ Options with nested names are read as `Options::get($kirby, 'robots.ai')`
 (flat `'annai.robots.ai' => …` and nested `'annai' => ['robots' => ['ai' => …]]`
 both work through Kirby's `option()`).
 
-### 3.2 `Annai\Text` (owner `formats`) — Kirby-free helpers
+### 3.2 `Annai\Text` — Kirby-free helpers
 
 ```php
 final class Text
@@ -233,17 +203,17 @@ final class Text
 
     /**
      * The E.164 number of a phone or fax field, or '' — the input contract below ("Phone numbers: the input
-     * contract", decision 2026-10-13). Takes the RAW field value (a line break must still be one here); the caller
+     * contract"). Takes the RAW field value (a line break must still be one here); the caller
      * makes the display string with line(). Trimmed (U+00A0 and U+202F count as a space), the field must hold
      * only the characters of the gate, else '' and 'characters'. libphonenumber reads the rest: parse() with
      * the region of $country (a calling code: '49' → DE, getRegionCodeForCountryCode()), isValidNumber(),
      * format(E164); else '' and 'invalid'. Without the library '' and 'library'.
-     * phone('030 / 23125000') → '+493023125000'; phone('+49 (0)30 23125000') → '+493023125000';
-     * phone('0049 30 23125000') → '+493023125000'; phone('+43 1 234 56') → '+43123456';
+     * phone('030 / 34567000') → '+493034567000'; phone('+49 (0)30 34567000') → '+493034567000';
+     * phone('0049 30 34567000') → '+493034567000'; phone('+43 1 234 56') → '+43123456';
      * phone('01 234 56', '43') → '+43123456'; phone('0471 123456', '39') → '+390471123456';
-     * phone('') → '' (no reason); phone('Tel. 030 23125000'), phone('(tel: 030 23125000)'),
-     * phone('0351 / 12.12.2010'), phone("030 23125000\n0171 1234567") → '' and 'characters';
-     * phone('23125'), phone('+49') → '' and 'invalid'.
+     * phone('') → '' (no reason); phone('Tel. 030 34567000'), phone('(tel: 030 34567000)'),
+     * phone('0351 / 12.12.2010'), phone("030 34567000\n0171 1234567") → '' and 'characters';
+     * phone('34567'), phone('+49') → '' and 'invalid'.
      */
     public static function phone(string $display, string $country = '49'): string;
 
@@ -257,7 +227,7 @@ final class Text
     /**
      * A field value as a JSON string for a log line or the check: every control character as an escape —
      * C0 by json_encode(), C1 (U+0080–U+009F, kept raw by JSON_UNESCAPED_UNICODE) by a \u00XX escape —,
-     * invalid UTF-8 as U+FFFD. shown("030 23125000\n0171 1234567") → '"030 23125000\n0171 1234567"' (a visible \n).
+     * invalid UTF-8 as U+FFFD. shown("030 34567000\n0171 1234567") → '"030 34567000\n0171 1234567"' (a visible \n).
      */
     public static function shown(string $value): string;
 
@@ -278,9 +248,9 @@ final class Text
 }
 ```
 
-#### Phone numbers: the input contract (decision 2026-10-13)
+#### Phone numbers: the input contract
 
-**Decision 2026-10-13:** a phone or fax field holds **only the
+**Rule:** a phone or fax field holds **only the
 number**. Annai does not look for a number in text. A field outside the
 contract publishes nothing, is logged with its reason, and `annai-check`
 shows every phone and fax field with its raw value and its result before the
@@ -289,12 +259,11 @@ go-live. The number is read by Google's libphonenumber
 instead of a parser of Annai's own.
 
 Why: Annai reads only its own Panel fields `telefon` and `fax` (business page,
-`site.txt`, further location pages). Every such field on the real sites
-looked at (2026-10-13) holds a bare number and was always read right. Yet in
+`site.txt`, further location pages). Such a field holds a bare number in practice,
+and those were always read right. Yet in
 testing, first every serious bug and in the end every bug concerned the phone,
 each time from an invented input — a note, a date, a time, HTML, a Kirbytag —
-that stands in no field Annai reads. The parser grew from 28 to 419 lines and
-1,840 of 3,369 checks. libphonenumber turns notes into numbers too
+that stands in no field Annai reads. libphonenumber turns notes into numbers too
 (`0351 / 12.12.2010` → `+4935112122010`), because German numbers have no fixed
 length: reading text for a number cannot be done right, and need not be. The
 free-text parser (island rule, rule table, exit check, markup reading), the
@@ -306,16 +275,16 @@ reason (`Text::PHONE_GATE`):
 | Character | Why |
 |---|---|
 | `0`–`9` | the number |
-| space (U+00A0 and U+202F count as one, `Text::PHONE_SPACES`) | between groups: `030 23125000`, `0171 123 45 67`; a no-break space looks the same in the Panel and comes with a number copied from a web page or Word |
-| `+`, first character only | the country code: `+49 30 23125000` (`0049 …` needs none) |
-| `/` | between area code and number: `030 / 23125000` |
-| `-` | between groups and before an extension: `0171-1234567`, `23125-0` |
-| `(` `)` | around the trunk prefix or the area code: `+49 (0)30 23125000`, `(030) 23125000` |
+| space (U+00A0 and U+202F count as one, `Text::PHONE_SPACES`) | between groups: `030 34567000`, `0171 123 45 67`; a no-break space looks the same in the Panel and comes with a number copied from a web page or Word |
+| `+`, first character only | the country code: `+49 30 34567000` (`0049 …` needs none) |
+| `/` | between area code and number: `030 / 34567000` |
+| `-` | between groups and before an extension: `0171-1234567`, `34567-0` |
+| `(` `)` | around the trunk prefix or the area code: `+49 (0)30 34567000`, `(030) 34567000` |
 
 **Not `.`**: dates and times consist of digits and dots (`12.12.2010`,
 `9.00`); with the dot they would pass the gate, and libphonenumber reads
 `0351 / 12.12.2010` as the valid German number `+4935112122010`. The price:
-`030.23125000` and `+33.1.23.45.67.89` give `''` and are reported — write
+`030.34567000` and `+33.1.23.45.67.89` give `''` and are reported — write
 spaces. Not a letter (`Tel.`, `ext.`, a Kirbytag, HTML, a note), not a line
 break, a tab, another dash (`–`) or another space, not `+` inside the number
 (`(+49) 30 …`).
@@ -327,10 +296,10 @@ code, default `49`): `getRegionCodeForCountryCode()` gives `DE` for 49, `AT`
 for 43, `IT` for 39, `US` for 1; a code without a region (`ZZ`) reads only
 numbers with `+`. A number with `+` is read for its own country whatever
 `phoneCountry` says; one with the international prefix of the region
-(`00` in DE, AT, CH, IT; `011` in the NANP) too, so `0049 30 23125000` is read
+(`00` in DE, AT, CH, IT; `011` in the NANP) too, so `0049 30 34567000` is read
 with `49` and `43`, not with `1`. The trunk prefix `(0)` after a country
 code and the leading `0` of an Italian area code are libphonenumber's:
-`+49 (0)30 23125000` → `+493023125000`, `0471 123456` with `39` →
+`+49 (0)30 34567000` → `+493034567000`, `0471 123456` with `39` →
 `+390471123456`.
 
 | Field | Result | Reason (`Text::phoneProblem()`) |
@@ -338,7 +307,7 @@ code and the leading `0` of an Italian area code are libphonenumber's:
 | empty, or spaces only | `''` | `null`, no log line |
 | a number within the gate that libphonenumber validates | `+…` | `null` |
 | a character outside the gate | `''` | `'characters'` |
-| within the gate, but libphonenumber cannot parse it or it is no valid number (`23125`, `0351`, `+49`, `-`, 16 digits) | `''` | `'invalid'` |
+| within the gate, but libphonenumber cannot parse it or it is no valid number (`34567`, `0351`, `+49`, `-`, 16 digits) | `''` | `'invalid'` |
 | within the gate, libphonenumber not installed | `''` | `'library'` |
 
 `Business::e164()` logs every reason with the raw value as JSON
@@ -349,8 +318,8 @@ number; llms.txt shows the field as written, with ` (+E.164)` when there is a
 number.
 
 **The limit of the contract.** A note written only with characters of the
-gate is read as libphonenumber reads it: `030 23125000 (12)` →
-`+49302312500012`, `030 23125000 0815` → `+4930231250000815`. Annai cannot tell
+gate is read as libphonenumber reads it: `030 34567000 (12)` →
+`+49303456700012`, `030 34567000 0815` → `+4930345670000815`. Annai cannot tell
 such digits from the number; the contract keeps them out of the field, and
 `annai-check` shows the result before the go-live. An input outside the
 contract is therefore **not a bug**, as long as the gate rejects it or it
@@ -371,16 +340,16 @@ comes from Composer; next to a ZIP Kirby the check needs a
 installation (README).
 
 **The tests** (`tests/TextTest.php`, table-driven): the golden table of
-seven real-world spellings (`01512 3456789`, `030 23125020`, `+49 30 23125040`,
-`030 23125060`, `030 / 23125000`, `+49 1512 3456788`, fax `030 23125010`) with
+seven spellings (`01512 3456789`, `030 34567020`, `+49 30 34567040`,
+`030 34567060`, `030 / 34567000`, `+49 1512 3456788`, fax `030 34567010`) with
 their E.164 numbers as libphonenumber 9.0.41 gives them; the allowed
 spellings; numbers from abroad and national numbers per `phoneCountry`;
 fields outside the gate; invalid and empty fields; the limit of the contract;
 the missing library (a child process without the autoloader); the run time of
 four fields of 50,000 characters. Each rule of this section was broken once
-in the code and turned its test red (30 mutants, 13.10.2026).
+in the code and turned its test red (30 mutants).
 
-### 3.3 `Annai\Robots` (owner `formats`) — RFC 9309 text
+### 3.3 `Annai\Robots` — RFC 9309 text
 
 ```php
 final class Robots
@@ -509,7 +478,7 @@ final class Robots
 }
 ```
 
-### 3.4 `Annai\Sitemap` (owner `formats`) — sitemaps.org XML
+### 3.4 `Annai\Sitemap` — sitemaps.org XML
 
 ```php
 final class Sitemap
@@ -565,13 +534,13 @@ final class Sitemap
     /**
      * W3C datetime (DATE_ATOM, "2026-10-11T01:14:00+02:00") from a unix timestamp or a
      * DateTimeInterface, in $zone. null or 0 → null. Never uses Kirby's date handler
-     * (with handler `intl`, $page->modified('c') is an ICU pattern — bug in an older copy).
+     * (with handler `intl`, $page->modified('c') is an ICU pattern — a bug of earlier copies).
      */
     public static function lastmod(int|\DateTimeInterface|null $time, string $zone = 'UTC'): ?string;
 }
 ```
 
-### 3.5 `Annai\LlmsTxt` (owner `formats`) — llmstxt.org markdown
+### 3.5 `Annai\LlmsTxt` — llmstxt.org markdown
 
 ```php
 final class LlmsTxt
@@ -582,7 +551,7 @@ final class LlmsTxt
      *    'summary'  => 'Bio-Hofladen mit Café',               // "> " quote; '' = none
      *    'intro'    => ['Paragraph …', …],                    // free paragraphs after the quote
      *    'contact'  => ['address'   => 'Musterweg 1, 12345 Musterstadt',   // '' = none
-     *                   'phone'     => '030 / 23125000', 'phoneE164' => '+493023125000',
+     *                   'phone'     => '030 / 34567000', 'phoneE164' => '+493034567000',
      *                   'email'     => 'hof@example.test',
      *                   'action'    => ['name' => 'Online bestellen', 'target' => 'https://shop.example/testhof'] | null,
      *                   'extra'     => ['- Fax: …']],         // hook list lines appended to Contact (Text::line, not escaped)
@@ -601,7 +570,7 @@ final class LlmsTxt
      *   ## Kontakt                                  ← I18n llms.contact; whole section omitted when all empty
      *
      *   - Adresse: Musterweg 1, 12345 Musterstadt        ← llms.address
-     *   - Telefon: 030 / 23125000 (tel:+493023125000)     ← llms.phone; "(E.164)" only when phoneE164 !== ''
+     *   - Telefon: 030 / 34567000 (tel:+493034567000)     ← llms.phone; "(E.164)" only when phoneE164 !== ''
      *   - E-Mail: hof@example.test                  ← llms.email
      *   - Online bestellen: https://shop.example/testhof   ← action name (fallback I18n llms.action) + target
      *
@@ -610,7 +579,7 @@ final class LlmsTxt
      *   ### Hofladen                                ← only when count(units) > 1 and the unit has a name
      *
      *   - Adresse: Bahnhofstraße 2, 12346 Musterdorf  ← only for a unit with `place` (another location):
-     *   - Telefon: 030 23125070 (tel:+493023125070)                    its address and phone as in Kontakt, then a blank line
+     *   - Telefon: 030 34567070 (tel:+493034567070)                    its address and phone as in Kontakt, then a blank line
      *
      *   - Montag: 8:00–12:00, 14:00–18:00 Uhr       ← I18n::day(0) + ": " + t('llms.hoursLine', ['hours' => "8:00–12:00, 14:00–18:00"])
      *   - Dienstag: geschlossen                     ← llms.closed when blocks === []
@@ -662,7 +631,7 @@ final class LlmsTxt
 }
 ```
 
-### 3.6 `Annai\JsonLd` (owner `markup`) — schema.org arrays and encoding
+### 3.6 `Annai\JsonLd` — schema.org arrays and encoding
 
 ```php
 final class JsonLd
@@ -711,7 +680,7 @@ final class JsonLd
 }
 ```
 
-### 3.7 `Annai\Head` (owner `markup`) — the `<head>` model and tags
+### 3.7 `Annai\Head` — the `<head>` model and tags
 
 #### 3.7.1 Input and model
 
@@ -766,8 +735,8 @@ final class Head
   other page → `title . ' · ' . brand`; brand empty → site title. Hook
   `annai.title` (Closure) replaces the whole rule.
 - Description: page `intro` field (`einleitung`), else site `description`
-  field (`beschreibung`), rendered with `$field->kirbytext()` (as the starter's
-  `$field->excerpt()`: no raw Markdown or Kirbytags), then
+  field (`beschreibung`), rendered with `$field->kirbytext()` (no raw Markdown or Kirbytags in the
+  result), then
   `Text::excerpt(…, descriptionLength)`. With `annai.descriptionFallback` on, an
   chain is intro, then the page's description field (the same name as the site's
   `description`, `annai.fields`), then the site description. Each step gives way to
@@ -788,7 +757,7 @@ final class Head
   used to point to itself, a duplicate in every untranslated language). The
   hook keeps its precedence; a hook returning `null` leaves the rule in place.
 
-#### 3.7.3 Snippet `snippets/annai/head.php` (owner `markup`)
+#### 3.7.3 Snippet `snippets/annai/head.php`
 
 ```php
 <?php snippet('annai/head') ?>                                   // uses $page->annaiHead()
@@ -802,7 +771,7 @@ theme-color, icons, fonts or stylesheets: those stay in the site's head. The
 snippet produces no classes (it is head markup); a site overrides it with
 `site/snippets/annai/head.php`.
 
-### 3.8 `Annai\Business` (owner `business`) — the facts of the business
+### 3.8 `Annai\Business` — the facts of the business
 
 ```php
 final class Business
@@ -964,7 +933,7 @@ final class Business
 }
 ```
 
-### 3.9 `Annai\Pages`, `Annai\Routes` (owner `routes`)
+### 3.9 `Annai\Pages`, `Annai\Routes`
 
 ```php
 final class Pages
@@ -1168,13 +1137,13 @@ final class Routes
 }
 ```
 
-Routes are registered in index.php (architect) with `'method' => 'GET|HEAD'`:
+Routes are registered in index.php with `'method' => 'GET|HEAD'`:
 `robots.txt`, `sitemap.xml`, `sitemap-([1-9][0-9]*)\.xml` (the canonical number
 only: `(:num)` also matched `01` and `0001` and served chunk 1 under three
 URLs; the dot escaped, so `sitemap-1Xxml` is 404), `llms.txt`. Each action returns `$this->next()` when Annai is off (or
 the chunk is out of range).
 
-### 3.10 index.php (written, architect) — site and page methods
+### 3.10 index.php — site and page methods
 
 | Method | Returns | Delegates to |
 |---|---|---|
@@ -1195,7 +1164,7 @@ the chunk is out of range).
 | `$page->annaiLastmod()` | ?string | `Pages::lastmod()` |
 | `$page->annaiCheck()` | ?array | `Check::page()` |
 
-### 3.11 `Annai\Check` and `bin/annai-check` (owner `tools`)
+### 3.11 `Annai\Check` and `bin/annai-check`
 
 ```php
 final class Check
@@ -1241,7 +1210,7 @@ final class Check
      *                 'problem' => …] for every further location page (Business::units() with a `place`, one entry per
      *                 page, a non-empty phone only: they reach the JSON-LD departments and llms.txt too).
      *                 §3.2, the input contract: a person sees every field and its result before the go-live. Printed by
-     *                 render() as "  ~ phone: \"030 / 23125000\" → +493023125000" (the raw value through Text::shown(), so a
+     *                 render() as "  ~ phone: \"030 / 34567000\" → +493034567000" (the raw value through Text::shown(), so a
      *                 line break or a control character shows as an escape), "  ~ fax: \"Fax folgt\" → (none: more than the number)"
      *                 (Check::PHONE_PROBLEMS: 'characters' → more than the number, 'invalid' → no valid number,
      *                 'library' → libphonenumber is not installed; "(none)" without a reason), a further location
@@ -1286,8 +1255,7 @@ final class Check
 }
 ```
 
-`bin/annai-check` (executable, `#!/usr/bin/env php`, CLI only like
-`koe-fetch`): boots Kirby from a site directory and prints the report.
+`bin/annai-check` (executable, `#!/usr/bin/env php`, CLI only): boots Kirby from a site directory and prints the report.
 
 ```
 vendor/bin/annai-check [--root=DIR] [--url=https://example.test] [--page=ID ...] [--json]
@@ -1309,7 +1277,7 @@ vendor/bin/annai-check [--root=DIR] [--url=https://example.test] [--page=ID ...]
 - `--help` / `-h` prints the usage line and exits 0. `--url` must be an absolute http(s) URL, else usage error (exit 2).
 - Usage errors, boot errors and "Annai is off" messages go to STDERR; the report goes to STDOUT.
 - `jsonld.valid` is false only when `JsonLd::encode()` throws; a page without JSON-LD is valid with no types.
-- No Panel area (decision §8 D12).
+- No Panel area (§8).
 
 ---
 
@@ -1317,7 +1285,7 @@ vendor/bin/annai-check [--root=DIR] [--url=https://example.test] [--page=ID ...]
 
 All read as `annai.<name>`; `null` = not set. Boolean options take a real
 `true`/`false` (anything else → `Options::warn()`, default used). Typed
-readers live in `Options` (architect) — builders call them instead of `get()`
+readers live in `Options`; call them instead of `get()`
 wherever one exists.
 
 | Option | Default | Reader | Meaning |
@@ -1345,13 +1313,13 @@ wherever one exists.
 | `canonical` | `null` | `hook()` | `Closure(Page): string` |
 | `locale` | `null` | `locale()` | `og:locale`; null → multilang current language locale (`LC_ALL` or first), else Kirby `locale` option (`de_DE.utf8` → `de_DE`), else null (omitted). Normalised to `xx_YY` form; invalid → null |
 | `twitterCard` | `null` | `twitterCard()` | `'summary'` or `'summary_large_image'`; anything else → null |
-| `noindex` | `null` | `get()` | Preview noindex: `null` auto (Sudare), `true` force, `false` never; anything else warned, counts as `null`. **Proposal (b)** |
+| `noindex` | `null` | `get()` | Preview noindex: `null` auto (Sudare), `true` force, `false` never; anything else warned, counts as `null`. |
 | `noindexExcluded` | `true` | `flag()` | `noindex, follow` on pages excluded from the sitemap |
-| `hreflang` | `false` | `flag()` | hreflang links and sitemap alternates on a multilang site. **Proposal (c)** |
+| `hreflang` | `false` | `flag()` | hreflang links and sitemap alternates on a multilang site. |
 | `exclude.templates` | `['error']` | `excludeTemplates()` | Templates kept out of sitemap, llms.txt, check |
 | `exclude.pages` | `[]` | `excludePages()` | Page ids, each with everything below it (`['intern']` also keeps out `intern/protokoll`), or `Closure(Page): bool` (a truthy result excludes) |
 | `disallow` | `['/panel']` | `disallow()` | Paths for `Disallow:` in the `*` group; an entry `Robots::validPath()` rejects (no leading `/`, a space, a `#`, a control character, not UTF-8) is warned here, left out by `Robots::render()` and named by `Robots::warnings()`. `/` makes the group `Disallow: /` alone (§3.3) |
-| `robots.ai` | `null` | `robotsAi()` | `null`, `'blockTraining'`, `'allowAll'` (§3.3). **Proposal (a)** |
+| `robots.ai` | `null` | `robotsAi()` | `null`, `'blockTraining'`, `'allowAll'` (§3.3). |
 | `robots.agents` | `[]` | `robotsAgents()` | `['GPTBot' => false, 'CCBot' => true]` overrides; a name that is not `^[A-Za-z0-9_.-]+$` (after trim) is warned and dropped, `'*'` too |
 | `robots.extra` | `[]` | `robotsExtra()` | Raw lines for the `*` group (repeated for allowed agents); from a `User-agent:` line on, own groups. An element with line feeds inside is split into lines first (`robotsExtra()` and `Robots::extra()`); a byte that is not UTF-8 becomes U+FFFD (`Text::utf8()`, RFC 9309 §2.2) |
 | `sitemap.lastmod` | `true` | `flag()` | Emit `<lastmod>` |
@@ -1362,7 +1330,7 @@ wherever one exists.
 | `llms.extra` | `null` | `hook()` | `Closure(array $model, array $facts): array` |
 | `timezone` | `'Europe/Berlin'` | `timezone()` | Zone of `<lastmod>` offsets; invalid → warned, default |
 
-Rename table from today's keys (README "Upgrading"): `suchmaschinen.ausgeschlossen` →
+Rename table from the earlier keys (README "Upgrading"): `suchmaschinen.ausgeschlossen` →
 `annai.exclude.templates`; `suchmaschinen.gesperrt` → `annai.disallow`;
 `strukturdaten.typ` → `annai.type`; `strukturdaten.bereich` → `annai.area`;
 `strukturdaten.sameAs` → `annai.sameAs`; `strukturdaten.geo` → `annai.geo`;
@@ -1405,7 +1373,7 @@ CLI are English only (developer tools).
 ## 6. Content field and config contract
 
 Field names are read through `Options::fields()`; the defaults are the
-starter's German names, so no content changes.
+German names of the earlier copies, so no content changes.
 
 | Key | Default field | Where | Used for |
 |---|---|---|---|
@@ -1470,80 +1438,31 @@ built from Kirby's base URL (`Pages::base()`, no language prefix).
   `koyomi_active()` and `annai.koyomi`. Event pages are ordinary pages and are
   in the sitemap anyway; Annai adds the lastmod rule and the llms.txt list.
   Koyomi prints its own event JSON-LD in its layout; Annai does not duplicate
-  it (D11).
+  it.
 
 ---
 
-## 8. Design decisions (judgement calls made here)
+## 8. Design choices
 
-- **D1 Proposal (a) AI crawler rules**: `annai.robots.ai` default `null` (no
-  AI groups, today's file). Presets `blockTraining` and `allowAll`;
-  `annai.robots.agents` per bot. The list in `Robots::AI_AGENTS` was compiled
-  from vendor docs on 2026-10-11 and **needs a check against the live pages
-  before a release**. Blocking a `user`/`search` agent is allowed but warned
-  by the check tool.
-- **D2 Proposal (b) noindex in preview**: `annai.noindex` default `null` =
-  auto via `Sudare\Sudare::active()`. The contract (static `active()`) is a
-  proposal to the Sudare build; adjust one side if they differ. While preview
-  is active the robots meta says noindex on every page; robots.txt, sitemap.xml
-  and llms.txt stay the normal files behind the protection. Only an explicit
-  `annai.noindex => true` closes them (`Disallow: /`, empty urlset, H1 only).
-- **D3 Proposal (c) hreflang**: `annai.hreflang` default `false` because
-  today no site prints hreflang. Recommended `true` for any multilang site.
-- **D4 Proposal (d) check tool**: CLI only (`bin/annai-check`), no Panel
-  area (a Panel area needs a Vue bundle; the family has none).
-- **D5 `@id` fragment** is `#business` (English) instead of `#betrieb`;
-  option `annai.entityId`. Live sites that want to keep the old
-  identifier set `'annai.entityId' => 'betrieb'`.
-- **D6 Texts of llms.txt follow `annai.language`** like Noren: a German
-  site without Kirby `locale` must set `'annai.language' => 'de'`, otherwise
-  "## Contact" appears. Same rule as in Noren ("en first").
-- **D7 `og:site_name` and `og:locale` are printed whenever known** (today
-  only some older site copies do that). `og:locale` comes from the
-  language or Kirby's `locale`; without either it is omitted.
-- **D8 Excluded templates get `noindex, follow`** (`annai.noindexExcluded`
-  default true, as in older site copies). The starter today prints nothing.
-- **D9 `teilbild` is not read**: the share image is `annai.image`. Sites move
-  one line of config.
-- **D10 Koyomi lastmod**: for a past event, lastmod = max(page modified,
-  event end), so the sitemap says "changed" when an event turned past, but a
-  later edit still wins. Upcoming events only in llms.txt (past ones are
-  noise for an agent).
-- **D11 No Koyomi event JSON-LD from Annai**: Koyomi's own layout prints
-  it; doing it here too would duplicate the node on sites using Koyomi's
-  templates. A site with its own layout adds `Koyomi\JsonLd::event()` through
-  `annai.jsonld`.
-- **D12 llms.txt stays `text/plain`** (today; one older copy used
-  `text/markdown`). llmstxt.org examples are served as plain text.
-- **D13 Legacy German config keys** (`breite`/`laenge`, `typ`/`ziel`) are
-  accepted inside `annai.geo` / `annai.action` so a site's existing values
-  move by renaming the option only. They are never emitted.
-- **D14 The `Allow: /` line stays** in the `*` group (RFC 9309 does not need
-  it; `tests/auslieferung.spec.ts` of every site expects it). Exception: with
-  `/` in `annai.disallow` the group is `Disallow: /` alone, because next to
-  `Allow: /` the Allow wins the tie (RFC 9309 §2.2.2) and nothing is blocked.
-- **D15 Sitemap in multilang without hreflang**: one entry per page in the
-  current language (today's behaviour). With `annai.hreflang` one entry per
-  language with alternates (sitemaps.org "localized versions").
-- **D16 Phone country** is an option (`phoneCountry`, default 49); the
-  starter assumed Germany everywhere.
-- **D17 Phone fields: input contract** (decision 2026-10-13, §3.2): the field
-  holds only the number; a character gate, then libphonenumber
-  (`giggsey/libphonenumber-for-php-lite`, Composer). Replaces an earlier
-  free-text parser.
+- **AI crawler rules:** `annai.robots.ai` defaults to `null`: no AI groups, the same robots.txt as without the option. Presets `blockTraining` and `allowAll`; `annai.robots.agents` per bot. The list in `Robots::AI_AGENTS` was compiled from the vendors' pages on 2026-10-11 and must be checked against them before a release. Blocking a `user` or `search` agent is allowed but warned by the check tool.
+- **noindex in preview:** `annai.noindex` defaults to `null` = automatic, via `Sudare\Sudare::active()`. That contract is shared with the Sudare package; if the two ever differ, one side changes. While the preview is active, the robots meta says noindex on every page; robots.txt, sitemap.xml and llms.txt stay the normal files behind the protection. Only an explicit `annai.noindex => true` closes them (`Disallow: /`, empty urlset, H1 only).
+- **hreflang:** `annai.hreflang` defaults to `false`, because no site printed hreflang before. Recommended `true` for any multilang site.
+- **Check tool:** CLI only (`bin/annai-check`), no Panel area (a Panel area needs a Vue bundle; the family has none).
+- **`@id` fragment** is `#business` (English) instead of `#betrieb`; option `annai.entityId`. A live site that wants to keep the old identifier sets `'annai.entityId' => 'betrieb'` (a changed `@id` is a new entity for Google).
+- **Texts of llms.txt** follow `annai.language` like Noren: a German site without Kirby `locale` must set `'annai.language' => 'de'`, otherwise "## Contact" appears. Same rule as in Noren ("en first").
+- **`og:site_name` and `og:locale`** are printed whenever known; earlier copies printed them only sometimes. `og:locale` comes from the language or Kirby's `locale`; without either it is omitted.
+- **Excluded templates** get `noindex, follow` (`annai.noindexExcluded`, default true). Earlier output printed nothing for them.
+- **`teilbild` is not read:** the share image is `annai.image`. Sites move one line of config.
+- **Koyomi lastmod:** for a past event, lastmod = max(page modified, event end), so the sitemap says "changed" when an event turned past, but a later edit still wins. Upcoming events only in llms.txt (past ones are noise for an agent).
+- **No Koyomi event JSON-LD from Annai:** Koyomi's own layout prints it; doing it here too would duplicate the node on sites using Koyomi's templates. A site with its own layout adds `Koyomi\JsonLd::event()` through `annai.jsonld`.
+- **llms.txt stays `text/plain`** (one earlier copy used `text/markdown`). llmstxt.org examples are served as plain text.
+- **Legacy German config keys** (`breite`/`laenge`, `typ`/`ziel`) are accepted inside `annai.geo` / `annai.action`, so a site's existing values move by renaming the option only. They are never emitted.
+- **`Allow: /` stays** in the `*` group (RFC 9309 does not need it; sites that test their robots.txt expect it). Exception: with `/` in `annai.disallow` the group is `Disallow: /` alone, because next to `Allow: /` the Allow wins the tie (RFC 9309 §2.2.2) and nothing is blocked.
+- **Sitemap in multilang without hreflang:** one entry per page in the current language. With `annai.hreflang`, one entry per language with alternates (sitemaps.org "localized versions").
+- **Phone country** is an option (`phoneCountry`, default 49); without it, Germany is assumed.
+- **Phone fields: input contract** (§3.2): the field holds only the number. A character gate, then libphonenumber (`giggsey/libphonenumber-for-php-lite`, Composer). It replaces an earlier free-text parser.
 
-### Decisions taken
-
-- **(a) KI-Crawler-Regeln:** entschieden 11.10.: die Option bleibt, Standard aus (`annai.robots.ai`/`annai.robots.agents` `null`/`[]`) — alle dürfen lesen, robots.txt wie heute. Die Agentenliste in `Robots::AI_AGENTS` muss vor einem Release gegen die Herstellerseiten geprüft werden.
-- **(b) `annai.noindex`:** entschieden 11.10.: ja — Standard `null` = automatisch, noindex und robots.txt `Disallow: /`, solange Sudare schützt.
-- **(c) hreflang:** entschieden 11.10.: `annai.hreflang` bleibt standardmäßig `false`, bis eine Seite es braucht.
-- **(d) Prüfwerkzeug:** entschieden 11.10.: nur CLI (`bin/annai-check`), kein Panel-Bereich.
-- **D8 `noindexExcluded`:** entschieden 11.10.: ja — ausgeschlossene Vorlagen bekommen `noindex, follow`.
-- **D7 `og:site_name`/`og:locale`:** entschieden 11.10.: ja — werden ausgegeben, sobald bekannt.
-- **D5 `@id`:** entschieden 11.10.: Standard `#business`; eine Live-Site behält `#betrieb` über `'annai.entityId' => 'betrieb'` (ein geänderter `@id` würde Google verwirren). Steht ausdrücklich im README, Abschnitt „Upgrading“.
-- **Profilfelder in `sameAs`:** entschieden 11.10.: ja — `instagram` und `facebook` werden standardmäßig angehängt (`annai.fields.profiles`).
-- **Telefon (D17):** entschieden 13.10. abends: Im Feld steht nur die Nummer (Zeichen-Tor), Umwandlung mit libphonenumber-lite als Composer-Abhängigkeit, `annai-check` zeigt jedes Feld mit Ergebnis; Parser, Fuzzer und Generatoren fallen weg, Eingaben außerhalb des Vertrags gelten nicht als Fehler.
-- **Bekannt, offen:** Bidi-Steuerzeichen (U+202E) werden in der Ausgabe von `annai-check` nicht entfernt — nur kosmetisch.
+Known limitation: bidi control characters (U+202E) are not removed from the `annai-check` output (cosmetic only).
 
 ---
 
@@ -1554,15 +1473,15 @@ with `finish('<Suite>')`. Kirby-free files require `src/I18n.php` and their
 classes (`TextTest` also `vendor/autoload.php`, for libphonenumber); Kirby
 files use `annai_site()` / `annai_kirby()`.
 
-### 9.1 tests/TextTest.php (`formats`)
+### 9.1 tests/TextTest.php
 - `line("Bio-Hofladen\nmit  Café ")` → `'Bio-Hofladen mit Café'`; `line("a\x1bb\x01c")` → `'abc'`, `"a\e[2Jb"` → `'a[2Jb'`, DEL and U+009B removed, NEL/tab/VT/FF/CR separate words, U+200B stays; `excerpt()` and `plain()` inherit the filter; Kirby (BusinessTest): ESC in `marke`/`zusatz`/`einleitung` → `<title>`, `og:site_name` and the meta description without it, no C0 in the rendered page
 - `excerpt('Gemüse vom eigenen Feld.', 155)` unchanged; `excerpt('aaaa bbbb cccc', 9)` → `'aaaa…'`; `excerpt('<b>x</b> y', 10)` → `'x y'`; `excerpt('', 5)` → `''`
 - `prune` cases of §3.2 incl. list re-indexing and keeping `0`/`false`
-- `phone` (§3.2, the input contract): the golden table of seven real-world spellings (`01512 3456789` → `+4915123456789`, `030 23125020` → `+493023125020`, `+49 30 23125040` → `+493023125040`, `030 23125060` → `+493023125060`, `030 / 23125000` → `+493023125000`, `+49 1512 3456788` → `+4915123456788`, fax `030 23125010` → `+493023125010`); the further-location pair of LlmsTxtTest, JsonLdTest and §3.5, `030 23125070` → `+493023125070`; the allowed spellings (`0049 …`, `+49 (0)30 …`, `(030) 23125000`, `0171-1234567`, `23125000-0`, U+00A0/U+202F, whitespace around the number); numbers from abroad with `+` (`+43`, `+41`, `+44`, `+39`, `+1`) and national numbers with `phoneCountry` `43`, `39`, `1`; outside the gate → `''` and `'characters'` (text, HTML, Kirbytags, notes, two numbers, a line break, a tab, a date, a time, a dot, `ext.`, a `+` inside, `–`, full-width digits, ESC); within the gate but invalid → `'invalid'` (`23125000`, `0351`, `+49`, `+`, `0`, `(0)`, `-`, `()`, 16 digits, `+1 (555) …`, `030 1`, an unknown `phoneCountry`, 300 digits); empty, spaces, `"\n\t"`, U+00A0 alone → `''` and `null`; the limit of the contract (`030 23125000 (12)` → `+49302312500012`); `shown()`: a line break as `\n`, ESC and CSI as escapes; without libphonenumber (child process) `'library'`, the gate first, empty silent; run time: four fields of 50,000 characters under 0.25 s; BusinessTest: golden fields as phone and fax (telephone, faxNumber, llms.txt `(+E.164)`, no log line), each reason logged with its message and a site problem in the check, JSON-LD without `telephone`/`faxNumber`, llms.txt as written, an empty field silent
+- `phone` (§3.2, the input contract): the golden table of seven spellings (`01512 3456789` → `+4915123456789`, `030 34567020` → `+493034567020`, `+49 30 34567040` → `+493034567040`, `030 34567060` → `+493034567060`, `030 / 34567000` → `+493034567000`, `+49 1512 3456788` → `+4915123456788`, fax `030 34567010` → `+493034567010`); the further-location pair of LlmsTxtTest, JsonLdTest and §3.5, `030 34567070` → `+493034567070`; the allowed spellings (`0049 …`, `+49 (0)30 …`, `(030) 34567000`, `0171-1234567`, `34567000-0`, U+00A0/U+202F, whitespace around the number); numbers from abroad with `+` (`+43`, `+41`, `+44`, `+39`, `+1`) and national numbers with `phoneCountry` `43`, `39`, `1`; outside the gate → `''` and `'characters'` (text, HTML, Kirbytags, notes, two numbers, a line break, a tab, a date, a time, a dot, `ext.`, a `+` inside, `–`, full-width digits, ESC); within the gate but invalid → `'invalid'` (`34567000`, `0351`, `+49`, `+`, `0`, `(0)`, `-`, `()`, 16 digits, `+1 (555) …`, `030 1`, an unknown `phoneCountry`, 300 digits); empty, spaces, `"\n\t"`, U+00A0 alone → `''` and `null`; the limit of the contract (`030 34567000 (12)` → `+49303456700012`); `shown()`: a line break as `\n`, ESC and CSI as escapes; without libphonenumber (child process) `'library'`, the gate first, empty silent; run time: four fields of 50,000 characters under 0.25 s; BusinessTest: golden fields as phone and fax (telephone, faxNumber, llms.txt `(+E.164)`, no log line), each reason logged with its message and a site problem in the check, JSON-LD without `telephone`/`faxNumber`, llms.txt as written, an empty field silent
 - `time(480)` `'8:00'`, `time(1560)` `'2:00'`, `time(1440)` `'0:00'`; `range(480, 720)` `'8:00–12:00'`
 - `esc('<a href="x">&')` → `'&lt;a href=&quot;x&quot;&gt;&amp;'`; `xml("a&b'")` → `"a&amp;b&apos;"`
 
-### 9.2 tests/RobotsTest.php (`formats`)
+### 9.2 tests/RobotsTest.php
 - default config `['disallow' => ['/panel'], 'sitemap' => 'https://x/sitemap.xml']` → exactly `"User-agent: *\nAllow: /\nDisallow: /panel\n\nSitemap: https://x/sitemap.xml\n"`
 - no sitemap, two disallows, empty disallow list (`"User-agent: *\nAllow: /\n"`)
 - `agents('blockTraining')` has `GPTBot => false`, `ChatGPT-User` absent; `agents('blockTraining', ['GPTBot' => true])` → true; `agents('allowAll')` has every known agent true; `agents(null, ['FooBot' => false])` keeps FooBot
@@ -1573,7 +1492,7 @@ files use `annai_site()` / `annai_kirby()`.
 - `parse` round trip of a rendered file: groups, rules, sitemaps; comments ignored; case-insensitive field names
 - RFC shape: no two consecutive blank lines, ends with exactly one `"\n"`
 
-### 9.3 tests/SitemapTest.php (`formats`)
+### 9.3 tests/SitemapTest.php
 - empty list → valid empty urlset with xml declaration
 - one entry with lastmod → exact string of §3.4
 - escaping: loc with `&` and `'` → `&amp;`, `&apos;`
@@ -1583,25 +1502,25 @@ files use `annai_site()` / `annai_kirby()`.
 - `index` two sitemaps → exact string
 - `lastmod(1791000000, 'Europe/Berlin')` → `'2026-10-03T…+02:00'` (compute the expected value in the test with DateTimeImmutable), `lastmod(null)` → null, `lastmod(0)` → null, `lastmod(new DateTimeImmutable('2027-01-01 12:00', UTC), 'UTC')` → `'2027-01-01T12:00:00+00:00'`
 
-### 9.4 tests/LlmsTxtTest.php (`formats`)
-Set `I18n::setLanguage('de')` for the main case and reproduce the starter's
-expectations (the 41-check fixture): title/summary, `## Kontakt` with the four
+### 9.4 tests/LlmsTxtTest.php
+Set `I18n::setLanguage('de')` for the main case and reproduce the
+expectations of the 41-check fixture): title/summary, `## Kontakt` with the four
 lines, `### Hofladen` only with two units, `- Montag: 8:00–12:00, 14:00–18:00 Uhr`,
 `- Dienstag: geschlossen`, `- Samstag: 8:00–12:00 Uhr (nur Verkauf)`,
 `- 31.12.2027 (Silvester): geschlossen`, `- 24.12.2027 (Heiligabend): nur 8:30–12:00 Uhr`,
 `- [Hofladen](https://…/laden): Gemüse vom eigenen Feld.`, home first. Then:
 - English: `## Contact`, `- Monday: 8:00–12:00` (no "Uhr"), `- Tuesday: closed`
 - one unit → no `###`; holidays true → holidays line after the days; closure range → `2.8.2027 bis 15.8.2027 (Betriebsferien): geschlossen, Sommerpause`
-- `contact.extra`: `"  - Fax:\n   030 23125099  "` → `- Fax: 030 23125099` (Text::line), `"\t"` dropped; `- Fax: <b>0</b> [x](y)` written as given (no escaping)
+- `contact.extra`: `"  - Fax:\n   030 34567099  "` → `- Fax: 030 34567099` (Text::line), `"\t"` dropped; `- Fax: <b>0</b> [x](y)` written as given (no escaping)
 - events section with venue and a cancelled one; sections placement before Pages; optional section; empty contact → no `## Kontakt`
-- all links absolute (regex from auslieferung.spec.ts), file ends with one `"\n"`, no `\n\n\n`
+- all links absolute, file ends with one `"\n"`, no `\n\n\n`
 - `[`/`]` in a title replaced; an empty title (page, optional entry of whitespace only, event) is labelled with its URL — `- [https://x.test/leer](https://x.test/leer): Notiz`, the encoded `- [https://x.test/a%20b](https://x.test/a%20b)` — no `[](` in the file
 - summary link pattern: a 100,000-character `data:` target keeps the summary (`"\n> Hofladen"`, PCRE JIT on and off); three levels of parentheses in a target are a link, four are text; `"[a]("` × 25,000 and 50,000 nested parentheses well under a second; with `pcre.backtrack_limit` 2 the summary stays, links as plain text
 
-### 9.5 tests/JsonLdTest.php (`markup`)
+### 9.5 tests/JsonLdTest.php
 - `localBusiness` on the Testhof facts (two units, cafe not primary): keys and
-  values of the starter test (`@type`, `@id` `https://x/#business`, telephone
-  `+493023125000`, no `email`/`geo`/`image` keys, `address` exact array,
+  values of the 41-check run (`@type`, `@id` `https://x/#business`, telephone
+  `+493034567000`, no `email`/`geo`/`image` keys, `address` exact array,
   `openingHoursSpecification` = primary unit, one `department` named
   `Testhof — Hofcafé` with `@id` `…/#cafe`, `sameAs` without `''`,
   `potentialAction` exact)
@@ -1609,22 +1528,21 @@ lines, `### Hofladen` only with two units, `- Montag: 8:00–12:00, 14:00–18:0
 - `document([])` null; one node → `@context` + node; two nodes → `@graph`, inner `@context` removed; non-array dropped
 - `encode`: `</script>` becomes `</script>`; `&` → `&`; `ü` and `/` unescaped; `script()` wrapper exact
 
-### 9.6 tests/HeadTest.php (`markup`)
+### 9.6 tests/HeadTest.php
 - full input → model keys; `og` only non-empty; `og:url` = canonical; width/height as strings
 - `tags` order and exact strings (title, description, robots, canonical, alternates, og, twitter, script); `['title' => false]` drops `<title>`; description `''` → no meta description; robots null → no robots meta
 - escaping: title `A "B" & <C>` → `A &quot;B&quot; &amp; &lt;C&gt;`; description with `</script>` is escaped in the attribute
 - `render` joins with `"\n"` and ends with `"\n"`; empty model (`canonical` only) renders one line
 
-### 9.7 tests/SnippetTest.php (`markup`, Kirby)
+### 9.7 tests/SnippetTest.php (Kirby)
 - Annai off: `snippet('annai/head')` prints `''` (page without model)
 - explicit `['head' => Head::build([...])]` prints `Head::render()` output (compare strings)
 - `['head' => …, 'title' => false]` has no `<title>`
 - a site override `site/snippets/annai/head.php` wins (like noren SnippetsTest)
 
-### 9.8 tests/BusinessTest.php (`business`, Kirby)
+### 9.8 tests/BusinessTest.php (Kirby)
 Fixture: site.txt with `Marke`, `Zusatz`, `Beschreibung`, `Instagram`; page
-`1_kontakt` template `betrieb` with address/phone (the starter fixture text of
-AgentReadyHttpTest), pages `home`, `2_laden`.
+`1_kontakt` template `betrieb` with address/phone (the fixture text of the 41-check run), pages `home`, `2_laden`.
 - off → `facts()` `[]`, `jsonLd()` null, `head()` `[]`
 - `location()` finds `kontakt` by template; `annai.location` id wins; Closure wins; draft never
 - `location()` next to 50 nested pages: `head()` of the deepest page leaves the `index` property of `$site->children()` null (Reflection); a second-level betrieb page is found without the index, a third-level one through it (`searchesIndex()` true); the top level wins over the second; the search runs once per site object; `head()` calls `facts()` once (a counting `sameAs` Closure)
@@ -1637,9 +1555,9 @@ AgentReadyHttpTest), pages `home`, `2_laden`.
 - `jsonLd()`: home → one node; `/laden` → null; hook adds a node → `@graph`; hook returning `[]` → null; `type => false` + hook → the hook's node alone
 - `head()`: title rules (home with/without tagline, subpage, empty brand), description from `einleitung` else `beschreibung`, excerpt length, closures `annai.title`/`annai.description`/`annai.canonical`, `image` string → absolute URL, array form, Closure form, `locale` from Kirby `locale` option `de_DE.utf8` → `de_DE`, `twitterCard` invalid → null; ESC and U+009B in the hook's `alt`, `url` and canonical are removed (`og:image:alt` printed clean, no control character in the page), a profile field URL with U+009B, ESC or a space is logged (`holds a space or a control character`) and left out of `sameAs`; the U+009B is logged as `\u009b` (`Text::shown()`), no raw C1 in the log
 
-### 9.9 tests/RoutesTest.php (`routes`, Kirby)
+### 9.9 tests/RoutesTest.php (Kirby)
 - off: `annai_request($kirby, 'robots.txt')` is not a 200 from Annai (Kirby 404 or error page); same for sitemap.xml and llms.txt
-- HEAD and GET 200 on all three (D7); `sitemap-1.xml` 404 when one file
+- HEAD and GET 200 on all three; `sitemap-1.xml` 404 when one file
 - robots: content type `text/plain`, default `Disallow: /panel`, absolute `Sitemap:` from `Pages::base()` (multilang fixture without language `url` keys: `/sitemap.xml`, index locs answer 200, one business `@id` in every language), `annai.disallow`, `robots.ai => 'blockTraining'` adds GPTBot group, `robots.agents` (a name `"x\nDisallow: /"`, `Fo#o` or with a space is logged and left out; every `Robots::AI_AGENTS` name is a token; a name `"Bot\u{9B}31m"` and an `annai.disallow` entry `"x\u{9B}31m"` are logged with `\u009b`, no raw C1 in the log), `robots.extra`; `annai.noindex => true` → `Disallow: /` only
 - sitemap: `application/xml`, home + pages, excluded template and `exclude.pages` id/Closure missing, draft missing, `lastmod` present and W3C-shaped, `sitemap.lastmod => false` → none; `sitemap.extra` list and Closure; `sitemap.chunk => 2` with 3 pages → `sitemap.xml` is a sitemapindex with 2 files, `sitemap-1.xml` has 2 urls, `sitemap-2.xml` 1, `sitemap-3.xml` 404; index lastmod with extra lastmods `2000` and `2001-01-01` in one chunk → `2001-01-01`; `sitemap.chunk` `false`, `'abc'`, `0`, `'100'`, `100000` → one `<urlset>`, logged
 - `Pages::robots`: excluded → `noindex, follow`; `noindexExcluded => false` → null; `noindex => true` → `noindex, nofollow, noarchive`; a fake `Sudare\Sudare` class declared in the test with `active()` returning true → preview; returning false → null
@@ -1648,8 +1566,8 @@ AgentReadyHttpTest), pages `home`, `2_laden`.
 - hook options without a Closure: `annai.title`/`description`/`canonical` as strings, `annai.jsonld` and `annai.llms.extra` as arrays, `annai.location => 42` → the page, the home JSON-LD and llms.txt use Annai's rules, the business page is found by template, each option logged once with its value or type (`must be a Closure, not 'Eigener Titel'`, `not array`; `annai.location must be a page id or a Closure, not 42`), `Check::site()` reports them as `configuration: …`; `null` logs nothing
 - Koyomi (symlinked when `ANNAI_KOYOMI_PATH` exists, else SKIP): a calendar with one past and one upcoming event; past event page lastmod ≥ its end; llms `## Termine` lists only the upcoming one with its venue label; multilang (in the multilang bullet above): an event with German content only is linked under its German URL in English; multilang: llms.txt in English names that event with the title of the German version it links, also for a page model without Kirby's language fallback (`RtEventWithoutFallback`: Koyomi's own English title is `''`, precondition checked); an event whose German title is empty is named `breathing` (the slug of the linked version) in English and in German, each language in an App of its own (Koyomi caches its events per App with the URLs of the first language), and llms.txt has `- [breathing](http://example.invalid/events/breathing)` and no `[](`
 
-### 9.10 tests/AgentReadyTest.php (`routes`, Kirby) — the 41 checks
-Port `../kirby-starter/tests/AgentReadyHttpTest.php` one to one with these
+### 9.10 tests/AgentReadyTest.php (Kirby) — the 41 checks
+The 41 checks of the agent-ready run, one to one with these
 substitutions: fixture through `annai_site()`/`annai_page()`, requests through
 `annai_request()` (no `php -S`), templates print
 `<html><head><?php snippet('annai/head') ?></head><body>Fixture</body></html>`,
@@ -1666,33 +1584,25 @@ booting a new `annai_kirby()` with other options. The whole file is SKIP
 (prints why, `holds(true)`) when Noren is not available. Keep the German
 check messages as English sentences.
 
-### 9.11 tests/CheckTest.php (`tools`, Kirby)
+### 9.11 tests/CheckTest.php (Kirby)
 - `page()` on a good page → no problems, `jsonld.types` `['GroceryStore']` on home (with `annai.type`), `[]` on a subpage
 - problems: title > 60, description missing/short/long, `canonical` hook returning another URL, image `http://` → absolute-https problem; `noindex => true` is the one site problem `Check::PREVIEW_PROBLEM`, never a page problem; multilang fixture (de default, en; a page with only `default.en.txt`) checked in German → canonical `/en/english`, no problem, `notes` `['no content in de: canonical points to http://example.invalid/en/english']`, rendered as `  ~ `, summary `2 pages, 0 problems`, exit 0; a translated page has no note
 - `notes`: Kirby `url` `/` (the CLI without `--url`) → `[Check::NO_HOST_NOTE]`, exit code unchanged, rendered as `  ~ `; with a host `[]`
-- `phones` (§3.2, the input contract): the fixture's `telefon` `030 / 23125000` → `[['field' => 'phone', 'raw' => '030 / 23125000', 'e164' => '+493023125000', 'problem' => null]]`, rendered `  ~ phone: "030 / 23125000" → +493023125000` right after `preview: off`; `telefon` `"(0049) 30\u{A0}23125000"` → `+493023125000` and `fax` `"Fax\x1b folgt"` → `null`, `'characters'`, rendered `  ~ fax: "Fax\u001b folgt" → (none: more than the number)` without ESC (a CSI as `\u009b` in the line and in the problem), one `configuration: field fax holds more than the number …` problem, exit 1, `1 problems`, the `~` lines themselves not counted; `telefon` `23125000` → `'invalid'`, `(none: no valid number)`; an empty `telefon` → `[]`, no line; with Noren (three location pages, B with two areas and `030 23125030`, C with `"folgt\nab Mai"`): `phones` lists the business phone, then `page` `b` with `+493023125030` once and `page` `c` with `raw` `"folgt\nab Mai"` (the stored field, not the one-line display value) and `'characters'`, rendered `  ~ phone (b): "030 23125030" → +493023125030`, `  ~ phone (c): "folgt\nab Mai" → (none: more than the number)`, C a configuration problem; CLI: the phone line in the text report, `phones` in `--json`; a site whose `vendor/autoload.php` leaves out libphonenumber → `(none: libphonenumber is not installed)`, the configuration problem `phone numbers need giggsey/libphonenumber-for-php-lite …`, exit 1, `problem` `library` in `--json`; the same site rendered with Kirby's `debug` on (child process) throws `InvalidArgumentException` with the `library` message (README "Installation")
+- `phones` (§3.2, the input contract): the fixture's `telefon` `030 / 34567000` → `[['field' => 'phone', 'raw' => '030 / 34567000', 'e164' => '+493034567000', 'problem' => null]]`, rendered `  ~ phone: "030 / 34567000" → +493034567000` right after `preview: off`; `telefon` `"(0049) 30\u{A0}34567000"` → `+493034567000` and `fax` `"Fax\x1b folgt"` → `null`, `'characters'`, rendered `  ~ fax: "Fax\u001b folgt" → (none: more than the number)` without ESC (a CSI as `\u009b` in the line and in the problem), one `configuration: field fax holds more than the number …` problem, exit 1, `1 problems`, the `~` lines themselves not counted; `telefon` `34567000` → `'invalid'`, `(none: no valid number)`; an empty `telefon` → `[]`, no line; with Noren (three location pages, B with two areas and `030 34567030`, C with `"folgt\nab Mai"`): `phones` lists the business phone, then `page` `b` with `+493034567030` once and `page` `c` with `raw` `"folgt\nab Mai"` (the stored field, not the one-line display value) and `'characters'`, rendered `  ~ phone (b): "030 34567030" → +493034567030`, `  ~ phone (c): "folgt\nab Mai" → (none: more than the number)`, C a configuration problem; CLI: the phone line in the text report, `phones` in `--json`; a site whose `vendor/autoload.php` leaves out libphonenumber → `(none: libphonenumber is not installed)`, the configuration problem `phone numbers need giggsey/libphonenumber-for-php-lite …`, exit 1, `problem` `library` in `--json`; the same site rendered with Kirby's `debug` on (child process) throws `InvalidArgumentException` with the `library` message (README "Installation")
 - `site()` → `robots.warnings` with `robots.agents => ['Claude-User' => false]`; duplicate title detection; `sitemap.count`; `llms.headings`; `Check::LOCATION_PROBLEM` without `annai.location` and without a business page in the top two levels (the fixture keeps its address in site.txt and sets `annai.location => fn () => null`); with Noren (sibling fixture, else SKIP) and without `noren.locations` the problem is reported although the business page is on the top level, with `noren.locations => ['kontakt']` it is not; that is `Check::NOREN_LOCATIONS_PROBLEM` (`LOCATION_PROBLEM` names no Noren), also with `annai.location => 'kontakt'` (`searchesIndex()` true), none with both options
 - `render()` contains the summary line and `  ! ` prefixes; `exitCode()` 0/1
 - `bin/annai-check`: `proc_open` the script with `--root=$tmp --url=http://example.invalid` on an `annai_site()` directory (write `site/config/config.php` with `annai.active`): exit 0 and output contains `pages`; `--json` parses; without `annai.active` exit 2; `--json` with an `annai.llms.extra` section `案内` and `annai.robots.extra` `# Filialen: Åland` → exit 0, `llms.headings` holds `案内` whole, `robots.text` the line whole; `--page=caf\xE9` → exit 1 and the problem text with U+FFFD, not exit 3
 
 ---
 
-## 10. Documentation (owner `tools`)
+## 10. Documentation
 
-- `README.md` (English, modelled on noren's): Why, Requirements, Installation
-  (composer, repositories until Packagist), Quick start (config + `snippet('annai/head')`
-  in the layout), What is served (table of the four URLs with content types),
-  Options table (§4 verbatim), Content field contract (§6), Noren and Koyomi
-  (§7), robots.txt and AI agents (the agent table with roles and the policy),
-  JSON-LD (what the node contains, hook examples: an older copy's `@graph`,
-  `WebSite`/`Person`, a site's `identifier`), llms.txt
-  (sections, hook), Snippet and own markup (page/site methods with the §3.10
-  table and return shapes), Check tool (CLI usage, problems list), Preview
-  (Sudare contract), **Upgrading from site/plugins/suchmaschinen** (coexistence:
-  different plugin id and route patterns — the old plugin MUST be removed or
-  its routes win, because Kirby registers routes in plugin load order;
-  steps; rename table of §4 plus snippet `strukturdaten` → `annai/head`,
-  `kopf.php` head lines → `annai/head`; behaviour changes D5–D9, D14),
-  Privacy, Development, License.
+- `README.md` (English, modelled on noren's), sections as in the README: Features, Requirements,
+  Installation (composer, repositories until Packagist), Usage (config, head snippet, content
+  fields), robots.txt and AI agents (the agent table with roles and the policy), Sitemap, llms.txt
+  and preview (Sudare contract), Check tool (CLI usage, problems list), Upgrading (coexistence with
+  `site/plugins/suchmaschinen`: the old plugin MUST be removed or its routes win, because Kirby
+  registers routes in plugin load order; rename table of §4; behaviour changes as in the CHANGELOG
+  1.0.0 entry), Options (§4 verbatim), Privacy, License.
 - `CHANGELOG.md`: Keep a Changelog, `## [1.0.0] — unreleased`, Added /
-  Changed (vs the starter copy, with the rename table).
+  Changed (vs the earlier site copies, with the rename table).

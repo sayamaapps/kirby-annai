@@ -3,9 +3,9 @@
 namespace Annai;
 
 /**
- * schema.org arrays and JSON-LD encoding (SPEC.md §3.6). OWNER: task `markup`.
+ * schema.org arrays and JSON-LD encoding (SPEC.md §3.6).
  *
- * Port of kirby-starter's site/snippets/strukturdaten.php. Nothing is typed
+ * The business node and its encoding. Nothing is typed
  * twice: every value comes from Business::facts() (§3.8). Empty values are
  * removed by Text::prune(), so an empty email or a missing geo point never
  * reaches the output (an empty string is a wrong statement for an agent).
