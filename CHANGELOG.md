@@ -8,7 +8,7 @@ All notable changes to this project are documented here. Versions follow
   the sitemap, llms.txt and the head show without configuration) is a **major**
   version: a site would publish other data after a routine update.
 
-## [Unreleased]
+## [2.2.3] — 2026-10-26
 
 ### Fixed
 
