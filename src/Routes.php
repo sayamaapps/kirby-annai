@@ -6,6 +6,7 @@ use Kirby\Cms\App;
 use Kirby\Cms\Page;
 use Kirby\Content\Field;
 use Kirby\Http\Response;
+use DateTimeImmutable;
 
 /**
  * The route bodies: robots.txt, sitemap.xml, llms.txt (docs/SPEC.md §3.9).
@@ -147,7 +148,7 @@ final class Routes
 				$date .= '-01';
 			}
 			try {
-				$time = (new \DateTimeImmutable($date))->getTimestamp();
+				$time = (new DateTimeImmutable($date))->getTimestamp();
 			} catch (\Exception) {
 				continue;
 			}

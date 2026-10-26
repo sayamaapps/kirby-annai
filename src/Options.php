@@ -5,6 +5,8 @@ namespace Sayamaapps\Annai;
 use Closure;
 use Kirby\Cms\App;
 use Kirby\Cms\Helpers;
+use DateTimeZone;
+use InvalidArgumentException;
 
 /**
  * Reads `sayamaapps.annai.*` options, with the 2.x `annai.*` names as fallback
@@ -228,7 +230,7 @@ final class Options
 		if (!is_array($option)) {
 			return $fields;
 		}
-		foreach ($fields as $key => $default) {
+		foreach (array_keys($fields) as $key) {
 			if (!array_key_exists($key, $option)) {
 				continue;
 			}
@@ -640,7 +642,7 @@ final class Options
 		$zone = self::get($kirby, 'timezone', self::DEFAULT_TIMEZONE);
 		if (is_string($zone)) {
 			try {
-				new \DateTimeZone($zone);
+				new DateTimeZone($zone);
 				return $zone;
 			} catch (\Exception) {
 				// Reported below.
@@ -679,7 +681,7 @@ final class Options
 	public static function warn(App $kirby, string $message): void
 	{
 		if ($kirby->option('debug') === true) {
-			throw new \InvalidArgumentException($message);
+			throw new InvalidArgumentException($message);
 		}
 		if (isset(self::$logged[$message])) {
 			return;

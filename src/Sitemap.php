@@ -2,6 +2,9 @@
 
 namespace Sayamaapps\Annai;
 
+use DateTimeImmutable;
+use DateTimeZone;
+
 /**
  * sitemaps.org XML (docs/SPEC.md §3.4).
  */
@@ -75,11 +78,11 @@ final class Sitemap
 		if ($time === null || $time === 0) {
 			return null;
 		}
-		$zone = new \DateTimeZone($zone);
+		$zone = new DateTimeZone($zone);
 		if (is_int($time)) {
-			$date = (new \DateTimeImmutable('@' . $time))->setTimezone($zone);
+			$date = (new DateTimeImmutable('@' . $time))->setTimezone($zone);
 		} else {
-			$date = \DateTimeImmutable::createFromInterface($time)->setTimezone($zone);
+			$date = DateTimeImmutable::createFromInterface($time)->setTimezone($zone);
 		}
 		return $date->format(DATE_ATOM);
 	}

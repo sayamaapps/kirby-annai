@@ -351,6 +351,51 @@ final class Check
 		$chunks = Sitemap::chunks($entries, Options::sitemapChunk($kirby));
 		$llms = LlmsTxt::render(Routes::llmsModel($kirby));
 
+		[$pages, $ids] = self::sitePages($kirby, $only);
+		$preview = Pages::preview($kirby);
+		$hidden = Pages::hidden($kirby);
+		$problems = self::pageProblems($only, $ids, $pages, $preview);
+		[$problems, $facts] = self::setupProblems($kirby, $problems);
+		$phones = self::phoneReports($kirby, $facts);
+		$notes = self::notes($kirby);
+		$headings = self::headings($llms);
+
+		$lastmod = $entries !== [] && array_filter($entries, fn ($entry) => ($entry['lastmod'] ?? null) === null) === [];
+		$robots = self::robotsReport($kirby);
+
+		foreach (array_slice(Options::logged(), $logged) as $message) {
+			$problems[] = sprintf(self::CONFIGURATION_PROBLEM, (string)preg_replace('/^Annai: /', '', $message));
+		}
+
+		return [
+			'robots' => $robots,
+			'sitemap' => [
+				'count'   => count($entries),
+				'chunks'  => count($chunks),
+				'lastmod' => $lastmod,
+			],
+			'llms' => [
+				'length'   => strlen($llms),
+				'headings' => $headings,
+			],
+			'preview'  => $preview,
+			'hidden'   => $hidden,
+			'phones'   => $phones,
+			'notes'    => $notes,
+			'pages'    => $pages,
+			'problems' => $problems,
+		];
+	}
+
+	/**
+	 * The page reports of the site, and the ids of the indexable pages (the
+	 * ids of $only are checked against them).
+	 *
+	 * @param list<string> $only
+	 * @return array{0: list<array<string,mixed>>, 1: list<string>}
+	 */
+	private static function sitePages(App $kirby, array $only): array
+	{
 		$pages = [];
 		$ids = [];
 		foreach (Pages::all($kirby) as $page) {
@@ -360,9 +405,20 @@ final class Check
 			$pages[] = self::page($kirby, $page);
 			$ids[] = $page->id();
 		}
+		return [$pages, $ids];
+	}
 
-		$preview = Pages::preview($kirby);
-		$hidden = Pages::hidden($kirby);
+	/**
+	 * Problems across the pages: the preview, ids that name no indexable page,
+	 * and titles that more than one page uses.
+	 *
+	 * @param list<string> $only
+	 * @param list<string> $ids
+	 * @param list<array<string,mixed>> $pages
+	 * @return list<string>
+	 */
+	private static function pageProblems(array $only, array $ids, array $pages, bool $preview): array
+	{
 		$problems = [];
 		if ($preview) {
 			$problems[] = self::PREVIEW_PROBLEM;
@@ -384,7 +440,20 @@ final class Check
 				$problems[] = 'duplicate title: ' . $title . ' (' . implode(', ', $list) . ')';
 			}
 		}
+		return $problems;
+	}
 
+	/**
+	 * Problems of the installation and the configuration: the 2.x plugin next to
+	 * this one, static files in the web root, the location pages, and a missing
+	 * name. Also the facts without the units (no Noren call for a name check),
+	 * which the phone reports use.
+	 *
+	 * @param list<string> $problems
+	 * @return array{0: list<string>, 1: array<string,mixed>}
+	 */
+	private static function setupProblems(App $kirby, array $problems): array
+	{
 		if (is_dir($kirby->root('site') . '/plugins/suchmaschinen')) {
 			$problems[] = self::OLD_PLUGIN_PROBLEM;
 		}
@@ -400,15 +469,27 @@ final class Check
 		} elseif (Options::active($kirby) && Business::searchesIndex($kirby)) {
 			$problems[] = self::LOCATION_PROBLEM;
 		}
-		// The facts without the units: no Noren call for a name check.
 		$facts = Options::active($kirby) ? Business::facts($kirby, false) : [];
 		if (Options::active($kirby) && ($facts['name'] ?? '') === '') {
 			$problems[] = sprintf(self::NAME_PROBLEM, Options::fields($kirby)['brand']);
 		}
-		// Every phone and fax field with its raw value and its result (SPEC §3.2, the input
-		// contract): the E.164 number Annai publishes, or why it publishes
-		// none — so a person sees each field before the go-live. Printed, not counted; a field
-		// that gives no number is logged as well and so is a configuration problem below.
+		return [$problems, $facts];
+	}
+
+	/**
+	 * Every phone and fax field with its raw value and its result (SPEC §3.2, the
+	 * input contract): the E.164 number Annai publishes, or why it publishes none,
+	 * so a person sees each field before the go-live. Printed, not counted; a field
+	 * that gives no number is logged as well and so is a configuration problem.
+	 * Also the phone of every further location page: it goes into the JSON-LD
+	 * departments and llms.txt as well, read from Business::units(), one line per
+	 * page; the raw value from that page's own field, as Business::place() reads it.
+	 *
+	 * @param array<string,mixed> $facts
+	 * @return list<array<string,mixed>>
+	 */
+	private static function phoneReports(App $kirby, array $facts): array
+	{
 		$country = Options::phoneCountry($kirby);
 		$phones = [];
 		foreach (Options::active($kirby) ? ['phone', 'fax'] : [] as $key) {
@@ -417,9 +498,6 @@ final class Check
 				$phones[] = self::phone(['field' => $key], $raw, (string)($facts[$key . 'E164'] ?? ''), $country);
 			}
 		}
-		// The phone of every further location page: it goes into the JSON-LD
-		// departments and llms.txt as well. Read from Business::units(), the source of both,
-		// one line per page; the raw value from that page's own field, as Business::place() reads it.
 		$placePages = [];
 		$phoneField = (string)Options::fields($kirby)['phone'];
 		foreach (Options::active($kirby) ? Business::units($kirby) : [] as $unit) {
@@ -432,57 +510,56 @@ final class Check
 			$raw = (string)$kirby->page($page)?->content()->get($phoneField);
 			$phones[] = self::phone(['field' => 'phone', 'page' => $page], $raw, (string)$place['phoneE164'], $country);
 		}
+		return $phones;
+	}
 
-		// On the command line without --url Kirby's URL is "/", and canonical,
-		// og:url and the Sitemap: line come out as paths. Said once, not counted:
-		// the site is not wrong, the call is incomplete.
+	/**
+	 * Notes that are printed but not counted. On the command line without --url
+	 * Kirby's URL is "/", and canonical, og:url and the Sitemap: line come out as
+	 * paths: the site is not wrong, the call is incomplete.
+	 *
+	 * @return list<string>
+	 */
+	private static function notes(App $kirby): array
+	{
 		$notes = [];
 		if (preg_match('#^https?://[^/]+#i', Pages::base($kirby)) !== 1) {
 			$notes[] = self::NO_HOST_NOTE;
 		}
+		return $notes;
+	}
 
-		// Text::EOL, not `\R`: in byte mode `\R` cut a heading "## 案内" inside the "内".
+	/**
+	 * The `## ` headings of llms.txt. Text::EOL, not `\R`: in byte mode `\R` cut
+	 * a heading "## 案内" inside the "内".
+	 *
+	 * @return list<string>
+	 */
+	private static function headings(string $llms): array
+	{
 		$headings = [];
 		foreach (preg_split(Text::EOL, $llms) ?: [] as $line) {
 			if (str_starts_with($line, '## ')) {
 				$headings[] = trim(substr($line, 3));
 			}
 		}
+		return $headings;
+	}
 
-		$lastmod = $entries !== [] && array_filter($entries, fn ($entry) => ($entry['lastmod'] ?? null) === null) === [];
-
-		// The warnings are those of the configuration that applies once the
-		// preview ends: with blockAll (an explicit annai.noindex => true),
-		// warnings() would say only "Disallow: / for everyone" and hide a
-		// blocked user agent until the go-live.
+	/**
+	 * robots.txt as it will be served and its warnings. The warnings are those of
+	 * the configuration that applies once the preview ends: with blockAll (an
+	 * explicit annai.noindex => true), warnings() would say only "Disallow: / for
+	 * everyone" and hide a blocked user agent until the go-live.
+	 *
+	 * @return array{text: string, warnings: list<string>}
+	 */
+	private static function robotsReport(App $kirby): array
+	{
 		$robotsConfig = Routes::robotsConfig($kirby);
-		$robotsText = Robots::render($robotsConfig);
-		$robotsWarnings = Robots::warnings(array_merge($robotsConfig, ['blockAll' => false]));
-
-		foreach (array_slice(Options::logged(), $logged) as $message) {
-			$problems[] = sprintf(self::CONFIGURATION_PROBLEM, (string)preg_replace('/^Annai: /', '', $message));
-		}
-
 		return [
-			'robots' => [
-				'text'     => $robotsText,
-				'warnings' => $robotsWarnings,
-			],
-			'sitemap' => [
-				'count'   => count($entries),
-				'chunks'  => count($chunks),
-				'lastmod' => $lastmod,
-			],
-			'llms' => [
-				'length'   => strlen($llms),
-				'headings' => $headings,
-			],
-			'preview'  => $preview,
-			'hidden'   => $hidden,
-			'phones'   => $phones,
-			'notes'    => $notes,
-			'pages'    => $pages,
-			'problems' => $problems,
+			'text'     => Robots::render($robotsConfig),
+			'warnings' => Robots::warnings(array_merge($robotsConfig, ['blockAll' => false])),
 		];
 	}
 }

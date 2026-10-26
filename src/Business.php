@@ -9,6 +9,7 @@ use Kirby\Cms\Site;
 use Kirby\Cms\Url;
 use Kirby\Content\Field;
 use Noren\Schedule;
+use WeakMap;
 
 /**
  * The facts of the business: name, address, phone, hours from Noren, the
@@ -21,7 +22,7 @@ final class Business
 	private const LOCATION_KEYS = ['street', 'postalCode', 'city', 'phone', 'fax', 'email'];
 
 	/** @var ?\WeakMap<Site, array{page: ?Page, index: bool}> byTemplate() per site object */
-	private static \WeakMap|null $byTemplate = null;
+	private static WeakMap|null $byTemplate = null;
 
 	/**
 	 * Is a unit at the business, so that its department @id is the bare area key
@@ -72,7 +73,7 @@ final class Business
 	private static function byTemplate(App $kirby): array
 	{
 		$site = $kirby->site();
-		self::$byTemplate ??= new \WeakMap();
+		self::$byTemplate ??= new WeakMap();
 		if (isset(self::$byTemplate[$site])) {
 			return self::$byTemplate[$site];
 		}
