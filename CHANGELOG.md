@@ -10,6 +10,15 @@ All notable changes to this project are documented here. Versions follow
 
 ## [Unreleased]
 
+### Fixed
+
+- **`noren.mergeAreas` lost an area's own closures in JSON-LD and llms.txt.**
+  Noren groups areas that look alike today; an area with a closure beyond
+  Noren's lead time stayed in the group, and its department and closure were
+  missing. Annai now asks Noren for one unit per area
+  (`norenUnits(null, false)`, Noren 1.3.0 or later; older Noren versions
+  keep the groups).
+
 ### Removed
 
 - **`DATENSCHUTZ.md` and `PRIVACY.md`.** Annai processes no visitor data, so it has no place in a site's privacy policy. The README says so under "Privacy".

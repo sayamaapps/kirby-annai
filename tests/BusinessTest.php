@@ -911,6 +911,7 @@ $norenChecks = [
     'units: noren.active false → []',
     'units: two locations, each its own hours (department dayOfWeek)',
     'units: a second location without areas becomes a department',
+    'units: noren.mergeAreas keeps every area and its own closure',
 ];
 
 if ($norenPath === null) {
@@ -982,6 +983,34 @@ if ($norenPath === null) {
     bizSite(['options' => bizOn(['noren.active' => false, 'noren.language' => 'de']), 'noren' => true], function (App $kirby): void {
         expect([], Business::units($kirby), 'units: noren.active false → []');
     });
+
+    // noren.mergeAreas groups areas that look alike today; a café closure beyond
+    // Noren's lead time does not split them. JSON-LD and llms.txt need every
+    // area with its own closures, not the display groups.
+    $tmp = annai_site(['noren']);
+    try {
+        $closure = (new DateTimeImmutable('now', new DateTimeZone('Europe/Berlin')))->modify('+30 days')->format('Y-m-d');
+        $rows = [];
+        foreach (['laden', 'cafe'] as $area) {
+            $rows[] = ['bereich' => $area, 'tag' => 'Montag', 'von1' => '09:00', 'bis1' => '17:00'];
+        }
+        annai_page($tmp, '', 'site', bizSiteDefaults());
+        annai_page($tmp, '1_kontakt', 'betrieb', array_merge(bizContactDefaults(), [
+            'bereiche' => [['schluessel' => 'laden', 'name' => 'Hofladen'], ['schluessel' => 'cafe', 'name' => 'Hofcafé']],
+            'zeiten' => $rows,
+            'schliessungen' => [['anlass' => 'Renovierung', 'von' => $closure, 'bis' => $closure, 'bereich' => 'cafe']],
+        ]));
+        $kirby = annai_kirby($tmp, bizOn(['noren.active' => true, 'noren.mergeAreas' => true, 'noren.language' => 'de']));
+        expect(1, count($kirby->site()->norenUnits()), 'mergeAreas: Noren shows one group today');
+        $units = Business::units($kirby);
+        expect(['laden', 'cafe'], array_column($units, 'area'), 'units: noren.mergeAreas keeps every area');
+        expect('Hofcafé', $units[1]['name'] ?? null, 'units: the café keeps its own name');
+        expect($closure, $units[1]['closures'][0]['from'] ?? null, 'units: the café keeps its own closure');
+        expect([], $units[0]['closures'], 'units: the laden has no closure');
+        holds(bizFind($units[1]['schema']['specialOpeningHoursSpecification'] ?? [], 'validFrom', $closure) !== null, 'units: noren.mergeAreas keeps every area and its own closure');
+    } finally {
+        annai_remove_tree($tmp);
+    }
 
     // A Noren page with hours but no address of its own, the address on
     // annai.location: the unit is at the business, its hours on the business node.
