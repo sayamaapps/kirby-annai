@@ -6,8 +6,8 @@ Field-level tables linked from the [README](../README.md).
 
 | URL | Content type | Contents |
 |---|---|---|
-| `/robots.txt` | `text/plain` | `*` group with `Allow: /` and the `annai.disallow` paths, one group per configured AI agent, `annai.robots.extra` lines, absolute `Sitemap:` line |
-| `/sitemap.xml` | `application/xml` | One `<urlset>` of indexable pages, or a `<sitemapindex>` above `annai.sitemap.chunk` URLs or 52,428,800 bytes |
+| `/robots.txt` | `text/plain` | `*` group with `Allow: /` and the `sayamaapps.annai.disallow` paths, one group per configured AI agent, `sayamaapps.annai.robots.extra` lines, absolute `Sitemap:` line |
+| `/sitemap.xml` | `application/xml` | One `<urlset>` of indexable pages, or a `<sitemapindex>` above `sayamaapps.annai.sitemap.chunk` URLs or 52,428,800 bytes |
 | `/sitemap-<n>.xml` | `application/xml` | Chunk n, only when the sitemap is split; otherwise 404 |
 | `/llms.txt` | `text/plain` | The llms.txt model: H1, summary, sections, pages, optional pages |
 
@@ -41,17 +41,17 @@ Compiled 2026-10-11 from the vendor pages linked in `src/Robots.php`; check them
 
 ## llms.txt sections
 
-Contact (omitted when empty), opening hours (one `###` per area when there are several), upcoming events (Koyomi), free sections (`annai.llms.extra`), pages (the home page first), optional pages (`annai.llms.optional`). Headings and day names follow `annai.language`. The H1 is the brand field, else the site title.
+Contact (omitted when empty), opening hours (one `###` per area when there are several), upcoming events (Koyomi), free sections (`sayamaapps.annai.llms.extra`), pages (the home page first), optional pages (`sayamaapps.annai.llms.optional`). Headings and day names follow `sayamaapps.annai.language`. The H1 is the brand field, else the site title.
 
 ## JSON-LD business node
 
 On the home page, one node built from the fields and Noren:
 
-- `@type` from `annai.type`; `@id` `<url>/#business` (the fragment is `annai.entityId`); `name`, `description`, `url`, `image`
+- `@type` from `sayamaapps.annai.type`; `@id` `<url>/#business` (the fragment is `sayamaapps.annai.entityId`); `name`, `description`, `url`, `image`
 - `telephone` (E.164), `faxNumber`, `email`, `address` (`PostalAddress`), `geo` (`GeoCoordinates`)
 - `openingHoursSpecification` and `specialOpeningHoursSpecification` of the primary Noren area
 - `department` for further areas and for units at another Noren location, each with its own `@id`
-- `sameAs` from `annai.sameAs` and the profile fields; `potentialAction` from `annai.action`
+- `sameAs` from `sayamaapps.annai.sameAs` and the profile fields; `potentialAction` from `sayamaapps.annai.action`
 
 Empty values are left out. The output is encoded so that a `</script>` typed into a field cannot break out of the script element.
 
@@ -63,7 +63,7 @@ Empty values are left out. The output is encoded so that a `</script>` typed int
 | `title longer than 60 characters` | page |
 | `description missing` | page |
 | `description shorter than 50 characters` | page |
-| `description longer than N characters` (N = `annai.descriptionLength` + 5) | page |
+| `description longer than N characters` (N = `sayamaapps.annai.descriptionLength` + 5) | page |
 | `canonical differs from the page URL` | page |
 | `og:image is not an absolute https URL` | page |
 | `JSON-LD is not valid JSON` | page |
@@ -77,7 +77,7 @@ Empty values are left out. The output is encoded so that a `</script>` typed int
 | `no indexable page with id: <id>` | site |
 | `name missing: set the brand field (<marke>) or the site title` | site |
 | `no business page in the top two page levels: every request searches the whole page index …` | site |
-| `Noren runs without noren.locations: …` | site |
+| `Noren runs without sayamaapps.noren.locations: …` | site |
 | `configuration: <message>` for each broken option logged while the report was built | site |
 | `phone: "<stored value>" → <E.164>`, or `→ (none: <reason>)` | note |
 | `no content in <code>: canonical points to <url>` | note |
@@ -147,17 +147,17 @@ For sites that ran the `site/plugins/suchmaschinen` plugin, with its `strukturda
 
 | Before | Now |
 |---|---|
-| `suchmaschinen.ausgeschlossen` | `annai.exclude.templates` |
-| `suchmaschinen.gesperrt` | `annai.disallow` |
-| `strukturdaten.typ` | `annai.type` (`false` = no business node) |
-| `strukturdaten.bereich` | `annai.area` |
-| `strukturdaten.sameAs` | `annai.sameAs` |
-| `strukturdaten.geo` with `breite` / `laenge` | `annai.geo` (legacy keys still read) |
-| `strukturdaten.aktion` with `typ` / `ziel` | `annai.action` (`type` / `target`; legacy keys still read) |
-| `teilbild` | `annai.image` |
-| `praxis.nichtIndexieren` | `annai.exclude.templates` |
+| `suchmaschinen.ausgeschlossen` | `sayamaapps.annai.exclude.templates` |
+| `suchmaschinen.gesperrt` | `sayamaapps.annai.disallow` |
+| `strukturdaten.typ` | `sayamaapps.annai.type` (`false` = no business node) |
+| `strukturdaten.bereich` | `sayamaapps.annai.area` |
+| `strukturdaten.sameAs` | `sayamaapps.annai.sameAs` |
+| `strukturdaten.geo` with `breite` / `laenge` | `sayamaapps.annai.geo` (legacy keys still read) |
+| `strukturdaten.aktion` with `typ` / `ziel` | `sayamaapps.annai.action` (`type` / `target`; legacy keys still read) |
+| `teilbild` | `sayamaapps.annai.image` |
+| `praxis.nichtIndexieren` | `sayamaapps.annai.exclude.templates` |
 | snippet `strukturdaten` | `snippet('annai/head')` (JSON-LD is part of it) |
 | `kopf.php` head lines (title, description, canonical, og:*) | `snippet('annai/head')` |
 | `kopf.sticky`, `themenfarbe`, `favicon`, `schriften` | stay with the site |
 
-Also new: `annai.language`, `annai.fields`, `annai.robots.*`, `annai.sitemap.*`, `annai.llms.*`, `annai.jsonld`, `annai.canonical`, `annai.title`, `annai.description`. The old `suchmaschinen.*` keys are no longer read.
+Also new: `sayamaapps.annai.language`, `sayamaapps.annai.fields`, `sayamaapps.annai.robots.*`, `sayamaapps.annai.sitemap.*`, `sayamaapps.annai.llms.*`, `sayamaapps.annai.jsonld`, `sayamaapps.annai.canonical`, `sayamaapps.annai.title`, `sayamaapps.annai.description`. The old `suchmaschinen.*` keys are no longer read.
