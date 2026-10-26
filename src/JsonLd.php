@@ -1,6 +1,6 @@
 <?php
 
-namespace Annai;
+namespace Sayamaapps\Annai;
 
 /**
  * schema.org arrays and JSON-LD encoding (docs/SPEC.md §3.6).

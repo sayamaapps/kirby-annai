@@ -1,6 +1,6 @@
 <?php
 
-namespace Annai;
+namespace Sayamaapps\Annai;
 
 /**
  * The <head> model and its tags (docs/SPEC.md §3.7).

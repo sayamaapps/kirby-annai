@@ -1,6 +1,6 @@
 <?php
 
-use Annai\I18n;
+use Sayamaapps\Annai\I18n;
 use PHPUnit\Framework\Attributes\CoversNothing;
 use PHPUnit\Framework\TestCase;
 

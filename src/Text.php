@@ -1,6 +1,6 @@
 <?php
 
-namespace Annai;
+namespace Sayamaapps\Annai;
 
 use libphonenumber\NumberParseException;
 use libphonenumber\PhoneNumberFormat;

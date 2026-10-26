@@ -1,6 +1,6 @@
 <?php
 
-namespace Annai;
+namespace Sayamaapps\Annai;
 
 use Closure;
 use Kirby\Cms\App;

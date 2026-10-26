@@ -2,11 +2,8 @@
 
 require_once dirname(__DIR__) . '/vendor/autoload.php';
 
-// The package classes load as they do in production: every src file is
-// required once (the same paths the index.php of the plugin requires).
-foreach (glob(dirname(__DIR__) . '/src/*.php') ?: [] as $file) {
-	require_once $file;
-}
+// The package classes load as they do in production: through the class map.
+Kirby\Filesystem\F::loadClasses(require dirname(__DIR__) . '/autoload.php', dirname(__DIR__));
 
 require_once __DIR__ . '/helpers.php';
 

@@ -1,6 +1,6 @@
 <?php
 
-namespace Annai;
+namespace Sayamaapps\Annai;
 
 /**
  * llms.txt per llmstxt.org (docs/SPEC.md §3.5).

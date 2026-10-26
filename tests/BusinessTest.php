@@ -1,7 +1,7 @@
 <?php
 
-use Annai\Business;
-use Annai\Text;
+use Sayamaapps\Annai\Business;
+use Sayamaapps\Annai\Text;
 use Kirby\Cms\App;
 use Kirby\Cms\Page;
 use PHPUnit\Framework\Attributes\CoversNothing;
@@ -411,7 +411,7 @@ final class BusinessTest extends TestCase
 		// holds only a country code publishes nothing, also a foreign one.
 		bizSite(['options' => bizOn(['annai.phoneCountry' => '0043']), 'contact' => ['telefon' => '01 234 56', 'fax' => '+43']], function (App $kirby): void {
 			$facts = Business::facts($kirby);
-			expect('43', Annai\Options::phoneCountry($kirby), "phoneCountry '0043' is read as 43");
+			expect('43', Sayamaapps\Annai\Options::phoneCountry($kirby), "phoneCountry '0043' is read as 43");
 			expect('+43123456', $facts['phoneE164'], "phoneCountry '0043': a national number gets +43, not +0043");
 			expect('', $facts['faxE164'], 'facts: a fax field holding only "+43" publishes nothing');
 		});
@@ -489,7 +489,7 @@ final class BusinessTest extends TestCase
 				bizFixture($tmp, ['contact' => ['fax' => $field]]);
 				$kirby = annai_kirby($tmp, bizOn());
 				holds(
-					in_array('configuration: ' . substr($bizPhoneSaid('fax', $value, $reason), strlen('Annai: ')), Annai\Check::site($kirby)['problems'], true),
+					in_array('configuration: ' . substr($bizPhoneSaid('fax', $value, $reason), strlen('Annai: ')), Sayamaapps\Annai\Check::site($kirby)['problems'], true),
 					'check: ' . $value . ' in the fax field is a site problem'
 				);
 				expect(
@@ -512,7 +512,7 @@ final class BusinessTest extends TestCase
 			expect(['', ''], [$facts['phone'], $facts['phoneE164']], 'facts: an empty phone field gives no number');
 			holds(!str_contains($log, 'Annai: field'), 'facts: an empty phone field logs nothing');
 			bizFixture($tmp, ['contact' => ['telefon' => '030 34567000']]);
-			expect([], Annai\Check::site(annai_kirby($tmp, bizOn()))['problems'], 'check: a number within the contract is no problem');
+			expect([], Sayamaapps\Annai\Check::site(annai_kirby($tmp, bizOn()))['problems'], 'check: a number within the contract is no problem');
 		} finally {
 			annai_remove_tree($tmp);
 		}
@@ -1257,7 +1257,7 @@ final class BusinessTest extends TestCase
 						[, $llms] = annai_request($kirby, 'llms.txt');
 					});
 					$sued = $kirby->page('sued');
-					$GLOBALS['bizDraftLocation'] = [$units, $document, $llms, $log, $sued instanceof Page && Annai\Pages::isDraft($sued)];
+					$GLOBALS['bizDraftLocation'] = [$units, $document, $llms, $log, $sued instanceof Page && Sayamaapps\Annai\Pages::isDraft($sued)];
 				} finally {
 					annai_remove_tree($tmp);
 				}
@@ -1358,7 +1358,7 @@ final class BusinessTest extends TestCase
 		bizSite(
 			['options' => bizOn(['annai.labels' => ['llms.hours' => 'Sprechzeiten', 'llms.hoursLine' => 'nur Uhr', 'llms.nope' => 'x', 'llms.closed' => '  ']])],
 			function (App $kirby): void {
-				expect(['llms.hours' => 'Sprechzeiten'], \Annai\Options::labels($kirby), 'labels: known keys only, placeholders kept');
+				expect(['llms.hours' => 'Sprechzeiten'], \Sayamaapps\Annai\Options::labels($kirby), 'labels: known keys only, placeholders kept');
 			}
 		);
 	}

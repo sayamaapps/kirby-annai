@@ -1,6 +1,6 @@
 <?php
 
-use Annai\Sitemap;
+use Sayamaapps\Annai\Sitemap;
 use PHPUnit\Framework\Attributes\CoversNothing;
 use PHPUnit\Framework\TestCase;
 

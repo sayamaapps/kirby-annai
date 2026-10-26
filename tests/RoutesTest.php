@@ -196,8 +196,8 @@ final class RoutesTest extends TestCase
 					"off: $path is not served by Annai (status $code)"
 				);
 			}
-			holds(Annai\Pages::all($kirby) === [], 'off: Pages::all() is []');
-			holds(Annai\Pages::entries($kirby) === [], 'off: Pages::entries() is []');
+			holds(Sayamaapps\Annai\Pages::all($kirby) === [], 'off: Pages::all() is []');
+			holds(Sayamaapps\Annai\Pages::entries($kirby) === [], 'off: Pages::entries() is []');
 		}, 'rtFixture');
 
 		// `'annai.active' => 'true'` (an env-driven config) used to switch Annai off in
@@ -205,7 +205,7 @@ final class RoutesTest extends TestCase
 		rtRun(['annai.active' => 'true'], function (App $kirby, string $tmp): void {
 			$log = annai_with_error_log($tmp, function () use ($kirby): void {
 				expect(false, annai_active(), "active 'true': annai_active() is false");
-				expect(false, Annai\Options::active($kirby), "active 'true': Options::active() is false");
+				expect(false, Sayamaapps\Annai\Options::active($kirby), "active 'true': Options::active() is false");
 				[$code, $body] = annai_request($kirby, 'robots.txt');
 				holds(!str_contains($body, 'User-agent'), "active 'true': robots.txt falls through (status $code)");
 			});
@@ -268,7 +268,7 @@ final class RoutesTest extends TestCase
 			},
 			'rtFixture'
 		);
-		foreach (array_keys(Annai\Robots::AI_AGENTS) as $name) {
+		foreach (array_keys(Sayamaapps\Annai\Robots::AI_AGENTS) as $name) {
 			holds(preg_match('/^[A-Za-z0-9_.-]+$/D', $name) === 1, "Robots::AI_AGENTS: $name is a valid token");
 		}
 
@@ -297,7 +297,7 @@ final class RoutesTest extends TestCase
 		// so a group written into one string is a group of its own and does not land in the
 		// * group next to blockTraining's agent groups.
 		rtRun(rtOn(['annai.robots.extra' => ["# reason\nUser-agent: Googlebot\nDisallow: /", 'Crawl-delay: 5'], 'annai.robots.ai' => 'blockTraining']), function (App $kirby): void {
-			expect(['# reason', 'User-agent: Googlebot', 'Disallow: /', 'Crawl-delay: 5'], Annai\Options::robotsExtra($kirby), 'robots.extra: an element with line feeds is split into lines');
+			expect(['# reason', 'User-agent: Googlebot', 'Disallow: /', 'Crawl-delay: 5'], Sayamaapps\Annai\Options::robotsExtra($kirby), 'robots.extra: an element with line feeds is split into lines');
 			[, $body] = annai_request($kirby, 'robots.txt');
 			holds(str_starts_with($body, "User-agent: *\nAllow: /\nDisallow: /panel\n# reason\n\nUser-agent: AI2Bot\nDisallow: /\n"), 'robots.extra with line feeds: the * group holds the comment only, then the agent groups');
 			holds(str_contains($body, "\n\nUser-agent: Googlebot\nDisallow: /\nCrawl-delay: 5\n\nSitemap: "), 'robots.extra with line feeds: Googlebot is a group of its own after the agent groups');
@@ -316,7 +316,7 @@ final class RoutesTest extends TestCase
 			holds(str_contains($body, "Disallow: /panel\n") && !str_contains($body, '/caf'), 'robots.txt: the path that is not UTF-8 is left out');
 			holds(str_contains($body, "# Grund: caf\u{FFFD} \u{FFFD}\n"), 'robots.txt: the extra line is written with U+FFFD for each bad byte');
 			holds(str_contains($log, 'Annai: annai.disallow entry "/caf' . "\u{FFFD}" . '" is not a path'), 'robots.txt: the path that is not UTF-8 is logged');
-			$warnings = Annai\Robots::warnings(Annai\Routes::robotsConfig($kirby));
+			$warnings = Sayamaapps\Annai\Robots::warnings(Sayamaapps\Annai\Routes::robotsConfig($kirby));
 			expect(1, count($warnings), 'robots warnings: the path that is not UTF-8 is named once');
 			holds(str_contains($warnings[0] ?? '', 'Disallow: "/caf' . "\u{FFFD}" . '" left out'), 'robots warnings: the warning names the path with U+FFFD');
 		}, 'rtFixture');
@@ -325,12 +325,12 @@ final class RoutesTest extends TestCase
 		// which also matches NEL = 0x85, the second byte of "Å" (C3 85) and "内" (E5 86 85):
 		// the rule "Disallow: /Åland/" became "Disallow: /\xC3" plus a junk line.
 		rtRun(rtOn(['annai.robots.extra' => ["# Filialen: Åland, 案内\nDisallow: /Åland/", 'Disallow: /Ņ/']]), function (App $kirby): void {
-			expect(['# Filialen: Åland, 案内', 'Disallow: /Åland/', 'Disallow: /Ņ/'], Annai\Options::robotsExtra($kirby), 'robots.extra: a line feed splits, a 0x85 byte inside a character does not');
+			expect(['# Filialen: Åland, 案内', 'Disallow: /Åland/', 'Disallow: /Ņ/'], Sayamaapps\Annai\Options::robotsExtra($kirby), 'robots.extra: a line feed splits, a 0x85 byte inside a character does not');
 			[, $body] = annai_request($kirby, 'robots.txt');
 			expect(true, mb_check_encoding($body, 'UTF-8'), 'robots.txt: UTF-8 with "Å" and "案内" in robots.extra');
 			holds(str_contains($body, "# Filialen: Åland, 案内\nDisallow: /Åland/\nDisallow: /Ņ/\n"), 'robots.txt: the rules with "Å" and "Ņ" are whole lines');
 			holds(!str_contains($body, "\nland/"), 'robots.txt: no junk line from a character cut in two');
-			expect('/Åland/', Annai\Robots::parse($body)['groups'][0]['rules'][2]['path'] ?? null, 'robots.txt: the parser reads the path whole');
+			expect('/Åland/', Sayamaapps\Annai\Robots::parse($body)['groups'][0]['rules'][2]['path'] ?? null, 'robots.txt: the parser reads the path whole');
 		}, 'rtFixture');
 
 		rtRun(rtOn(['annai.noindex' => true]), function (App $kirby): void {
@@ -384,7 +384,7 @@ final class RoutesTest extends TestCase
 			holds(!in_array('http://example.invalid/intern', $locs, true), 'sitemap: exclude.pages id missing');
 			holds(!in_array('http://example.invalid/intern/protokoll-vorstand', $locs, true), 'sitemap: exclude.pages keeps the subpage of the id out');
 			holds(in_array('http://example.invalid/internat', $locs, true), 'sitemap: exclude.pages matches whole path segments (internat stays)');
-			expect('noindex, follow', Annai\Pages::robots($kirby, $kirby->page('intern/protokoll-vorstand')), 'robots meta: subpage of an excluded id → noindex, follow');
+			expect('noindex, follow', Sayamaapps\Annai\Pages::robots($kirby, $kirby->page('intern/protokoll-vorstand')), 'robots meta: subpage of an excluded id → noindex, follow');
 		}, function (string $tmp): void {
 			rtFixture($tmp);
 			annai_page($tmp, '5_intern', 'default', ['title' => 'Intern']);
@@ -399,7 +399,7 @@ final class RoutesTest extends TestCase
 			$log = annai_with_error_log($tmp, function () use ($kirby): void {
 				[, $body] = annai_request($kirby, 'robots.txt');
 				expect("User-agent: *\nAllow: /\nDisallow: /panel\n\nSitemap: http://example.invalid/sitemap.xml\n", $body, 'annai.disallow: only the valid path is written');
-				$warnings = Annai\Check::site($kirby)['robots']['warnings'];
+				$warnings = Sayamaapps\Annai\Check::site($kirby)['robots']['warnings'];
 				expect(3, count($warnings), 'annai.disallow: the check warns once per invalid path');
 				holds(str_contains($warnings[0] ?? '', 'Disallow: "panel"'), 'annai.disallow: the check names the invalid path');
 			});
@@ -418,8 +418,8 @@ final class RoutesTest extends TestCase
 					$body,
 					'annai.disallow "/": the * group blocks without an Allow: /, the allowed agent stays allowed, the sitemap line stays'
 				);
-				expect([['type' => 'disallow', 'path' => '/']], Annai\Robots::parse($body)['groups'][0]['rules'] ?? null, 'annai.disallow "/": the parsed * group has the one rule');
-				$warnings = Annai\Check::site($kirby)['robots']['warnings'];
+				expect([['type' => 'disallow', 'path' => '/']], Sayamaapps\Annai\Robots::parse($body)['groups'][0]['rules'] ?? null, 'annai.disallow "/": the parsed * group has the one rule');
+				$warnings = Sayamaapps\Annai\Check::site($kirby)['robots']['warnings'];
 				expect(2, count($warnings), 'annai.disallow "/" and "/my path": two warnings');
 				expect('Disallow: / for everyone', $warnings[0] ?? null, 'annai.disallow "/": the check warns, and now the file does what it says');
 				holds(str_contains($warnings[1] ?? '', '"/my path"') && str_contains($warnings[1] ?? '', 'no space'), 'annai.disallow "/my path": the check names the space');
@@ -433,7 +433,7 @@ final class RoutesTest extends TestCase
 			rtRun(rtOn(['annai.descriptionLength' => $length]), function (App $kirby, string $tmp) use ($length, $expected): void {
 				$shown = var_export($length, true);
 				$log = annai_with_error_log($tmp, function () use ($kirby, $expected, $shown): void {
-					expect($expected, Annai\Options::descriptionLength($kirby), "descriptionLength $shown → $expected");
+					expect($expected, Sayamaapps\Annai\Options::descriptionLength($kirby), "descriptionLength $shown → $expected");
 				});
 				if ($expected !== $length && $length !== null) {
 					holds(str_contains($log, 'annai.descriptionLength') && str_contains($log, $shown), "descriptionLength $shown is logged");
@@ -538,7 +538,7 @@ final class RoutesTest extends TestCase
 				});
 				holds(str_contains($xml, '<urlset') && !str_contains($xml, '<sitemapindex'), "sitemap.chunk $shown: one <urlset>, no index");
 				expect(5, substr_count($xml, '<url>'), "sitemap.chunk $shown: every page in the one file");
-				expect(Annai\Sitemap::MAX_URLS, Annai\Options::sitemapChunk($kirby), "sitemap.chunk $shown: " . Annai\Sitemap::MAX_URLS . ' per file');
+				expect(Sayamaapps\Annai\Sitemap::MAX_URLS, Sayamaapps\Annai\Options::sitemapChunk($kirby), "sitemap.chunk $shown: " . Sayamaapps\Annai\Sitemap::MAX_URLS . ' per file');
 				holds(str_contains($log, 'annai.sitemap.chunk') && str_contains($log, $shown), "sitemap.chunk $shown: reported");
 			}, 'rtFixture');
 		}
@@ -561,22 +561,22 @@ final class RoutesTest extends TestCase
 		rtRun(rtOn(), function (App $kirby): void {
 			$error = $kirby->page('error');
 			holds($error instanceof Page, 'fixture has the error page');
-			expect('noindex, follow', Annai\Pages::robots($kirby, $error), 'robots meta: excluded template → noindex, follow');
-			expect(null, Annai\Pages::robots($kirby, $kirby->site()->homePage()), 'robots meta: home page → null');
+			expect('noindex, follow', Sayamaapps\Annai\Pages::robots($kirby, $error), 'robots meta: excluded template → noindex, follow');
+			expect(null, Sayamaapps\Annai\Pages::robots($kirby, $kirby->site()->homePage()), 'robots meta: home page → null');
 		}, 'rtFixture');
 
 		rtRun(rtOn(['annai.noindexExcluded' => false]), function (App $kirby): void {
-			expect(null, Annai\Pages::robots($kirby, $kirby->page('error')), 'robots meta: noindexExcluded false → null');
+			expect(null, Sayamaapps\Annai\Pages::robots($kirby, $kirby->page('error')), 'robots meta: noindexExcluded false → null');
 		}, 'rtFixture');
 
 		rtRun(rtOn(['annai.noindex' => true]), function (App $kirby): void {
-			expect('noindex, nofollow, noarchive', Annai\Pages::robots($kirby, $kirby->site()->homePage()), 'robots meta: annai.noindex true → preview');
+			expect('noindex, nofollow, noarchive', Sayamaapps\Annai\Pages::robots($kirby, $kirby->site()->homePage()), 'robots meta: annai.noindex true → preview');
 		}, 'rtFixture');
 
 		rtRun(rtOn(['annai.noindex' => false]), function (App $kirby): void {
 			Sudare\Sudare::$on = true;
 			try {
-				expect(false, Annai\Pages::preview($kirby), 'preview: annai.noindex false wins over Sudare');
+				expect(false, Sayamaapps\Annai\Pages::preview($kirby), 'preview: annai.noindex false wins over Sudare');
 			} finally {
 				Sudare\Sudare::$on = false;
 			}
@@ -585,32 +585,32 @@ final class RoutesTest extends TestCase
 		rtRun(rtOn(), function (App $kirby): void {
 			Sudare\Sudare::$on = true;
 			try {
-				expect('noindex, nofollow, noarchive', Annai\Pages::robots($kirby, $kirby->site()->homePage()), 'preview: Sudare active → noindex on every page');
+				expect('noindex, nofollow, noarchive', Sayamaapps\Annai\Pages::robots($kirby, $kirby->site()->homePage()), 'preview: Sudare active → noindex on every page');
 				// Sudare answers unauthenticated requests before Kirby renders: the robots.txt that
 				// reaches Annai is the normal one (Sitemap line, no Disallow: /), not the hidden one.
 				[, $body] = annai_request($kirby, 'robots.txt');
 				holds(in_array('Sitemap: http://example.invalid/sitemap.xml', explode("\n", $body), true), 'preview: Sudare active → robots.txt keeps its Sitemap line');
 				holds(!in_array('Disallow: /', explode("\n", $body), true), 'preview: Sudare active → robots.txt is not Disallow: / (the normal file)');
-				expect(false, Annai\Pages::hidden($kirby), 'preview: Sudare active → not hidden');
+				expect(false, Sayamaapps\Annai\Pages::hidden($kirby), 'preview: Sudare active → not hidden');
 			} finally {
 				Sudare\Sudare::$on = false;
 			}
-			expect(false, Annai\Pages::preview($kirby), 'preview: Sudare inactive → false (auto)');
-			expect(false, Annai\Pages::hidden($kirby), 'preview: Sudare inactive → not hidden');
-			expect(null, Annai\Pages::robots($kirby, $kirby->site()->homePage()), 'preview: Sudare inactive → no robots meta on home');
+			expect(false, Sayamaapps\Annai\Pages::preview($kirby), 'preview: Sudare inactive → false (auto)');
+			expect(false, Sayamaapps\Annai\Pages::hidden($kirby), 'preview: Sudare inactive → not hidden');
+			expect(null, Sayamaapps\Annai\Pages::robots($kirby, $kirby->site()->homePage()), 'preview: Sudare inactive → no robots meta on home');
 		}, 'rtFixture');
 
 		// Pages::hidden() is the explicit annai.noindex => true only: it implies the preview,
 		// a protected preview alone is not hidden.
 		rtRun(rtOn(['annai.noindex' => true]), function (App $kirby): void {
-			expect(true, Annai\Pages::hidden($kirby), 'hidden: annai.noindex true → hidden');
-			expect(true, Annai\Pages::preview($kirby), 'hidden: annai.noindex true → also a preview');
+			expect(true, Sayamaapps\Annai\Pages::hidden($kirby), 'hidden: annai.noindex true → hidden');
+			expect(true, Sayamaapps\Annai\Pages::preview($kirby), 'hidden: annai.noindex true → also a preview');
 		}, 'rtFixture');
 
 		rtRun(rtOn(['annai.noindex' => false]), function (App $kirby): void {
 			Sudare\Sudare::$on = true;
 			try {
-				expect(false, Annai\Pages::hidden($kirby), 'hidden: annai.noindex false → not hidden');
+				expect(false, Sayamaapps\Annai\Pages::hidden($kirby), 'hidden: annai.noindex false → not hidden');
 			} finally {
 				Sudare\Sudare::$on = false;
 			}
@@ -646,7 +646,7 @@ final class RoutesTest extends TestCase
 				[$code, $xml] = annai_request($kirby, 'sitemap.xml');
 				expect(200, $code, 'preview: sitemap.xml answers');
 				holds(str_contains($xml, '<urlset'), 'preview: sitemap.xml is a urlset');
-				expect(count(Annai\Pages::entries($kirby)), count(rtLocs($xml)), 'preview: sitemap.xml lists the entries, as after the go-live');
+				expect(count(Sayamaapps\Annai\Pages::entries($kirby)), count(rtLocs($xml)), 'preview: sitemap.xml lists the entries, as after the go-live');
 				holds(rtLocs($xml) !== [], 'preview: sitemap.xml is not empty');
 				[$code, $md] = annai_request($kirby, 'llms.txt');
 				expect(200, $code, 'preview: llms.txt answers');
@@ -692,8 +692,8 @@ final class RoutesTest extends TestCase
 				foreach (['robots.txt', 'sitemap.xml', 'llms.txt'] as $path) {
 					expect('no-store', $kirby->render($path)?->headers()['Cache-Control'] ?? null, "exempt $path: still Cache-Control: no-store");
 				}
-				expect(true, Annai\Pages::hidden($kirby, '/robots.txt'), 'exempt: hidden() for the exempted route');
-				expect(false, Annai\Pages::hidden($kirby), 'exempt: no path → only the explicit setting counts');
+				expect(true, Sayamaapps\Annai\Pages::hidden($kirby, '/robots.txt'), 'exempt: hidden() for the exempted route');
+				expect(false, Sayamaapps\Annai\Pages::hidden($kirby), 'exempt: no path → only the explicit setting counts');
 			} finally {
 				Sudare\Sudare::$on = false;
 				Sudare\Sudare::$exempt = [];
@@ -704,7 +704,7 @@ final class RoutesTest extends TestCase
 				[, $body] = annai_request($kirby, 'robots.txt');
 				holds(!in_array('Disallow: /', explode("\n", $body), true), 'exempt without a protection: robots.txt unchanged');
 				holds(!array_key_exists('Cache-Control', $kirby->render('robots.txt')?->headers() ?? []), 'exempt without a protection: no Cache-Control');
-				expect(false, Annai\Pages::hidden($kirby, '/robots.txt'), 'exempt without a protection: not hidden');
+				expect(false, Sayamaapps\Annai\Pages::hidden($kirby, '/robots.txt'), 'exempt without a protection: not hidden');
 			} finally {
 				Sudare\Sudare::$exempt = [];
 			}
@@ -734,7 +734,7 @@ final class RoutesTest extends TestCase
 			[$code, $md] = annai_request($kirby, 'llms.txt');
 			expect(200, $code, 'hidden: llms.txt answers');
 			expect("# Testhof\n", $md, 'hidden: llms.txt is the H1 only');
-			holds(Annai\Pages::entries($kirby) !== [], 'hidden: Pages::entries() still has the entries (data method)');
+			holds(Sayamaapps\Annai\Pages::entries($kirby) !== [], 'hidden: Pages::entries() still has the entries (data method)');
 			foreach (['robots.txt', 'sitemap.xml', 'llms.txt'] as $path) {
 				expect('no-store', $kirby->render($path)?->headers()['Cache-Control'] ?? null, "hidden: $path is sent with Cache-Control: no-store");
 			}
@@ -744,7 +744,7 @@ final class RoutesTest extends TestCase
 		rtRun(rtOn(['annai.noindex' => true, 'annai.sitemap.chunk' => 2]), function (App $kirby): void {
 			expect('no-store', $kirby->render('sitemap.xml')?->headers()['Cache-Control'] ?? null, 'preview: a chunked sitemap.xml is sent with Cache-Control: no-store');
 			expect(404, $kirby->render('sitemap-1.xml')?->code(), 'preview: the chunk files are 404 (nothing to list)');
-			$response = Annai\Routes::sitemap($kirby, 1);
+			$response = Sayamaapps\Annai\Routes::sitemap($kirby, 1);
 			holds($response === null, 'preview: Routes::sitemap(1) is null');
 		}, 'rtFixture');
 
@@ -787,15 +787,15 @@ final class RoutesTest extends TestCase
 				try {
 					$robots = null;
 					$log = annai_with_error_log($tmp, function () use ($kirby, &$robots): void {
-						$robots = Annai\Pages::robots($kirby, $kirby->site()->homePage());
+						$robots = Sayamaapps\Annai\Pages::robots($kirby, $kirby->site()->homePage());
 					});
 					expect('noindex, nofollow, noarchive', $robots, 'annai.noindex ' . var_export($value, true) . ' + Sudare active → still noindex');
 					holds(str_contains($log, 'annai.noindex must be true, false or null'), 'annai.noindex ' . var_export($value, true) . ' is logged');
 				} finally {
 					Sudare\Sudare::$on = false;
 				}
-				expect(false, Annai\Pages::preview($kirby), 'annai.noindex ' . var_export($value, true) . ' + Sudare inactive → automatic, false');
-				expect(false, Annai\Pages::hidden($kirby), 'annai.noindex ' . var_export($value, true) . ' is never hidden');
+				expect(false, Sayamaapps\Annai\Pages::preview($kirby), 'annai.noindex ' . var_export($value, true) . ' + Sudare inactive → automatic, false');
+				expect(false, Sayamaapps\Annai\Pages::hidden($kirby), 'annai.noindex ' . var_export($value, true) . ' is never hidden');
 			}, 'rtFixture');
 		}
 
@@ -803,15 +803,15 @@ final class RoutesTest extends TestCase
 		rtRun(rtOn(), function (App $kirby, string $tmp): void {
 			Sudare\Sudare::$protects = true;
 			try {
-				expect(true, Annai\Pages::preview($kirby), 'preview on the CLI: Sudare::protects() true → preview');
+				expect(true, Sayamaapps\Annai\Pages::preview($kirby), 'preview on the CLI: Sudare::protects() true → preview');
 				expect($tmp, Sudare\Sudare::$base, 'preview on the CLI: protects() gets the site base directory');
 				[, $body] = annai_request($kirby, 'robots.txt');
 				holds(!in_array('Disallow: /', explode("\n", $body), true), 'preview on the CLI: robots.txt is the normal file, not Disallow: /');
-				expect(false, Annai\Pages::hidden($kirby), 'preview on the CLI: protects() true → not hidden');
+				expect(false, Sayamaapps\Annai\Pages::hidden($kirby), 'preview on the CLI: protects() true → not hidden');
 			} finally {
 				Sudare\Sudare::$protects = false;
 			}
-			expect(false, Annai\Pages::preview($kirby), 'preview on the CLI: protects() false → no preview');
+			expect(false, Sayamaapps\Annai\Pages::preview($kirby), 'preview on the CLI: protects() false → no preview');
 		}, 'rtFixture');
 
 		// Drafts (preview links) are noindex, nofollow whatever noindexExcluded says.
@@ -821,7 +821,7 @@ final class RoutesTest extends TestCase
 				holds($draft instanceof Page && $draft->isDraft(), 'fixture has a real draft');
 				expect(
 					'noindex, nofollow',
-					$draft instanceof Page ? Annai\Pages::robots($kirby, $draft) : null,
+					$draft instanceof Page ? Sayamaapps\Annai\Pages::robots($kirby, $draft) : null,
 					'robots meta: draft → noindex, nofollow (noindexExcluded ' . var_export($flag, true) . ')'
 				);
 			}, function (string $tmp): void {
@@ -838,10 +838,10 @@ final class RoutesTest extends TestCase
 				$child = $kirby->page('geheim/unterseite');
 				holds($child instanceof Page && !$child->isDraft() && $child->parent()?->isDraft() === true, 'fixture: the page below the draft is no draft for Kirby, its parent is');
 				$shown = var_export($flag, true);
-				expect('noindex, nofollow', $child instanceof Page ? Annai\Pages::robots($kirby, $child) : null, "robots meta: a page below a draft → noindex, nofollow (noindexExcluded $shown)");
+				expect('noindex, nofollow', $child instanceof Page ? Sayamaapps\Annai\Pages::robots($kirby, $child) : null, "robots meta: a page below a draft → noindex, nofollow (noindexExcluded $shown)");
 				expect(false, $child instanceof Page ? $child->annaiIndexable() : null, "annaiIndexable(): a page below a draft is not indexable (noindexExcluded $shown)");
 				$grandchild = $kirby->page('geheim/unterseite/tiefer');
-				expect('noindex, nofollow', $grandchild instanceof Page ? Annai\Pages::robots($kirby, $grandchild) : null, "robots meta: two levels below a draft → noindex, nofollow (noindexExcluded $shown)");
+				expect('noindex, nofollow', $grandchild instanceof Page ? Sayamaapps\Annai\Pages::robots($kirby, $grandchild) : null, "robots meta: two levels below a draft → noindex, nofollow (noindexExcluded $shown)");
 				$kirby->impersonate('kirby');
 				[$code, $html] = annai_request($kirby, 'geheim/unterseite');
 				expect(200, $code, "a page below a draft renders for an editor (noindexExcluded $shown)");
@@ -859,11 +859,11 @@ final class RoutesTest extends TestCase
 		// (default) language's file; the English entry now has its own.
 		rtRun(rtOn(['languages' => true, 'annai.hreflang' => true]), function (App $kirby): void {
 			$laden = $kirby->page('laden');
-			$de = Annai\Sitemap::lastmod(strtotime('2026-01-01 12:00:00 UTC'), 'Europe/Berlin');
-			$en = Annai\Sitemap::lastmod(strtotime('2026-06-01 12:00:00 UTC'), 'Europe/Berlin');
-			expect($de, Annai\Pages::lastmod($kirby, $laden), 'hreflang lastmod: default language file without a code');
-			expect($de, Annai\Pages::lastmod($kirby, $laden, 'de'), 'hreflang lastmod: de file');
-			expect($en, Annai\Pages::lastmod($kirby, $laden, 'en'), 'hreflang lastmod: en file has its own modified time');
+			$de = Sayamaapps\Annai\Sitemap::lastmod(strtotime('2026-01-01 12:00:00 UTC'), 'Europe/Berlin');
+			$en = Sayamaapps\Annai\Sitemap::lastmod(strtotime('2026-06-01 12:00:00 UTC'), 'Europe/Berlin');
+			expect($de, Sayamaapps\Annai\Pages::lastmod($kirby, $laden), 'hreflang lastmod: default language file without a code');
+			expect($de, Sayamaapps\Annai\Pages::lastmod($kirby, $laden, 'de'), 'hreflang lastmod: de file');
+			expect($en, Sayamaapps\Annai\Pages::lastmod($kirby, $laden, 'en'), 'hreflang lastmod: en file has its own modified time');
 			[, $xml] = annai_request($kirby, 'sitemap.xml');
 			preg_match_all('#<loc>([^<]*)</loc>\s*<lastmod>([^<]*)</lastmod>#', $xml, $m, PREG_SET_ORDER);
 			$lastmods = [];
@@ -882,12 +882,12 @@ final class RoutesTest extends TestCase
 		rtRun(rtOn(['languages' => true]), function (App $kirby): void {
 			$laden = $kirby->page('laden');
 			holds($laden instanceof Page, 'multilang: laden exists');
-			expect([], Annai\Pages::alternates($kirby, $laden), 'hreflang off (default): no alternates');
+			expect([], Sayamaapps\Annai\Pages::alternates($kirby, $laden), 'hreflang off (default): no alternates');
 		}, 'rtMultilang');
 
 		rtRun(rtOn(['languages' => true, 'annai.hreflang' => true]), function (App $kirby): void {
 			$laden = $kirby->page('laden');
-			$alternates = Annai\Pages::alternates($kirby, $laden);
+			$alternates = Sayamaapps\Annai\Pages::alternates($kirby, $laden);
 			expect(['de', 'en', 'x-default'], array_keys($alternates), 'hreflang: de, en, x-default in this order');
 			expect('http://example.invalid/laden', $alternates['de'] ?? null, 'hreflang: de URL');
 			expect('http://example.invalid/en/laden', $alternates['en'] ?? null, 'hreflang: en URL');
@@ -895,7 +895,7 @@ final class RoutesTest extends TestCase
 			$kontakt = $kirby->page('kontakt');
 			expect(
 				['de', 'x-default'],
-				array_keys(Annai\Pages::alternates($kirby, $kontakt)),
+				array_keys(Sayamaapps\Annai\Pages::alternates($kirby, $kontakt)),
 				'hreflang: a page without English content lists only de and x-default'
 			);
 
@@ -913,7 +913,7 @@ final class RoutesTest extends TestCase
 		rtRun(rtOn(['languages' => true, 'annai.hreflang' => true]), function (App $kirby): void {
 			$english = $kirby->page('english');
 			holds($english instanceof Page, 'hreflang: the English-only page exists');
-			$alternates = $english instanceof Page ? Annai\Pages::alternates($kirby, $english) : [];
+			$alternates = $english instanceof Page ? Sayamaapps\Annai\Pages::alternates($kirby, $english) : [];
 			expect(
 				['en' => 'http://example.invalid/en/english', 'x-default' => 'http://example.invalid/en/english'],
 				$alternates,
@@ -923,7 +923,7 @@ final class RoutesTest extends TestCase
 			holds(!str_contains($xml, '<loc>http://example.invalid/english</loc>'), 'hreflang: no German sitemap entry for the English-only page');
 			expect(6, substr_count($xml, '<url>'), 'hreflang: one url per language with content (home 2, laden 2, kontakt 1, english 1)');
 			$laden = $kirby->page('laden');
-			expect('http://example.invalid/laden', Annai\Pages::alternates($kirby, $laden)['x-default'] ?? null, 'hreflang: x-default stays the default language URL when it has content');
+			expect('http://example.invalid/laden', Sayamaapps\Annai\Pages::alternates($kirby, $laden)['x-default'] ?? null, 'hreflang: x-default stays the default language URL when it has content');
 		}, function (string $tmp): void {
 			rtMultilang($tmp);
 			annai_page($tmp, '4_english', 'default', ['title' => 'English only'], 'en');
@@ -955,11 +955,11 @@ final class RoutesTest extends TestCase
 				[, $html] = annai_request($kirby, 'english');
 				holds(str_contains($html, '<link rel="canonical" href="http://example.invalid/en/english">'), "canonical ($with): the English-only page in the default language points to /en/english (the first language with content)");
 				$kirby->setCurrentLanguage('en');
-				expect('http://example.invalid/kontakt', Annai\Pages::contentUrl($kirby, $kirby->page('kontakt')), "contentUrl ($with): in English, kontakt → the German URL");
-				expect(null, Annai\Pages::contentUrl($kirby, $kirby->page('laden')), "contentUrl ($with): null for a page with content in the current language");
+				expect('http://example.invalid/kontakt', Sayamaapps\Annai\Pages::contentUrl($kirby, $kirby->page('kontakt')), "contentUrl ($with): in English, kontakt → the German URL");
+				expect(null, Sayamaapps\Annai\Pages::contentUrl($kirby, $kirby->page('laden')), "contentUrl ($with): null for a page with content in the current language");
 				$kirby->setCurrentLanguage('de');
-				expect(null, Annai\Pages::contentUrl($kirby, $kirby->page('kontakt')), "contentUrl ($with): null in German, where kontakt has its content");
-				expect('http://example.invalid/en/english', Annai\Pages::contentUrl($kirby, $kirby->page('english')), "contentUrl ($with): in German, the English-only page → the English URL");
+				expect(null, Sayamaapps\Annai\Pages::contentUrl($kirby, $kirby->page('kontakt')), "contentUrl ($with): null in German, where kontakt has its content");
+				expect('http://example.invalid/en/english', Sayamaapps\Annai\Pages::contentUrl($kirby, $kirby->page('english')), "contentUrl ($with): in German, the English-only page → the English URL");
 			}, $rtEnglishOnly);
 		}
 		rtRun(rtOn(['languages' => true, 'annai.canonical' => fn (Page $page): string => 'https://fixed.example/' . $page->id()]), function (App $kirby): void {
@@ -971,8 +971,8 @@ final class RoutesTest extends TestCase
 			holds(str_contains($html, '<link rel="canonical" href="http://example.invalid/kontakt">'), 'canonical: a hook returning null leaves the content-language rule in place');
 		}, $rtEnglishOnly);
 		rtRun(rtOn(), function (App $kirby): void {
-			expect(null, Annai\Pages::contentUrl($kirby, $kirby->page('kontakt')), 'contentUrl: null on a single-language site');
-			expect(null, Annai\Pages::contentLanguage($kirby, $kirby->page('kontakt')), 'contentLanguage: null on a single-language site');
+			expect(null, Sayamaapps\Annai\Pages::contentUrl($kirby, $kirby->page('kontakt')), 'contentUrl: null on a single-language site');
+			expect(null, Sayamaapps\Annai\Pages::contentLanguage($kirby, $kirby->page('kontakt')), 'contentLanguage: null on a single-language site');
 		}, 'rtFixture');
 
 		// The canonical of a page without content in the current language points to
@@ -995,9 +995,9 @@ final class RoutesTest extends TestCase
 			holds(!in_array('http://example.invalid/english', $locs, true), 'canonical lists (hreflang off): not under /english, whose canonical points to /en/english');
 			holds(in_array('http://example.invalid/kontakt', $locs, true) && in_array('http://example.invalid/laden', $locs, true), 'canonical lists (hreflang off): pages with German content keep their German URL');
 			preg_match('#<loc>http://example\.invalid/en/english</loc>\s*<lastmod>([^<]*)</lastmod>#', $xml, $m);
-			expect(Annai\Sitemap::lastmod(strtotime('2026-06-01 12:00:00 UTC'), 'Europe/Berlin'), $m[1] ?? null, 'canonical lists (hreflang off): the entry carries the lastmod of the English content file');
-			expect('en', Annai\Pages::contentLanguage($kirby, $kirby->page('english')), 'contentLanguage: in German, the English-only page → en');
-			expect(null, Annai\Pages::contentLanguage($kirby, $kirby->page('kontakt')), 'contentLanguage: null where the current language has the content');
+			expect(Sayamaapps\Annai\Sitemap::lastmod(strtotime('2026-06-01 12:00:00 UTC'), 'Europe/Berlin'), $m[1] ?? null, 'canonical lists (hreflang off): the entry carries the lastmod of the English content file');
+			expect('en', Sayamaapps\Annai\Pages::contentLanguage($kirby, $kirby->page('english')), 'contentLanguage: in German, the English-only page → en');
+			expect(null, Sayamaapps\Annai\Pages::contentLanguage($kirby, $kirby->page('kontakt')), 'contentLanguage: null where the current language has the content');
 			[, $llms] = annai_request($kirby, 'llms.txt');
 			holds(str_contains($llms, '(http://example.invalid/en/english)'), 'canonical lists: llms.txt links the English-only page to /en/english');
 			holds(!str_contains($llms, '(http://example.invalid/english)'), 'canonical lists: llms.txt has no link to /english');
@@ -1038,7 +1038,7 @@ final class RoutesTest extends TestCase
 				holds($laden instanceof AnnaiClosedPage && $laden->storage() instanceof AnnaiClosedStorage, 'closed contentFile(): the fixture page uses the throwing storage (fixture check)');
 				AnnaiClosedStorage::$thrown = 0;
 				try {
-					$alternates = Annai\Pages::alternates($kirby, $laden);
+					$alternates = Sayamaapps\Annai\Pages::alternates($kirby, $laden);
 				} catch (\Throwable $error) {
 					$alternates = $error::class . ': ' . $error->getMessage();
 				}
@@ -1064,16 +1064,16 @@ final class RoutesTest extends TestCase
 		rtRun(rtOn(['languages' => true, 'annai.hreflang' => true, 'annai.exclude.templates' => ['error', 'weiter']]), function (App $kirby): void {
 			$weiter = $kirby->page('weiter');
 			holds($weiter instanceof Page, 'hreflang + noindex: the excluded page exists');
-			expect('noindex, follow', Annai\Pages::robots($kirby, $weiter), 'hreflang + noindex: the excluded page is noindex, follow');
-			expect([], Annai\Pages::alternates($kirby, $weiter), 'hreflang + noindex: no alternates for a noindex page');
+			expect('noindex, follow', Sayamaapps\Annai\Pages::robots($kirby, $weiter), 'hreflang + noindex: the excluded page is noindex, follow');
+			expect([], Sayamaapps\Annai\Pages::alternates($kirby, $weiter), 'hreflang + noindex: no alternates for a noindex page');
 			expect([], $weiter->annaiAlternates(), 'hreflang + noindex: annaiAlternates() is empty too');
 			[, $html] = annai_request($kirby, 'weiter');
 			holds(str_contains($html, '<meta name="robots" content="noindex, follow">') && !str_contains($html, 'rel="alternate"'), 'hreflang + noindex: the head carries the robots meta and no hreflang link');
-			expect(['de', 'en', 'x-default'], array_keys(Annai\Pages::alternates($kirby, $kirby->page('laden'))), 'hreflang + noindex: an indexable page keeps its alternates');
-			expect(0, Annai\Check::page($kirby, $weiter)['alternates'], 'hreflang + noindex: the check counts no alternates');
+			expect(['de', 'en', 'x-default'], array_keys(Sayamaapps\Annai\Pages::alternates($kirby, $kirby->page('laden'))), 'hreflang + noindex: an indexable page keeps its alternates');
+			expect(0, Sayamaapps\Annai\Check::page($kirby, $weiter)['alternates'], 'hreflang + noindex: the check counts no alternates');
 			Sudare\Sudare::$on = true;
 			try {
-				expect([], Annai\Pages::alternates($kirby, $kirby->page('laden')), 'hreflang + preview: no alternates while every page is noindex');
+				expect([], Sayamaapps\Annai\Pages::alternates($kirby, $kirby->page('laden')), 'hreflang + preview: no alternates while every page is noindex');
 				// The sitemap entries (the data method, the check tool) keep one entry per
 				// language while the preview is on — they used to collapse to one per page because
 				// alternates() answered [] for every page.
@@ -1140,7 +1140,7 @@ final class RoutesTest extends TestCase
 			holds(str_contains($md, "## Seiten\n\n- [Startseite](http://example.invalid)\n- [Hofladen](http://example.invalid/laden)"), 'listed home: Startseite once, then the first listed page');
 			holds(!str_contains($md, '- [Home](http://example.invalid)'), 'listed home: the home page is not listed a second time under its title');
 			expect(1, substr_count($md, '](http://example.invalid)'), 'listed home: exactly one link to the home URL');
-			expect(['laden', 'kontakt', 'weiter'], array_map(fn (Page $page): string => $page->id(), Annai\Pages::menu($kirby)), 'listed home: Pages::menu() leaves the home page out');
+			expect(['laden', 'kontakt', 'weiter'], array_map(fn (Page $page): string => $page->id(), Sayamaapps\Annai\Pages::menu($kirby)), 'listed home: Pages::menu() leaves the home page out');
 			[, $xml] = annai_request($kirby, 'sitemap.xml');
 			expect(1, count(array_keys(rtLocs($xml), 'http://example.invalid', true)), 'listed home: the sitemap lists the home URL once');
 		}, function (string $tmp): void {
@@ -1324,14 +1324,14 @@ final class RoutesTest extends TestCase
 				expect('LocalBusiness', annai_jsonld($home)[0]['@type'] ?? null, "non-Closure annai.jsonld: Annai's business node stays");
 				[, $md] = annai_request($kirby, 'llms.txt');
 				holds(str_starts_with($md, "# Testhof\n"), "non-Closure annai.llms.extra: Annai's model is served");
-				expect('kontakt', Annai\Business::location($kirby)?->id(), 'non-Closure annai.location: the template search finds the business page');
+				expect('kontakt', Sayamaapps\Annai\Business::location($kirby)?->id(), 'non-Closure annai.location: the template search finds the business page');
 			});
 			foreach (['title' => "'Eigener Titel'", 'description' => "'Eigene Beschreibung'", 'canonical' => "'https://fixed.example/'", 'jsonld' => 'array', 'llms.extra' => 'array'] as $key => $shown) {
 				holds(str_contains($log, "Annai: annai.$key must be a Closure, not $shown — ignored."), "non-Closure annai.$key is logged with its value or type");
 			}
 			holds(str_contains($log, 'Annai: annai.location must be a page id or a Closure, not 42 — ignored.'), 'annai.location 42 is logged with its value');
 			expect(1, substr_count($log, 'annai.title must be a Closure'), 'non-Closure annai.title: logged once per process, not once per page');
-			$problems = Annai\Check::site(annai_kirby($tmp, rtOn(['annai.title' => 'Anderer Titel', 'annai.location' => ['kontakt']])))['problems'];
+			$problems = Sayamaapps\Annai\Check::site(annai_kirby($tmp, rtOn(['annai.title' => 'Anderer Titel', 'annai.location' => ['kontakt']])))['problems'];
 			holds(in_array("configuration: annai.title must be a Closure, not 'Anderer Titel' — ignored.", $problems, true), 'check: a non-Closure hook is a configuration problem');
 			holds(in_array('configuration: annai.location must be a page id or a Closure, not array — ignored.', $problems, true), 'check: a non-string, non-Closure annai.location is a configuration problem');
 		}, 'rtFixture');
@@ -1362,7 +1362,7 @@ final class RoutesTest extends TestCase
 		rtRun(rtOn(['annai.jsonld' => $boom, 'debug' => true]), function (App $kirby): void {
 			$thrown = null;
 			try {
-				Annai\Business::jsonLd($kirby, $kirby->site()->homePage());
+				Sayamaapps\Annai\Business::jsonLd($kirby, $kirby->site()->homePage());
 			} catch (InvalidArgumentException $error) {
 				$thrown = $error->getMessage();
 			}
@@ -1386,8 +1386,8 @@ final class RoutesTest extends TestCase
 					expect(200, $code, 'unencodable JSON-LD: home page renders');
 					holds(str_contains($html, '<title>Testhof</title>'), 'unencodable JSON-LD: the rest of the head is there');
 					holds(!str_contains($html, 'ld+json'), 'unencodable JSON-LD: no JSON-LD script');
-					expect(null, Annai\Business::head($kirby, $kirby->site()->homePage())['jsonld'], 'unencodable JSON-LD: head input has no jsonld');
-					holds(is_array(Annai\Business::jsonLd($kirby, $kirby->site()->homePage())), 'unencodable JSON-LD: jsonLd() still returns the document (the check reports it)');
+					expect(null, Sayamaapps\Annai\Business::head($kirby, $kirby->site()->homePage())['jsonld'], 'unencodable JSON-LD: head input has no jsonld');
+					holds(is_array(Sayamaapps\Annai\Business::jsonLd($kirby, $kirby->site()->homePage())), 'unencodable JSON-LD: jsonLd() still returns the document (the check reports it)');
 				});
 				holds(str_contains($log, 'JSON-LD of home cannot be encoded') && str_contains($log, 'NaN'), 'unencodable JSON-LD is logged with the reason');
 			},
@@ -1409,7 +1409,7 @@ final class RoutesTest extends TestCase
 				holds($past instanceof Page && $upcoming instanceof Page, 'koyomi: both event pages exist');
 				if ($past instanceof Page && method_exists($past, 'koyomi') && $past->koyomi() !== null) {
 					$end = $past->koyomi()->end;
-					$lastmod = Annai\Pages::lastmod($kirby, $past);
+					$lastmod = Sayamaapps\Annai\Pages::lastmod($kirby, $past);
 					holds(
 						$lastmod !== null && (new DateTimeImmutable((string)$lastmod))->getTimestamp() >= $end->getTimestamp(),
 						'koyomi: past event lastmod is at least its end (' . $lastmod . ')'
@@ -1455,7 +1455,7 @@ final class RoutesTest extends TestCase
 			// German URL. The events list follows the canonical rule like every other list.
 			rtRun(rtOn(['languages' => true, 'koyomi.active' => true, 'koyomi.now' => '2027-01-01 12:00']), function (App $kirby): void {
 				$kirby->setCurrentLanguage('en');
-				$urls = array_column(Annai\Pages::events($kirby), 'url');
+				$urls = array_column(Sayamaapps\Annai\Pages::events($kirby), 'url');
 				expect(['http://example.invalid/events/breathing'], $urls, 'koyomi (English): an event with German content only is linked under its canonical German URL');
 			}, 'rtKoyomiGerman', ['koyomi']);
 
@@ -1499,7 +1499,7 @@ final class RoutesTest extends TestCase
 			foreach (['en' => 'English', 'de' => 'German'] as $code => $language) {
 				rtRun(rtOn(['languages' => true, 'koyomi.active' => true, 'koyomi.now' => '2027-01-01 12:00']), function (App $kirby) use ($code, $language): void {
 					$kirby->setCurrentLanguage($code);
-					$events = Annai\Pages::events($kirby);
+					$events = Sayamaapps\Annai\Pages::events($kirby);
 					expect([['breathing', 'http://example.invalid/events/breathing']], array_map(fn (array $event): array => [$event['title'], $event['url']], $events), "koyomi ($language): a German-only event with an empty title is named by the slug of the German version it links");
 					$llms = $kirby->site()->annaiLlms();
 					holds(str_contains($llms, "\n- [breathing](http://example.invalid/events/breathing)"), "koyomi ($language): llms.txt names the event by its slug");

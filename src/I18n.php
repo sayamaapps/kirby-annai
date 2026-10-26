@@ -1,6 +1,6 @@
 <?php
 
-namespace Annai;
+namespace Sayamaapps\Annai;
 
 /**
  * Strings of the plugin, Kirby-free. (docs/SPEC.md §3.1, §5).

@@ -9,6 +9,8 @@
     <projectFiles>
         <directory name="src" />
         <file name="index.php" />
+        <file name="legacy.php" />
+        <file name="autoload.php" />
         <ignoreFiles>
             <directory name="vendor" />
             <directory name="tests" />

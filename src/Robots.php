@@ -1,6 +1,6 @@
 <?php
 
-namespace Annai;
+namespace Sayamaapps\Annai;
 
 /**
  * robots.txt per RFC 9309 (docs/SPEC.md §3.3).

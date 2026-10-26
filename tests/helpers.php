@@ -180,7 +180,7 @@ function annai_with_error_log(string $tmp, callable $fn): string
 	// Options logs each message once per process. The tests share one process
 	// now, so the messages of earlier tests are forgotten here (a test seam
 	// outside the production code).
-	(new ReflectionProperty(Annai\Options::class, 'logged'))->setValue(null, []);
+	(new ReflectionProperty(Sayamaapps\Annai\Options::class, 'logged'))->setValue(null, []);
 	try {
 		$fn();
 	} finally {

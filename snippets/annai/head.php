@@ -18,4 +18,4 @@ $model = $head ?? (isset($page) ? $page->annaiHead() : null);
 if ($model === null) {
 	return;
 }
-echo Annai\Head::render($model, ['title' => ($title ?? true) !== false]);
+echo Sayamaapps\Annai\Head::render($model, ['title' => ($title ?? true) !== false]);

@@ -1,6 +1,6 @@
 <?php
 
-use Annai\Head;
+use Sayamaapps\Annai\Head;
 use PHPUnit\Framework\Attributes\CoversNothing;
 use PHPUnit\Framework\TestCase;
 

@@ -1,6 +1,6 @@
 <?php
 
-use Annai\JsonLd;
+use Sayamaapps\Annai\JsonLd;
 use PHPUnit\Framework\Attributes\CoversNothing;
 use PHPUnit\Framework\TestCase;
 

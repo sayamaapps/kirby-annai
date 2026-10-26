@@ -1,6 +1,6 @@
 <?php
 
-use Annai\Robots;
+use Sayamaapps\Annai\Robots;
 use PHPUnit\Framework\Attributes\CoversNothing;
 use PHPUnit\Framework\TestCase;
 

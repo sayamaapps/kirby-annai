@@ -1,6 +1,6 @@
 <?php
 
-use Annai\Text;
+use Sayamaapps\Annai\Text;
 use PHPUnit\Framework\Attributes\CoversNothing;
 use PHPUnit\Framework\TestCase;
 
@@ -143,7 +143,7 @@ final class TextTest extends TestCase
 		// Without the library (Annai copied without Composer): every other field gives '' and
 		// 'library', the gate still answers first. A child process without the autoloader.
 		$phoneProbe = 'require ' . var_export(__DIR__ . '/../src/I18n.php', true) . '; require ' . var_export(__DIR__ . '/../src/Text.php', true) . ';'
-			. ' $out = []; foreach (["030 34567000", "Tel. 030 34567000", ""] as $field) { $out[] = [Annai\Text::phone($field), Annai\Text::phoneProblem($field)]; }'
+			. ' $out = []; foreach (["030 34567000", "Tel. 030 34567000", ""] as $field) { $out[] = [Sayamaapps\Annai\Text::phone($field), Sayamaapps\Annai\Text::phoneProblem($field)]; }'
 			. ' echo json_encode([class_exists("libphonenumber\\\\PhoneNumberUtil"), $out]);';
 		$process = proc_open([PHP_BINARY, '-r', $phoneProbe], [1 => ['pipe', 'w'], 2 => ['pipe', 'w']], $pipes);
 		$phoneWithout = null;

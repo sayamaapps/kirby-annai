@@ -1,7 +1,7 @@
 <?php
 
-use Annai\I18n;
-use Annai\LlmsTxt;
+use Sayamaapps\Annai\I18n;
+use Sayamaapps\Annai\LlmsTxt;
 use PHPUnit\Framework\Attributes\CoversNothing;
 use PHPUnit\Framework\TestCase;
 

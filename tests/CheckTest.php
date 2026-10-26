@@ -1,6 +1,6 @@
 <?php
 
-use Annai\Check;
+use Sayamaapps\Annai\Check;
 use PHPUnit\Framework\Attributes\CoversNothing;
 use PHPUnit\Framework\TestCase;
 
@@ -331,7 +331,7 @@ final class CheckTest extends TestCase
 					// annai.location spares Annai's lookup, not Noren's walk for the
 					// hours (home page, llms.txt, an annai.jsonld hook) — still reported.
 					expect([Check::NOREN_LOCATIONS_PROBLEM], Check::site(annai_kirby($norenTmp, $noren + ['annai.location' => 'kontakt']))['problems'], 'Noren with annai.location but without noren.locations: the index search is still reported');
-					expect(true, Annai\Business::searchesIndex(annai_kirby($norenTmp, $noren + ['annai.location' => 'kontakt'])), 'searchesIndex(): true for Noren without noren.locations, whatever annai.location says');
+					expect(true, Sayamaapps\Annai\Business::searchesIndex(annai_kirby($norenTmp, $noren + ['annai.location' => 'kontakt'])), 'searchesIndex(): true for Noren without noren.locations, whatever annai.location says');
 					expect([], Check::site(annai_kirby($norenTmp, $noren + ['annai.location' => 'kontakt', 'noren.locations' => ['kontakt']]))['problems'], 'Noren with annai.location and noren.locations: no problem');
 				} finally {
 					annai_remove_tree($norenTmp);

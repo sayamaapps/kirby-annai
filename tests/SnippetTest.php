@@ -22,7 +22,7 @@ HTML;
 /** The explicit model used by most checks, built by the plugin's own Head class. */
 function snippet_test_model(): array
 {
-	return Annai\Head::build([
+	return Sayamaapps\Annai\Head::build([
 		'title'       => 'Hofladen · Testhof',
 		'description' => 'Gemüse vom eigenen Feld.',
 		'canonical'   => 'https://x/laden',
@@ -67,7 +67,7 @@ final class SnippetTest extends TestCase
 			$html = $kirby->snippet('annai/head', ['head' => snippet_test_model()], true);
 			expect(SNIPPET_TEST_HTML, $html, 'explicit model: snippet prints Head::render() output exactly');
 			expect(
-				Annai\Head::render(snippet_test_model(), ['title' => true]),
+				Sayamaapps\Annai\Head::render(snippet_test_model(), ['title' => true]),
 				$html,
 				'explicit model: same string as Head::render()'
 			);

@@ -1,6 +1,6 @@
 <?php
 
-namespace Annai;
+namespace Sayamaapps\Annai;
 
 use Kirby\Cms\App;
 use Kirby\Cms\Page;

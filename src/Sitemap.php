@@ -1,6 +1,6 @@
 <?php
 
-namespace Annai;
+namespace Sayamaapps\Annai;
 
 /**
  * sitemaps.org XML (docs/SPEC.md §3.4).

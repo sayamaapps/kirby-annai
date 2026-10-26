@@ -1,28 +1,19 @@
 <?php
 
 use Kirby\Cms\App;
-use Kirby\Cms\Page;
+use Kirby\Filesystem\F;
+use Sayamaapps\Annai\Business;
+use Sayamaapps\Annai\Check;
+use Sayamaapps\Annai\Head;
+use Sayamaapps\Annai\I18n;
+use Sayamaapps\Annai\Options;
+use Sayamaapps\Annai\Pages;
+use Sayamaapps\Annai\Routes;
 
-require_once __DIR__ . '/src/I18n.php';
-require_once __DIR__ . '/src/Options.php';
-require_once __DIR__ . '/src/Text.php';
-require_once __DIR__ . '/src/Robots.php';
-require_once __DIR__ . '/src/Sitemap.php';
-require_once __DIR__ . '/src/LlmsTxt.php';
-require_once __DIR__ . '/src/JsonLd.php';
-require_once __DIR__ . '/src/Head.php';
-require_once __DIR__ . '/src/Business.php';
-require_once __DIR__ . '/src/Pages.php';
-require_once __DIR__ . '/src/Routes.php';
-require_once __DIR__ . '/src/Check.php';
-
-use Annai\Business;
-use Annai\Check;
-use Annai\Head;
-use Annai\I18n;
-use Annai\Options;
-use Annai\Pages;
-use Annai\Routes;
+// The class map (autoload.php) and the old names (legacy.php) load before the
+// plugin is registered. Both files only declare; no logic runs here.
+F::loadClasses(require __DIR__ . '/autoload.php', __DIR__);
+require_once __DIR__ . '/legacy.php';
 
 /**
  * Annai (案内 — guidance; the one who shows the way): everything search
