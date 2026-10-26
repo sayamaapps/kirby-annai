@@ -331,8 +331,9 @@ final class Business
 
     /**
      * Opening hours from Noren, as plain arrays. [] when Noren is not installed, not active,
-     * `annai.noren` is false, or there are no maintained plans. One entry per $site->norenUnits()
-     * item, in Noren's order, minus the units of a draft location page (Pages::isDraft(); logged
+     * `annai.noren` is false, or there are no maintained plans. One entry per $site->norenUnits(null, false)
+     * item — one per area also with `noren.mergeAreas`, whose groups only mean "alike today" and
+     * would drop a later closure of one area from JSON-LD and llms.txt — in Noren's order, minus the units of a draft location page (Pages::isDraft(); logged
      * once); the primary unit first:
      *   primary = among the units at the business location (place null), the one whose area
      *   equals `annai.area`, else the first; no primary when no unit is there (see primary()).
@@ -361,7 +362,7 @@ final class Business
         }
 
         $site = $kirby->site();
-        $units = array_values((array) $site->norenUnits());
+        $units = array_values((array) $site->norenUnits(null, false));
         if ($units === []) {
             return [];
         }
