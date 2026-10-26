@@ -1,6 +1,8 @@
 <?xml version="1.0"?>
+<!-- errorLevel 4, not the target 3: at level 3 the remaining findings need casts or guards that
+     change what malformed option values do (structure fields may hold arrays), see the PR. -->
 <psalm
-    errorLevel="3"
+    errorLevel="4"
     phpVersion="8.2"
     resolveFromConfigFile="true"
     findUnusedBaselineEntry="false"
@@ -18,4 +20,23 @@
             <directory name="config" />
         </ignoreFiles>
     </projectFiles>
+    <issueHandlers>
+        <!-- Koyomi is an optional sibling plugin: its classes and functions exist only when it is
+             installed, and Pages checks koyomiOn() first (the event rules of the sitemap and llms.txt). -->
+        <UndefinedClass>
+            <errorLevel type="suppress">
+                <file name="src/Pages.php" />
+            </errorLevel>
+        </UndefinedClass>
+        <UndefinedFunction>
+            <errorLevel type="suppress">
+                <file name="src/Pages.php" />
+            </errorLevel>
+        </UndefinedFunction>
+        <TypeDoesNotContainType>
+            <errorLevel type="suppress">
+                <file name="src/Pages.php" />
+            </errorLevel>
+        </TypeDoesNotContainType>
+    </issueHandlers>
 </psalm>

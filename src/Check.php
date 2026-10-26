@@ -29,7 +29,8 @@ final class Check
 	 * Site-level problem when the business page is looked up in the whole page
 	 * index (Business::searchesIndex()): no business page in the top two levels.
 	 */
-	public const LOCATION_PROBLEM = 'no business page in the top two page levels: every request searches the whole page index for one; set annai.location (a page id, or fn () => null for none)';
+	public const LOCATION_PROBLEM = 'no business page in the top two page levels: every request searches the whole page index for one; '
+		. 'set annai.location (a page id, or fn () => null for none)';
 
 	/**
 	 * Site-level problem (sprintf with the brand field name) when the business
@@ -61,7 +62,9 @@ final class Check
 	 * spares Annai's lookup, not Noren's. Reported instead of
 	 * LOCATION_PROBLEM, whose advice does not help here.
 	 */
-	public const NOREN_LOCATIONS_PROBLEM = 'Noren runs without noren.locations: every page that shows the opening hours or asks for the business page makes Noren walk the whole page index for its location pages; set noren.locations (annai.location does not stop it)';
+	public const NOREN_LOCATIONS_PROBLEM = 'Noren runs without noren.locations: every page that shows the opening hours or asks for the business page '
+		. 'makes Noren walk the whole page index for its location pages; '
+		. 'set noren.locations (annai.location does not stop it)';
 
 	/** Site-level problem when the previous plugin is still installed next to Annai. */
 	public const OLD_PLUGIN_PROBLEM = 'old plugin site/plugins/suchmaschinen is still installed: it and Annai both register robots.txt, sitemap.xml and llms.txt; remove it';
@@ -96,6 +99,23 @@ final class Check
 	public static function exitCode(array $report): int
 	{
 		return self::problemCount($report) > 0 ? 1 : 0;
+	}
+
+	/**
+	 * The `## ` headings of llms.txt. Text::EOL, not `\R`: in byte mode `\R` cut
+	 * a heading "## 案内" inside the "内".
+	 *
+	 * @return list<string>
+	 */
+	private static function headings(string $llms): array
+	{
+		$headings = [];
+		foreach (preg_split(Text::EOL, $llms) ?: [] as $line) {
+			if (str_starts_with($line, '## ')) {
+				$headings[] = trim(substr($line, 3));
+			}
+		}
+		return $headings;
 	}
 
 	/**
@@ -139,6 +159,22 @@ final class Check
 	}
 
 	/**
+	 * Notes that are printed but not counted. On the command line without --url
+	 * Kirby's URL is "/", and canonical, og:url and the Sitemap: line come out as
+	 * paths: the site is not wrong, the call is incomplete.
+	 *
+	 * @return list<string>
+	 */
+	private static function notes(App $kirby): array
+	{
+		$notes = [];
+		if (preg_match('#^https?://[^/]+#i', Pages::base($kirby)) !== 1) {
+			$notes[] = self::NO_HOST_NOTE;
+		}
+		return $notes;
+	}
+
+	/**
 	 * What engines and agents see on one page: url, id, template, indexable,
 	 * robots meta, title and description with lengths, canonical, og:image,
 	 * number of hreflang alternates, JSON-LD types and validity, problems and
@@ -153,6 +189,7 @@ final class Check
 	{
 		// JSON-LD that cannot be encoded is left out of the head (Business::head()
 		// logs it); the raw document from annaiJsonLd() below still reports it.
+		/** @psalm-suppress UndefinedMagicMethod annaiHead() is registered by this plugin (pageMethods) */
 		$head = $page->annaiHead() ?? [];
 		$title = (string)($head['title'] ?? '');
 		$description = (string)($head['description'] ?? '');
@@ -165,6 +202,7 @@ final class Check
 		// noindex only while the preview is on, and site() says that once
 		// (PREVIEW_PROBLEM); drafts and excluded pages are not indexable.
 		$robots = Pages::robots($kirby, $page);
+		/** @psalm-suppress UndefinedMagicMethod annaiJsonLd() is registered by this plugin (pageMethods) */
 		$jsonld = self::jsonld($page->annaiJsonLd());
 		$descriptionLength = mb_strlen($description);
 
@@ -200,7 +238,7 @@ final class Check
 		return [
 			'url'         => $page->url(),
 			'id'          => $page->id(),
-			'template'    => (string)$page->intendedTemplate()->name(),
+			'template'    => $page->intendedTemplate()->name(),
 			'indexable'   => $indexable,
 			'robots'      => $robots,
 			'title'       => ['text' => $title, 'length' => mb_strlen($title)],
@@ -212,6 +250,41 @@ final class Check
 			'problems'    => $problems,
 			'notes'       => $notes,
 		];
+	}
+
+	/**
+	 * Problems across the pages: the preview, ids that name no indexable page,
+	 * and titles that more than one page uses.
+	 *
+	 * @param list<string> $only
+	 * @param list<string> $ids
+	 * @param list<array<string,mixed>> $pages
+	 * @return list<string>
+	 */
+	private static function pageProblems(array $only, array $ids, array $pages, bool $preview): array
+	{
+		$problems = [];
+		if ($preview) {
+			$problems[] = self::PREVIEW_PROBLEM;
+		}
+		foreach ($only as $id) {
+			if (!in_array($id, $ids, true)) {
+				$problems[] = 'no indexable page with id: ' . $id;
+			}
+		}
+
+		$byTitle = [];
+		foreach ($pages as $page) {
+			if ($page['title']['text'] !== '') {
+				$byTitle[$page['title']['text']][] = $page['id'];
+			}
+		}
+		foreach ($byTitle as $title => $list) {
+			if (count($list) > 1) {
+				$problems[] = 'duplicate title: ' . $title . ' (' . implode(', ', $list) . ')';
+			}
+		}
+		return $problems;
 	}
 
 	/**
@@ -228,6 +301,43 @@ final class Check
 			'e164'    => $e164 !== '' ? $e164 : null,
 			'problem' => $e164 !== '' ? null : Text::phoneProblem($raw, $country),
 		];
+	}
+
+	/**
+	 * Every phone and fax field with its raw value and its result (SPEC §3.2, the
+	 * input contract): the E.164 number Annai publishes, or why it publishes none,
+	 * so a person sees each field before the go-live. Printed, not counted; a field
+	 * that gives no number is logged as well and so is a configuration problem.
+	 * Also the phone of every further location page: it goes into the JSON-LD
+	 * departments and llms.txt as well, read from Business::units(), one line per
+	 * page; the raw value from that page's own field, as Business::place() reads it.
+	 *
+	 * @param array<string,mixed> $facts
+	 * @return list<array<string,mixed>>
+	 */
+	private static function phoneReports(App $kirby, array $facts): array
+	{
+		$country = Options::phoneCountry($kirby);
+		$phones = [];
+		foreach (Options::active($kirby) ? ['phone', 'fax'] : [] as $key) {
+			$raw = Business::field($kirby, $key);
+			if ($raw !== '') {
+				$phones[] = self::phone(['field' => $key], $raw, (string)($facts[$key . 'E164'] ?? ''), $country);
+			}
+		}
+		$placePages = [];
+		$phoneField = (string)Options::fields($kirby)['phone'];
+		foreach (Options::active($kirby) ? Business::units($kirby) : [] as $unit) {
+			$place = $unit['place'] ?? null;
+			$page = (string)($unit['location'] ?? '');
+			if ($place === null || $place['phone'] === '' || isset($placePages[$page])) {
+				continue;
+			}
+			$placePages[$page] = true;
+			$raw = (string)$kirby->page($page)?->content()->get($phoneField);
+			$phones[] = self::phone(['field' => 'phone', 'page' => $page], $raw, (string)$place['phoneE164'], $country);
+		}
+		return $phones;
 	}
 
 	/** Page problems + site problems + robots warnings. */
@@ -325,6 +435,56 @@ final class Check
 	}
 
 	/**
+	 * robots.txt as it will be served and its warnings. The warnings are those of
+	 * the configuration that applies once the preview ends: with blockAll (an
+	 * explicit annai.noindex => true), warnings() would say only "Disallow: / for
+	 * everyone" and hide a blocked user agent until the go-live.
+	 *
+	 * @return array{text: string, warnings: list<string>}
+	 */
+	private static function robotsReport(App $kirby): array
+	{
+		$robotsConfig = Routes::robotsConfig($kirby);
+		return [
+			'text'     => Robots::render($robotsConfig),
+			'warnings' => Robots::warnings(array_merge($robotsConfig, ['blockAll' => false])),
+		];
+	}
+
+	/**
+	 * Problems of the installation and the configuration: the 2.x plugin next to
+	 * this one, static files in the web root, the location pages, and a missing
+	 * name. Also the facts without the units (no Noren call for a name check),
+	 * which the phone reports use.
+	 *
+	 * @param list<string> $problems
+	 * @return array{0: list<string>, 1: array<string,mixed>}
+	 */
+	private static function setupProblems(App $kirby, array $problems): array
+	{
+		if (is_dir($kirby->root('site') . '/plugins/suchmaschinen')) {
+			$problems[] = self::OLD_PLUGIN_PROBLEM;
+		}
+		// The web server serves an existing file before Kirby runs (.htaccess
+		// "!-f"): a static robots.txt left in the web root silently replaces the route.
+		foreach (['robots.txt', 'sitemap.xml', 'llms.txt'] as $name) {
+			if (is_file($kirby->root('index') . '/' . $name)) {
+				$problems[] = sprintf(self::STATIC_FILE_PROBLEM, $name);
+			}
+		}
+		if (Options::active($kirby) && Business::norenSearchesIndex($kirby)) {
+			$problems[] = self::NOREN_LOCATIONS_PROBLEM;
+		} elseif (Options::active($kirby) && Business::searchesIndex($kirby)) {
+			$problems[] = self::LOCATION_PROBLEM;
+		}
+		$facts = Options::active($kirby) ? Business::facts($kirby, false) : [];
+		if (Options::active($kirby) && ($facts['name'] ?? '') === '') {
+			$problems[] = sprintf(self::NAME_PROBLEM, Options::fields($kirby)['brand']);
+		}
+		return [$problems, $facts];
+	}
+
+	/**
 	 * Site report (see the layout in docs/SPEC.md §3.11): robots.txt and its
 	 * warnings, sitemap counts, llms.txt length and section headings, preview
 	 * state (preview, and hidden for an explicit annai.noindex => true), every
@@ -406,160 +566,5 @@ final class Check
 			$ids[] = $page->id();
 		}
 		return [$pages, $ids];
-	}
-
-	/**
-	 * Problems across the pages: the preview, ids that name no indexable page,
-	 * and titles that more than one page uses.
-	 *
-	 * @param list<string> $only
-	 * @param list<string> $ids
-	 * @param list<array<string,mixed>> $pages
-	 * @return list<string>
-	 */
-	private static function pageProblems(array $only, array $ids, array $pages, bool $preview): array
-	{
-		$problems = [];
-		if ($preview) {
-			$problems[] = self::PREVIEW_PROBLEM;
-		}
-		foreach ($only as $id) {
-			if (!in_array($id, $ids, true)) {
-				$problems[] = 'no indexable page with id: ' . $id;
-			}
-		}
-
-		$byTitle = [];
-		foreach ($pages as $page) {
-			if ($page['title']['text'] !== '') {
-				$byTitle[$page['title']['text']][] = $page['id'];
-			}
-		}
-		foreach ($byTitle as $title => $list) {
-			if (count($list) > 1) {
-				$problems[] = 'duplicate title: ' . $title . ' (' . implode(', ', $list) . ')';
-			}
-		}
-		return $problems;
-	}
-
-	/**
-	 * Problems of the installation and the configuration: the 2.x plugin next to
-	 * this one, static files in the web root, the location pages, and a missing
-	 * name. Also the facts without the units (no Noren call for a name check),
-	 * which the phone reports use.
-	 *
-	 * @param list<string> $problems
-	 * @return array{0: list<string>, 1: array<string,mixed>}
-	 */
-	private static function setupProblems(App $kirby, array $problems): array
-	{
-		if (is_dir($kirby->root('site') . '/plugins/suchmaschinen')) {
-			$problems[] = self::OLD_PLUGIN_PROBLEM;
-		}
-		// The web server serves an existing file before Kirby runs (.htaccess
-		// "!-f"): a static robots.txt left in the web root silently replaces the route.
-		foreach (['robots.txt', 'sitemap.xml', 'llms.txt'] as $name) {
-			if (is_file($kirby->root('index') . '/' . $name)) {
-				$problems[] = sprintf(self::STATIC_FILE_PROBLEM, $name);
-			}
-		}
-		if (Options::active($kirby) && Business::norenSearchesIndex($kirby)) {
-			$problems[] = self::NOREN_LOCATIONS_PROBLEM;
-		} elseif (Options::active($kirby) && Business::searchesIndex($kirby)) {
-			$problems[] = self::LOCATION_PROBLEM;
-		}
-		$facts = Options::active($kirby) ? Business::facts($kirby, false) : [];
-		if (Options::active($kirby) && ($facts['name'] ?? '') === '') {
-			$problems[] = sprintf(self::NAME_PROBLEM, Options::fields($kirby)['brand']);
-		}
-		return [$problems, $facts];
-	}
-
-	/**
-	 * Every phone and fax field with its raw value and its result (SPEC §3.2, the
-	 * input contract): the E.164 number Annai publishes, or why it publishes none,
-	 * so a person sees each field before the go-live. Printed, not counted; a field
-	 * that gives no number is logged as well and so is a configuration problem.
-	 * Also the phone of every further location page: it goes into the JSON-LD
-	 * departments and llms.txt as well, read from Business::units(), one line per
-	 * page; the raw value from that page's own field, as Business::place() reads it.
-	 *
-	 * @param array<string,mixed> $facts
-	 * @return list<array<string,mixed>>
-	 */
-	private static function phoneReports(App $kirby, array $facts): array
-	{
-		$country = Options::phoneCountry($kirby);
-		$phones = [];
-		foreach (Options::active($kirby) ? ['phone', 'fax'] : [] as $key) {
-			$raw = Business::field($kirby, $key);
-			if ($raw !== '') {
-				$phones[] = self::phone(['field' => $key], $raw, (string)($facts[$key . 'E164'] ?? ''), $country);
-			}
-		}
-		$placePages = [];
-		$phoneField = (string)Options::fields($kirby)['phone'];
-		foreach (Options::active($kirby) ? Business::units($kirby) : [] as $unit) {
-			$place = $unit['place'] ?? null;
-			$page = (string)($unit['location'] ?? '');
-			if ($place === null || $place['phone'] === '' || isset($placePages[$page])) {
-				continue;
-			}
-			$placePages[$page] = true;
-			$raw = (string)$kirby->page($page)?->content()->get($phoneField);
-			$phones[] = self::phone(['field' => 'phone', 'page' => $page], $raw, (string)$place['phoneE164'], $country);
-		}
-		return $phones;
-	}
-
-	/**
-	 * Notes that are printed but not counted. On the command line without --url
-	 * Kirby's URL is "/", and canonical, og:url and the Sitemap: line come out as
-	 * paths: the site is not wrong, the call is incomplete.
-	 *
-	 * @return list<string>
-	 */
-	private static function notes(App $kirby): array
-	{
-		$notes = [];
-		if (preg_match('#^https?://[^/]+#i', Pages::base($kirby)) !== 1) {
-			$notes[] = self::NO_HOST_NOTE;
-		}
-		return $notes;
-	}
-
-	/**
-	 * The `## ` headings of llms.txt. Text::EOL, not `\R`: in byte mode `\R` cut
-	 * a heading "## 案内" inside the "内".
-	 *
-	 * @return list<string>
-	 */
-	private static function headings(string $llms): array
-	{
-		$headings = [];
-		foreach (preg_split(Text::EOL, $llms) ?: [] as $line) {
-			if (str_starts_with($line, '## ')) {
-				$headings[] = trim(substr($line, 3));
-			}
-		}
-		return $headings;
-	}
-
-	/**
-	 * robots.txt as it will be served and its warnings. The warnings are those of
-	 * the configuration that applies once the preview ends: with blockAll (an
-	 * explicit annai.noindex => true), warnings() would say only "Disallow: / for
-	 * everyone" and hide a blocked user agent until the go-live.
-	 *
-	 * @return array{text: string, warnings: list<string>}
-	 */
-	private static function robotsReport(App $kirby): array
-	{
-		$robotsConfig = Routes::robotsConfig($kirby);
-		return [
-			'text'     => Robots::render($robotsConfig),
-			'warnings' => Robots::warnings(array_merge($robotsConfig, ['blockAll' => false])),
-		];
 	}
 }

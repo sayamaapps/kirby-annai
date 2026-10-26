@@ -28,7 +28,8 @@ final class LlmsTxt
 	 * URI) and dropped the summary; recursive parentheses rescanned the rest of
 	 * the text from every "[a](" (20 s for 25,000 without JIT).
 	 */
-	private const LINK = '/\[(?<label>(?:[^\[\]]++|\[[^\[\]]*+\])*+)\]\(\s*(?:<(?<angle>[^<>]*)>|(?<bare>(?:[^\s()]++|\((?:[^\s()]++|\((?:[^\s()]++|\([^\s()]*+\))*+\))*+\))*+))(?:\s+(?:"[^"]*"|\'[^\']*\'|\([^()]*\)))?\s*\)/u';
+	private const LINK = '/\[(?<label>(?:[^\[\]]++|\[[^\[\]]*+\])*+)\]\(\s*(?:<(?<angle>[^<>]*)>|(?<bare>(?:[^\s()]++|\((?:[^\s()]++|' .
+		'\((?:[^\s()]++|\([^\s()]*+\))*+\))*+\))*+))(?:\s+(?:"[^"]*"|\'[^\']*\'|\([^()]*\)))?\s*\)/u';
 
 	/** Link targets the summary may keep (lower case prefixes): web, mail, phone, same site. */
 	private const LINK_TARGETS = ['http://', 'https://', 'mailto:', 'tel:', '/', '#'];

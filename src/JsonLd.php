@@ -88,7 +88,7 @@ final class JsonLd
 	private static function fragment(array $unit): string|null
 	{
 		$area = is_string($unit['area'] ?? null) && $unit['area'] !== '' ? $unit['area'] : null;
-		$location = is_string($unit['location'] ?? null) && $unit['location'] !== '' ? str_replace('/', '-', $unit['location']) : null;
+		$location = is_string($unit['location'] ?? null) && $unit['location'] !== '' ? str_replace('/', '-', (string)$unit['location']) : null;
 		if ($area !== null && ($unit['atBusiness'] ?? !is_array($unit['place'] ?? null)) === true) {
 			return $area;
 		}
@@ -134,7 +134,7 @@ final class JsonLd
 			$departments[] = [
 				'@type'                            => $type,
 				'@id'                              => $url . '/#' . $fragment,
-				'name'                             => $name !== '' && $unitName !== '' ? $name . ' — ' . $unitName : $unitName,
+				'name'                             => $unitName !== '' ? $name . ' — ' . $unitName : $unitName,
 				// A unit at another location has its own address and phone, never the main one.
 				'address'                          => $place !== null ? self::address($place + ['country' => $facts['country'] ?? '']) : $address,
 				'telephone'                        => $place !== null ? ($place['phoneE164'] ?? null) : ($facts['phoneE164'] ?? null),

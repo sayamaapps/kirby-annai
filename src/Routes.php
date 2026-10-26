@@ -2,11 +2,11 @@
 
 namespace Sayamaapps\Annai;
 
+use DateTimeImmutable;
 use Kirby\Cms\App;
 use Kirby\Cms\Page;
 use Kirby\Content\Field;
 use Kirby\Http\Response;
-use DateTimeImmutable;
 
 /**
  * The route bodies: robots.txt, sitemap.xml, llms.txt (docs/SPEC.md §3.9).
@@ -241,7 +241,7 @@ final class Routes
 			$sitemaps = [];
 			foreach ($parts as $number => $part) {
 				$sitemaps[] = [
-					'loc'     => $base . '/sitemap-' . ($number + 1) . '.xml',
+					'loc'     => $base . '/sitemap-' . ((int)$number + 1) . '.xml',
 					'lastmod' => self::newest($part),
 				];
 			}

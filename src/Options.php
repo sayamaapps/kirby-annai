@@ -3,10 +3,10 @@
 namespace Sayamaapps\Annai;
 
 use Closure;
-use Kirby\Cms\App;
-use Kirby\Cms\Helpers;
 use DateTimeZone;
 use InvalidArgumentException;
+use Kirby\Cms\App;
+use Kirby\Cms\Helpers;
 
 /**
  * Reads `sayamaapps.annai.*` options, with the 2.x `annai.*` names as fallback
@@ -162,7 +162,8 @@ final class Options
 		}
 		if ($value < self::DESCRIPTION_LENGTH_MIN || $value > self::DESCRIPTION_LENGTH_MAX) {
 			$clamped = max(self::DESCRIPTION_LENGTH_MIN, min(self::DESCRIPTION_LENGTH_MAX, $value));
-			self::warn($kirby, 'Annai: annai.descriptionLength ' . $value . ' is outside ' . self::DESCRIPTION_LENGTH_MIN . '…' . self::DESCRIPTION_LENGTH_MAX . ' — using ' . $clamped . '.');
+			self::warn($kirby, 'Annai: annai.descriptionLength ' . $value . ' is outside ' . self::DESCRIPTION_LENGTH_MIN
+				. '…' . self::DESCRIPTION_LENGTH_MAX . ' — using ' . $clamped . '.');
 			return $clamped;
 		}
 		return $value;
@@ -292,30 +293,6 @@ final class Options
 	public static function get(App $kirby, string $key, mixed $default = null): mixed
 	{
 		return self::read($kirby, 'annai', $key) ?? $default;
-	}
-
-	/**
-	 * Reads `sayamaapps.<plugin>.<key>` (OPT-1). A value still under the 2.x name
-	 * `<plugin>.<key>` is returned as well and reported as deprecated (Kirby's
-	 * `debug` option turns the report on). Null when neither is set.
-	 *
-	 * Used for Annai's own options (plugin `annai`) and for the Noren options
-	 * Annai reads (plugin `noren`).
-	 */
-	public static function read(App $kirby, string $plugin, string $key): mixed
-	{
-		$value = $kirby->option(self::PREFIX . $plugin . '.' . $key);
-		if ($value !== null) {
-			return $value;
-		}
-		$legacy = $kirby->option($plugin . '.' . $key);
-		if ($legacy !== null) {
-			Helpers::deprecated(
-				$plugin . '.' . $key . ' is deprecated, use ' . self::PREFIX . $plugin . '.' . $key,
-				'option-prefix'
-			);
-		}
-		return $legacy;
 	}
 
 	/**
@@ -507,6 +484,30 @@ final class Options
 		$value = self::get($kirby, 'phoneCountry', '49');
 		$digits = ltrim((string)preg_replace('/\D+/', '', (string)$value), '0');
 		return $digits !== '' ? $digits : '49';
+	}
+
+	/**
+	 * Reads `sayamaapps.<plugin>.<key>` (OPT-1). A value still under the 2.x name
+	 * `<plugin>.<key>` is returned as well and reported as deprecated (Kirby's
+	 * `debug` option turns the report on). Null when neither is set.
+	 *
+	 * Used for Annai's own options (plugin `annai`) and for the Noren options
+	 * Annai reads (plugin `noren`).
+	 */
+	public static function read(App $kirby, string $plugin, string $key): mixed
+	{
+		$value = $kirby->option(self::PREFIX . $plugin . '.' . $key);
+		if ($value !== null) {
+			return $value;
+		}
+		$legacy = $kirby->option($plugin . '.' . $key);
+		if ($legacy !== null) {
+			Helpers::deprecated(
+				$plugin . '.' . $key . ' is deprecated, use ' . self::PREFIX . $plugin . '.' . $key,
+				'option-prefix'
+			);
+		}
+		return $legacy;
 	}
 
 	/**

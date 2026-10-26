@@ -335,6 +335,7 @@ final class Pages
 			return true;
 		}
 		try {
+			/** @psalm-suppress InternalMethod Version::contentFile() is @internal in Kirby; see the note above */
 			return is_file($page->version('latest')->contentFile($language));
 		} catch (\Throwable) {
 			return true;

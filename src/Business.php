@@ -21,7 +21,7 @@ final class Business
 {
 	private const LOCATION_KEYS = ['street', 'postalCode', 'city', 'phone', 'fax', 'email'];
 
-	/** @var ?\WeakMap<Site, array{page: ?Page, index: bool}> byTemplate() per site object */
+	/** @var ?WeakMap<Site, array{page: ?Page, index: bool}> byTemplate() per site object */
 	private static WeakMap|null $byTemplate = null;
 
 	/**
@@ -74,8 +74,9 @@ final class Business
 	{
 		$site = $kirby->site();
 		self::$byTemplate ??= new WeakMap();
-		if (isset(self::$byTemplate[$site])) {
-			return self::$byTemplate[$site];
+		$cached = self::$byTemplate[$site] ?? null;
+		if ($cached !== null) {
+			return $cached;
 		}
 
 		$templates = Options::locationTemplates($kirby);
@@ -175,7 +176,8 @@ final class Business
 			'invalid' => 'field ' . $field . ' holds no valid phone number (' . $value
 				. ') — nothing is published as E.164; write the whole number with its area code (a national number counts for +' . $country
 				. ', annai.phoneCountry) or with its country code (+…).',
-			'library' => 'phone numbers need giggsey/libphonenumber-for-php-lite, which is not installed — nothing is published as E.164; install Annai with Composer (README, Installation).',
+			'library' => 'phone numbers need giggsey/libphonenumber-for-php-lite, which is not installed — nothing is published as E.164; '
+				. 'install Annai with Composer (README, Installation).',
 			default => null,
 		};
 		if ($message !== null) {
@@ -245,6 +247,7 @@ final class Business
 
 		$name = Text::line($read('brand'));
 		if ($name === '') {
+			/** @psalm-suppress UndefinedMagicMethod title() is a Kirby field method */
 			$name = Text::line((string)$site->title());
 		}
 
@@ -500,6 +503,7 @@ final class Business
 		}
 
 		if (self::norenUsed($kirby)) {
+			/** @psalm-suppress UndefinedMagicMethod norenLocation() is registered by Noren (siteMethods) */
 			$page = $kirby->site()->norenLocation();
 			if ($page instanceof Page && !Pages::isDraft($page)) {
 				return $page;
@@ -715,6 +719,7 @@ final class Business
 			return false;
 		}
 		if (self::norenUsed($kirby)) {
+			/** @psalm-suppress UndefinedMagicMethod norenLocation() is registered by Noren (siteMethods) */
 			$page = $kirby->site()->norenLocation();
 			if ($page instanceof Page && !Pages::isDraft($page)) {
 				return false;
@@ -798,11 +803,13 @@ final class Business
 		}
 
 		$site = $kirby->site();
+		/** @psalm-suppress UndefinedMagicMethod norenUnits() is registered by Noren (siteMethods) */
 		$units = array_values((array)$site->norenUnits(null, false));
 		if ($units === []) {
 			return [];
 		}
 
+		/** @psalm-suppress UndefinedMagicMethod norenHolidays() is registered by Noren (siteMethods) */
 		$holidays = $site->norenHolidays() !== [];
 		$business = self::location($kirby);
 		// A draft named in `noren.locations` (Noren's $kirby->page() finds drafts)
@@ -825,6 +832,7 @@ final class Business
 		}
 		$several = count($pages) > 1;
 		$result = [];
+		/** @psalm-suppress UndefinedDocblockClass the Schedule of Noren is an optional package, see Business::norenUsed() */
 		foreach ($units as $unit) {
 			/** @var Schedule $schedule */
 			$schedule = $unit['schedule'];
@@ -851,6 +859,7 @@ final class Business
 			// The unit's own location page: $site->norenSchema() reads the FIRST
 			// location only, so a second location's area would get no hours.
 			$page = ($unit['location'] ?? null) instanceof Page ? $unit['location'] : null;
+			/** @psalm-suppress UndefinedMagicMethod norenSchema() is registered by Noren (page and siteMethods) */
 			$schema = $page !== null ? $page->norenSchema($unit['area'] ?? null) : $site->norenSchema($unit['area'] ?? null);
 			$place = self::otherPlace($kirby, $page, $business);
 
