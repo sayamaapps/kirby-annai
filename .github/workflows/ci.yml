@@ -5,6 +5,8 @@ on:
   push:
     branches: [main]
   pull_request:
+  # A manual run checks a branch before its pull request exists.
+  workflow_dispatch:
 
 # A new push to the same PR cancels the outdated run.
 concurrency:
