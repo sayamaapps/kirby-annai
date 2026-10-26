@@ -11,12 +11,12 @@ use PHPUnit\Framework\Assert;
 /** Strict comparison ($expected === $actual). */
 function expect(mixed $expected, mixed $actual, string $what): void
 {
-    Assert::assertSame($expected, $actual, $what);
+	Assert::assertSame($expected, $actual, $what);
 }
 
 function holds(bool $ok, string $what): void
 {
-    Assert::assertTrue($ok, $what);
+	Assert::assertTrue($ok, $what);
 }
 
 /**
@@ -26,17 +26,17 @@ function holds(bool $ok, string $what): void
  */
 function skip(string $what, string $why): void
 {
-    holds(true, $what . ' (skipped: ' . $why . ')');
+	holds(true, $what . ' (skipped: ' . $why . ')');
 }
 
 /** Only these keys of an array, in this order. */
 function only(array $array, array $keys): array
 {
-    $result = [];
-    foreach ($keys as $key) {
-        $result[$key] = $array[$key] ?? null;
-    }
-    return $result;
+	$result = [];
+	foreach ($keys as $key) {
+		$result[$key] = $array[$key] ?? null;
+	}
+	return $result;
 }
 
 /* --------------------------------------------------------------------------
@@ -44,16 +44,16 @@ function only(array $array, array $keys): array
  * -------------------------------------------------------------------------- */
 
 /** Path of the sibling package, or null: ANNAI_NOREN_PATH / ANNAI_KOYOMI_PATH, else ../kirby-<name>. */
-function annai_sibling(string $name): ?string
+function annai_sibling(string $name): string|null
 {
-    $env = getenv('ANNAI_' . strtoupper($name) . '_PATH');
-    $candidates = [$env !== false ? $env : null, dirname(__DIR__, 2) . '/kirby-' . $name];
-    foreach ($candidates as $path) {
-        if (is_string($path) && $path !== '' && is_file($path . '/index.php')) {
-            return realpath($path) ?: $path;
-        }
-    }
-    return null;
+	$env = getenv('ANNAI_' . strtoupper($name) . '_PATH');
+	$candidates = [$env !== false ? $env : null, dirname(__DIR__, 2) . '/kirby-' . $name];
+	foreach ($candidates as $path) {
+		if (is_string($path) && $path !== '' && is_file($path . '/index.php')) {
+			return realpath($path) ?: $path;
+		}
+	}
+	return null;
 }
 
 /**
@@ -69,32 +69,32 @@ function annai_sibling(string $name): ?string
  */
 function annai_site(array $with = []): string
 {
-    $base = dirname(__DIR__);
-    if (!is_file($base . '/vendor/autoload.php')) {
-        fwrite(STDERR, "Composer dependencies missing; run composer install first\n");
-        exit(1);
-    }
-    require_once $base . '/vendor/autoload.php';
+	$base = dirname(__DIR__);
+	if (!is_file($base . '/vendor/autoload.php')) {
+		fwrite(STDERR, "Composer dependencies missing; run composer install first\n");
+		exit(1);
+	}
+	require_once $base . '/vendor/autoload.php';
 
-    $tmp = sys_get_temp_dir() . '/annai-kirby-' . bin2hex(random_bytes(6));
-    foreach (['public', 'content/home', 'content/error', 'site/config', 'site/plugins', 'site/snippets', 'site/templates', 'site/blueprints/pages', 'storage'] as $dir) {
-        mkdir($tmp . '/' . $dir, 0700, true);
-    }
-    symlink($base, $tmp . '/site/plugins/annai');
-    foreach ($with as $name) {
-        $path = annai_sibling($name);
-        if ($path !== null) {
-            symlink($path, $tmp . '/site/plugins/' . $name);
-        }
-    }
-    $template = '<html><head><?php snippet("annai/head") ?></head><body>Fixture</body></html>';
-    foreach (['default', 'home', 'betrieb', 'weiter', 'rechtstext'] as $name) {
-        file_put_contents($tmp . '/site/templates/' . $name . '.php', $template);
-    }
-    file_put_contents($tmp . '/site/templates/error.php', '<?php echo "Fixture 404";');
-    file_put_contents($tmp . '/content/home/home.txt', "Title: Home\n");
-    file_put_contents($tmp . '/content/error/error.txt', "Title: Error\n");
-    return $tmp;
+	$tmp = sys_get_temp_dir() . '/annai-kirby-' . bin2hex(random_bytes(6));
+	foreach (['public', 'content/home', 'content/error', 'site/config', 'site/plugins', 'site/snippets', 'site/templates', 'site/blueprints/pages', 'storage'] as $dir) {
+		mkdir($tmp . '/' . $dir, 0700, true);
+	}
+	symlink($base, $tmp . '/site/plugins/annai');
+	foreach ($with as $name) {
+		$path = annai_sibling($name);
+		if ($path !== null) {
+			symlink($path, $tmp . '/site/plugins/' . $name);
+		}
+	}
+	$template = '<html><head><?php snippet("annai/head") ?></head><body>Fixture</body></html>';
+	foreach (['default', 'home', 'betrieb', 'weiter', 'rechtstext'] as $name) {
+		file_put_contents($tmp . '/site/templates/' . $name . '.php', $template);
+	}
+	file_put_contents($tmp . '/site/templates/error.php', '<?php echo "Fixture 404";');
+	file_put_contents($tmp . '/content/home/home.txt', "Title: Home\n");
+	file_put_contents($tmp . '/content/error/error.txt', "Title: Error\n");
+	return $tmp;
 }
 
 /**
@@ -104,18 +104,18 @@ function annai_site(array $with = []): string
  */
 function annai_kirby(string $tmp, array $options = []): Kirby\Cms\App
 {
-    Kirby\Template\Snippet::$cache = [];
-    return new Kirby\Cms\App([
-        'roots' => [
-            'base'    => $tmp,
-            'index'   => $tmp . '/public',
-            'content' => $tmp . '/content',
-            'site'    => $tmp . '/site',
-            'storage' => $tmp . '/storage',
-        ],
-        // $options first: with `+` the left array wins, and the docblock promises they override the defaults.
-        'options' => $options + ['url' => 'http://example.invalid', 'debug' => false, 'cache' => false],
-    ]);
+	Kirby\Template\Snippet::$cache = [];
+	return new Kirby\Cms\App([
+		'roots' => [
+			'base'    => $tmp,
+			'index'   => $tmp . '/public',
+			'content' => $tmp . '/content',
+			'site'    => $tmp . '/site',
+			'storage' => $tmp . '/storage',
+		],
+		// $options first: with `+` the left array wins, and the docblock promises they override the defaults.
+		'options' => $options + ['url' => 'http://example.invalid', 'debug' => false, 'cache' => false],
+	]);
 }
 
 /**
@@ -126,17 +126,17 @@ function annai_kirby(string $tmp, array $options = []): Kirby\Cms\App
  *   annai_page($tmp, '1_kontakt', 'betrieb', ['title' => 'Kontakt', 'strasse' => 'Musterweg 1']);
  *   annai_page($tmp, '', 'site', ['title' => 'Testhof', 'marke' => 'Testhof']);   // content/site.txt
  */
-function annai_page(string $tmp, string $dir, string $template, array $fields, ?string $language = null): void
+function annai_page(string $tmp, string $dir, string $template, array $fields, string|null $language = null): void
 {
-    $lines = [];
-    foreach ($fields as $name => $value) {
-        $text = is_array($value) ? Kirby\Data\Yaml::encode($value) : (string) $value;
-        $lines[] = ucfirst($name) . ': ' . (is_array($value) ? "\n\n" . $text : $text);
-    }
-    $folder = $dir === '' ? $tmp . '/content' : $tmp . '/content/' . $dir;
-    @mkdir($folder, 0700, true);
-    $file = $template . ($language !== null ? '.' . $language : '') . '.txt';
-    file_put_contents($folder . '/' . $file, implode("\n\n----\n\n", $lines) . "\n");
+	$lines = [];
+	foreach ($fields as $name => $value) {
+		$text = is_array($value) ? Kirby\Data\Yaml::encode($value) : (string)$value;
+		$lines[] = ucfirst($name) . ': ' . (is_array($value) ? "\n\n" . $text : $text);
+	}
+	$folder = $dir === '' ? $tmp . '/content' : $tmp . '/content/' . $dir;
+	@mkdir($folder, 0700, true);
+	$file = $template . ($language !== null ? '.' . $language : '') . '.txt';
+	file_put_contents($folder . '/' . $file, implode("\n\n----\n\n", $lines) . "\n");
 }
 
 /**
@@ -146,57 +146,57 @@ function annai_page(string $tmp, string $dir, string $template, array $fields, ?
  */
 function annai_request(Kirby\Cms\App $kirby, string $path, string $method = 'GET'): array
 {
-    // Kirby's Responder is shared per App instance and keeps the code of the
-    // previous render (an error page leaves 404 behind), so it is reset first.
-    $reset = function (): void {
-        $this->code = null;
-        $this->body = null;
-        $this->type = null;
-        $this->headers = [];
-        $this->cache = true;
-        $this->expires = null;
-    };
-    Closure::bind($reset, $kirby->response(), Kirby\Cms\Responder::class)();
-    $response = $kirby->render($path, $method);
-    if ($response === null) {
-        return [404, '', null];
-    }
-    return [$response->code(), (string) $response->body(), $response->type()];
+	// Kirby's Responder is shared per App instance and keeps the code of the
+	// previous render (an error page leaves 404 behind), so it is reset first.
+	$reset = function (): void {
+		$this->code = null;
+		$this->body = null;
+		$this->type = null;
+		$this->headers = [];
+		$this->cache = true;
+		$this->expires = null;
+	};
+	Closure::bind($reset, $kirby->response(), Kirby\Cms\Responder::class)();
+	$response = $kirby->render($path, $method);
+	if ($response === null) {
+		return [404, '', null];
+	}
+	return [$response->code(), (string)$response->body(), $response->type()];
 }
 
 /** JSON-LD blocks of an HTML string, decoded (JSON_THROW_ON_ERROR). @return list<array> */
 function annai_jsonld(string $html): array
 {
-    preg_match_all('#<script type="application/ld\+json">(.*?)</script>#s', $html, $blocks);
-    return array_map(fn ($block) => json_decode($block, true, 512, JSON_THROW_ON_ERROR), $blocks[1]);
+	preg_match_all('#<script type="application/ld\+json">(.*?)</script>#s', $html, $blocks);
+	return array_map(fn ($block) => json_decode($block, true, 512, JSON_THROW_ON_ERROR), $blocks[1]);
 }
 
 /** Runs $fn with the php error_log written to a file in $tmp, then restores the setting; returns the log. */
 function annai_with_error_log(string $tmp, callable $fn): string
 {
-    $previous = ini_get('error_log');
-    $file = $tmp . '/php-error.log';
-    ini_set('error_log', $file);
-    // Options logs each message once per process. The tests share one process
-    // now, so the messages of earlier tests are forgotten here (a test seam
-    // outside the production code).
-    (new ReflectionProperty(Annai\Options::class, 'logged'))->setValue(null, []);
-    try {
-        $fn();
-    } finally {
-        ini_set('error_log', (string) $previous);
-    }
-    return is_file($file) ? (string) file_get_contents($file) : '';
+	$previous = ini_get('error_log');
+	$file = $tmp . '/php-error.log';
+	ini_set('error_log', $file);
+	// Options logs each message once per process. The tests share one process
+	// now, so the messages of earlier tests are forgotten here (a test seam
+	// outside the production code).
+	(new ReflectionProperty(Annai\Options::class, 'logged'))->setValue(null, []);
+	try {
+		$fn();
+	} finally {
+		ini_set('error_log', (string)$previous);
+	}
+	return is_file($file) ? (string)file_get_contents($file) : '';
 }
 
 function annai_remove_tree(string $path): void
 {
-    if (!is_dir($path) || is_link($path)) {
-        return;
-    }
-    $it = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($path, FilesystemIterator::SKIP_DOTS), RecursiveIteratorIterator::CHILD_FIRST);
-    foreach ($it as $file) {
-        $file->isDir() && !$file->isLink() ? rmdir($file->getPathname()) : unlink($file->getPathname());
-    }
-    rmdir($path);
+	if (!is_dir($path) || is_link($path)) {
+		return;
+	}
+	$it = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($path, FilesystemIterator::SKIP_DOTS), RecursiveIteratorIterator::CHILD_FIRST);
+	foreach ($it as $file) {
+		$file->isDir() && !$file->isLink() ? rmdir($file->getPathname()) : unlink($file->getPathname());
+	}
+	rmdir($path);
 }

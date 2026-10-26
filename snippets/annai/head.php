@@ -16,6 +16,6 @@
  */
 $model = $head ?? (isset($page) ? $page->annaiHead() : null);
 if ($model === null) {
-    return;
+	return;
 }
 echo Annai\Head::render($model, ['title' => ($title ?? true) !== false]);
