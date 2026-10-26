@@ -19,3 +19,29 @@ class_alias(\Sayamaapps\Annai\Robots::class, 'Annai\\Robots');
 class_alias(\Sayamaapps\Annai\Routes::class, 'Annai\\Routes');
 class_alias(\Sayamaapps\Annai\Sitemap::class, 'Annai\\Sitemap');
 class_alias(\Sayamaapps\Annai\Text::class, 'Annai\\Text');
+
+if (Kirby\Cms\Helpers::hasOverride('annai_option') === false) {
+	/** Reads `sayamaapps.annai.<key>` (2.x: `annai.<key>`). Deprecated: use Sayamaapps\Annai\Options::get(). */
+	function annai_option(string $key, mixed $default = null): mixed
+	{
+		Kirby\Cms\Helpers::deprecated(
+			'annai_option() is deprecated, use Sayamaapps\Annai\Options::get()',
+			'annai-function'
+		);
+
+		return Sayamaapps\Annai\Options::get(Kirby\Cms\App::instance(), $key, $default);
+	}
+}
+
+if (Kirby\Cms\Helpers::hasOverride('annai_active') === false) {
+	/** Is Annai switched on? Deprecated: use Sayamaapps\Annai\Options::active(). */
+	function annai_active(): bool
+	{
+		Kirby\Cms\Helpers::deprecated(
+			'annai_active() is deprecated, use Sayamaapps\Annai\Options::active()',
+			'annai-function'
+		);
+
+		return Sayamaapps\Annai\Options::active(Kirby\Cms\App::instance());
+	}
+}

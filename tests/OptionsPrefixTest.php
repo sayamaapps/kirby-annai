@@ -71,6 +71,20 @@ final class OptionsPrefixTest extends TestCase
 		}
 	}
 
+	public function testTheGlobalFunctionsStillWorkAndAreReported(): void
+	{
+		$tmp = annai_site();
+		try {
+			annai_kirby($tmp, ['debug' => true, 'sayamaapps.annai.active' => true]);
+			$reported = [];
+			expect(true, $this->captureDeprecations($reported, fn () => annai_active()), 'annai_active(): reads the new name');
+			expect('Winery', $this->captureDeprecations($reported, fn () => annai_option('type', 'Winery')), 'annai_option(): the default is used when unset');
+			expect(['annai_active() is deprecated, use Sayamaapps\Annai\Options::active()', 'annai_option() is deprecated, use Sayamaapps\Annai\Options::get()'], $reported, 'the two functions name their replacements');
+		} finally {
+			annai_remove_tree($tmp);
+		}
+	}
+
 	/**
 	 * Runs $fn, collects the E_USER_DEPRECATED messages in $reported and returns the result of $fn.
 	 *

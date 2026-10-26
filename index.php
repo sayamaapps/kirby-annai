@@ -1,8 +1,6 @@
 <?php
 
-use Kirby\Cms\App;
 use Kirby\Filesystem\F;
-use Sayamaapps\Annai\Options;
 
 /**
  * Annai (案内 — guidance; the one who shows the way): everything search
@@ -29,18 +27,6 @@ use Sayamaapps\Annai\Options;
 
 F::loadClasses(require __DIR__ . '/autoload.php', __DIR__);
 require_once __DIR__ . '/legacy.php';
-
-/** Reads `annai.<key>`. Also meant for site snippets with their own markup. */
-function annai_option(string $key, mixed $default = null): mixed
-{
-	return Options::get(App::instance(), $key, $default);
-}
-
-/** `annai.active` is a real true. */
-function annai_active(): bool
-{
-	return Options::active(App::instance());
-}
 
 Kirby::plugin(
 	name: 'sayamaapps/annai',
