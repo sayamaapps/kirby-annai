@@ -1,75 +1,9 @@
 <?php
-/**
- * The routes and page selection with real Kirby (SPEC.md §9.9), in throwaway
- * site directories: robots.txt, sitemap.xml (+ chunks), llms.txt, the page
- * methods Pages::robots/alternates/lastmod, the multilang fixture and the
- * Koyomi lastmod rule and llms list (skipped without Koyomi).
- *
- *   ASDF_PHP_VERSION=8.5.3 php tests/RoutesTest.php
- *
- * The fake Sudare class below is the contract of SPEC.md §7:
- * Pages::preview() asks `Sudare\Sudare::active()`, on the CLI also
- * `Sudare\Sudare::protects()`. Declared here, so the
- * file uses braced namespace blocks (a file cannot mix them with a global
- * block).
- */
-
-namespace Sudare {
-    /**
-     * Fake of the preview protection contract: Sudare\Sudare::active(): bool
-     * (request state) and the stateless Sudare\Sudare::protects($base): bool
-     * that Annai asks on the command line. In Sudare 1.0.0 active() is
-     * Config::protects() of the configuration handle() remembered before the
-     * guard decided, so it is true for an exempt path (robots.txt, sitemap.xml,
-     * llms.txt let through to a crawler) as well: $on models that, and there
-     * is no "exempt" case to model (SPEC.md §7).
-     */
-    class Sudare
-    {
-        public static bool $on = false;
-        public static bool $protects = false;
-        public static ?string $base = null;
-        /** Paths the configuration exempts (Sudare 1.0.0 Config::isExempt()). */
-        public static array $exempt = [];
-
-        public static function active(): bool
-        {
-            return self::$on;
-        }
-
-        /** The configuration of the guarded request: null when no guard ran (CLI). */
-        public static function config(): ?FakeConfig
-        {
-            return self::$on ? new FakeConfig(self::$exempt) : null;
-        }
-
-        public static function protects(string $base, ?array $env = null): bool
-        {
-            self::$base = $base;
-            return self::$protects;
-        }
-    }
-
-    /** Fake of Sudare\Config: isExempt($path, $method, $sent) on a list of paths. */
-    class FakeConfig
-    {
-        public function __construct(private array $exempt)
-        {
-        }
-
-        public function isExempt(string $path, string $method = 'GET', ?string $sent = null): bool
-        {
-            return in_array($path, $this->exempt, true);
-        }
-    }
-}
-
-namespace {
-
-require_once __DIR__ . '/helpers.php';
 
 use Kirby\Cms\App;
 use Kirby\Cms\Page;
+use PHPUnit\Framework\Attributes\CoversNothing;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Pages::hasContent() reads Kirby's `@internal` Version::contentFile().
@@ -108,6 +42,25 @@ function rtClosedModels(): void
         public function storage(): Kirby\Content\Storage
         {
             return $this->closed ??= new AnnaiClosedStorage($this);
+        }
+    }
+}
+
+/** Declares the Koyomi event model used by the untitled-event checks (needs kirby-koyomi). */
+function rtDeclareEventWithoutFallback(): void
+{
+    if (!class_exists('RtEventWithoutFallback', false)) {
+        /** A Koyomi event page whose content in a non-default language is that language's own fields only. */
+        class RtEventWithoutFallback extends \Koyomi\Models\EventPage
+        {
+            public function content(?string $languageCode = null): \Kirby\Content\Content
+            {
+                $language = \Kirby\Cms\Language::ensure($languageCode ?? 'current');
+                if ($language->isDefault()) {
+                    return parent::content($languageCode);
+                }
+                return new \Kirby\Content\Content(parent: $this, data: $this->version()->read($language) ?? [], normalize: false);
+            }
         }
     }
 }
@@ -212,6 +165,27 @@ function rtKoyomiGerman(string $tmp): void
     }
 }
 
+/**
+ * The routes and page selection with real Kirby (SPEC.md §9.9), in throwaway
+ * site directories: robots.txt, sitemap.xml (+ chunks), llms.txt, the page
+ * methods Pages::robots/alternates/lastmod, the multilang fixture and the
+ * Koyomi lastmod rule and llms list (skipped without Koyomi).
+ *
+ *   ASDF_PHP_VERSION=8.5.3 vendor/bin/phpunit tests/RoutesTest.php
+ *
+ * The fake Sudare class below is the contract of SPEC.md §7:
+ * Pages::preview() asks `Sudare\Sudare::active()`, on the CLI also
+ * `Sudare\Sudare::protects()`. Declared here, so the
+ * file uses braced namespace blocks (a file cannot mix them with a global
+ * block).
+ */
+#[CoversNothing]
+final class RoutesTest extends TestCase
+{
+    public function testSuite(): void
+    {
+        require_once __DIR__ . '/support/sudare-fake.php';
+
 // ── Off ──────────────────────────────────────────────────────────────────
 rtRun([], function (App $kirby): void {
     foreach (['robots.txt', 'sitemap.xml', 'llms.txt'] as $path) {
@@ -222,7 +196,8 @@ rtRun([], function (App $kirby): void {
     }
     holds(Annai\Pages::all($kirby) === [], 'off: Pages::all() is []');
     holds(Annai\Pages::entries($kirby) === [], 'off: Pages::entries() is []');
-}, 'rtFixture');
+}
+, 'rtFixture');
 
 // `'annai.active' => 'true'` (an env-driven config) used to switch Annai off in
 // silence, although the README says a non-boolean option is logged.
@@ -1441,20 +1416,7 @@ if (annai_sibling('koyomi') === null) {
     // without a test turning red. The page model below is Kirby without that fallback (the
     // merge in Version::content() is marked @todo there): Koyomi's own English
     // title is then empty, and llms.txt must still name the German title.
-    if (!class_exists('RtEventWithoutFallback', false)) {
-        /** A Koyomi event page whose content in a non-default language is that language's own fields only. */
-        class RtEventWithoutFallback extends \Koyomi\Models\EventPage
-        {
-            public function content(?string $languageCode = null): \Kirby\Content\Content
-            {
-                $language = \Kirby\Cms\Language::ensure($languageCode ?? 'current');
-                if ($language->isDefault()) {
-                    return parent::content($languageCode);
-                }
-                return new \Kirby\Content\Content(parent: $this, data: $this->version()->read($language) ?? [], normalize: false);
-            }
-        }
-    }
+    rtDeclareEventWithoutFallback();
     rtRun(rtOn(['languages' => true, 'koyomi.active' => true, 'koyomi.now' => '2027-01-01 12:00']), function (App $kirby): void {
         $model = Page::$models['koyomi-event'] ?? null;
         Page::$models['koyomi-event'] = RtEventWithoutFallback::class;
@@ -1495,6 +1457,5 @@ if (annai_sibling('koyomi') === null) {
         }, $untitled, ['koyomi']);
     }
 }
-
-finish('Annai routes');
+    }
 }

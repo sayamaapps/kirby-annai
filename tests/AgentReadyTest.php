@@ -1,24 +1,8 @@
 <?php
-/**
- * What an agent fetches, with real Kirby (SPEC.md §9.10): llms.txt, robots
- * and JSON-LD of the home page, against fixture content with two opening-hour
- * areas, an upcoming closure and a `</script>` in the description. The 41 checks of the agent-ready run, without the
- * PHP server: every request goes through annai_request().
- *
- *   ASDF_PHP_VERSION=8.5.3 php tests/AgentReadyTest.php
- *
- * Skipped (with the reason printed) when Noren is not available: the hours
- * come from Noren's schema.org arrays.
- */
-
-require_once __DIR__ . '/helpers.php';
 
 use Kirby\Cms\App;
-
-if (annai_sibling('noren') === null) {
-    skip('Agent-ready checks (41)', 'kirby-noren not found (ANNAI_NOREN_PATH or ../kirby-noren)');
-    finish('Annai agent-ready');
-}
+use PHPUnit\Framework\Attributes\CoversNothing;
+use PHPUnit\Framework\TestCase;
 
 /** Fixture content, through the content helpers. */
 function arFixture(string $tmp, int $year): void
@@ -66,7 +50,28 @@ function arOptions(array $extra = []): array
     ], $extra);
 }
 
-$year = (int) date('Y') + 1; // the closures lie in the future whenever the test runs
+/**
+ * What an agent fetches, with real Kirby (SPEC.md §9.10): llms.txt, robots
+ * and JSON-LD of the home page, against fixture content with two opening-hour
+ * areas, an upcoming closure and a `</script>` in the description. The 41 checks of the agent-ready run, without the
+ * PHP server: every request goes through annai_request().
+ *
+ *   ASDF_PHP_VERSION=8.5.3 vendor/bin/phpunit tests/AgentReadyTest.php
+ *
+ * Skipped (with the reason printed) when Noren is not available: the hours
+ * come from Noren's schema.org arrays.
+ */
+#[CoversNothing]
+final class AgentReadyTest extends TestCase
+{
+    public function testSuite(): void
+    {
+if (annai_sibling('noren') === null) {
+    skip('Agent-ready checks (41)', 'kirby-noren not found (ANNAI_NOREN_PATH or ../kirby-noren)');
+    return;
+}
+$year = (int) date('Y') + 1;
+ // the closures lie in the future whenever the test runs
 $tmp = annai_site(['noren']);
 try {
     arFixture($tmp, $year);
@@ -160,5 +165,5 @@ try {
 } finally {
     annai_remove_tree($tmp);
 }
-
-finish('Annai agent-ready');
+    }
+}

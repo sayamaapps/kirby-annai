@@ -1,28 +1,11 @@
 <?php
-/**
- * Business facts, the JSON-LD document and the head input with real Kirby
- * (SPEC.md §9.8), in throwaway site directories:
- *  1. off: facts/jsonLd/head/units return [] / null;
- *  2. location(): by template, not by slug; annai.location and Closure win; drafts never;
- *  3. field(): location page first, site fallback, '' when both are empty;
- *  4. facts(): name and its fallback, phone, sameAs, geo and action legacy keys, type, image;
- *  5. jsonLd(): home only, hooks (@graph, [] → null, type false);
- *  6. head(): title rules, description source and excerpt, closures, image forms, locale, twitter card;
- *  7. Noren hours (only when kirby-noren is found, else SKIP lines): units, primary, days, closures, schema;
- *  8. without Noren: units [] even with noren.active set.
- *
- * Kirby loads the plugin through the symlink annai_site() creates, so no src
- * file is required here.
- *
- *   ASDF_PHP_VERSION=8.5.3 php tests/BusinessTest.php
- */
-
-require_once __DIR__ . '/helpers.php';
 
 use Annai\Business;
 use Annai\Text;
 use Kirby\Cms\App;
 use Kirby\Cms\Page;
+use PHPUnit\Framework\Attributes\CoversNothing;
+use PHPUnit\Framework\TestCase;
 
 /** Default site.txt fields of the fixture. */
 function bizSiteDefaults(): array
@@ -129,9 +112,30 @@ function bizFind(array $items, string $key, mixed $value): ?array
     return null;
 }
 
+/**
+ * Business facts, the JSON-LD document and the head input with real Kirby
+ * (SPEC.md §9.8), in throwaway site directories:
+ *  1. off: facts/jsonLd/head/units return [] / null;
+ *  2. location(): by template, not by slug; annai.location and Closure win; drafts never;
+ *  3. field(): location page first, site fallback, '' when both are empty;
+ *  4. facts(): name and its fallback, phone, sameAs, geo and action legacy keys, type, image;
+ *  5. jsonLd(): home only, hooks (@graph, [] → null, type false);
+ *  6. head(): title rules, description source and excerpt, closures, image forms, locale, twitter card;
+ *  7. Noren hours (only when kirby-noren is found, else SKIP lines): units, primary, days, closures, schema;
+ *  8. without Noren: units [] even with noren.active set.
+ *
+ * Kirby loads the plugin through the symlink annai_site() creates, so no src
+ * file is required here.
+ *
+ *   ASDF_PHP_VERSION=8.5.3 vendor/bin/phpunit tests/BusinessTest.php
+ */
+#[CoversNothing]
+final class BusinessTest extends TestCase
+{
+    public function testSuite(): void
+    {
 $year = (int) date('Y') + 1;
 $norenPath = annai_sibling('noren');
-
 /* ---------------------------------------------------------------------------
  * 1. Off
  * ------------------------------------------------------------------------- */
@@ -142,7 +146,6 @@ bizSite([], function (App $kirby): void {
     expect([], Business::head($kirby, $home), 'off: head() is []');
     expect([], Business::units($kirby), 'off: units() is []');
 });
-
 /* ---------------------------------------------------------------------------
  * 2. location()
  * ------------------------------------------------------------------------- */
@@ -150,31 +153,24 @@ bizSite(['options' => bizOn()], function (App $kirby): void {
     $location = Business::location($kirby);
     expect('kontakt', $location?->id(), 'location(): the betrieb page by template');
 });
-
 bizSite(['options' => bizOn(), 'contactDir' => '1_anfahrt'], function (App $kirby): void {
     expect('anfahrt', Business::location($kirby)?->id(), 'location(): found by template, not by slug (folder 1_anfahrt)');
 });
-
 bizSite(['options' => bizOn(['annai.location' => 'laden'])], function (App $kirby): void {
     expect('laden', Business::location($kirby)?->id(), 'location(): annai.location id wins over the template');
 });
-
 bizSite(['options' => bizOn(['annai.location' => fn () => App::instance()->page('laden')])], function (App $kirby): void {
     expect('laden', Business::location($kirby)?->id(), 'location(): annai.location Closure wins');
 });
-
 bizSite(['options' => bizOn(['annai.location' => fn () => App::instance()->page('entwurf')])], function (App $kirby): void {
     expect(null, Business::location($kirby), 'location(): a draft returned by the Closure is never used');
 });
-
 bizSite(['options' => bizOn(['annai.location' => 'entwurf'])], function (App $kirby): void {
     expect(null, Business::location($kirby), 'location(): a draft named by id is never used');
 });
-
 bizSite(['options' => bizOn(), 'contact' => false], function (App $kirby): void {
     expect(null, Business::location($kirby), 'location(): the draft betrieb page is not found by template, no page → null');
 });
-
 // The template search reads the top two levels before the whole index: building
 // $site->index() reads every page folder, on every page view (seven to ten times
 // the time of a page view on a site with 2,000 posts). Kirby caches the index in
@@ -189,8 +185,8 @@ $nest = static function (string $tmp, int $depth = 50): string {
     }
     annai_page($tmp, $dir, 'default', ['title' => 'Ebene ' . $depth]);
     return 'tief/' . implode('/', array_map(static fn (int $level): string => 'ebene-' . $level, range(1, $depth)));
-};
-
+}
+;
 $tmp = annai_site();
 try {
     bizFixture($tmp, []);
@@ -206,7 +202,6 @@ try {
 } finally {
     annai_remove_tree($tmp);
 }
-
 $tmp = annai_site();
 try {
     bizFixture($tmp, ['contactDir' => '3_ueber-uns/1_kontakt']);
@@ -217,7 +212,6 @@ try {
 } finally {
     annai_remove_tree($tmp);
 }
-
 $tmp = annai_site();
 try {
     bizFixture($tmp, ['contactDir' => '3_tief/1_ebene-1/1_kontakt']);
@@ -229,7 +223,6 @@ try {
 } finally {
     annai_remove_tree($tmp);
 }
-
 // Top level first: a betrieb page on the top level wins over one on the second
 // level, even where the second-level page comes first in the index.
 $tmp = annai_site();
@@ -241,7 +234,6 @@ try {
 } finally {
     annai_remove_tree($tmp);
 }
-
 // Once per request: without a business page the index is searched once, and
 // the next location() call does not search again.
 $tmp = annai_site();
@@ -261,7 +253,6 @@ try {
 } finally {
     annai_remove_tree($tmp);
 }
-
 // head() reads the facts once (they reach jsonLd() as an argument): the sameAs
 // Closure, called once per facts(), runs once.
 $calls = 0;
@@ -273,7 +264,6 @@ bizSite(['options' => bizOn(['annai.sameAs' => function () use (&$calls): array 
     Business::head($kirby, $kirby->site()->homePage());
     expect(1, $calls, 'head(): facts() once per call, passed on to jsonLd()');
 });
-
 /* ---------------------------------------------------------------------------
  * 3. field()
  * ------------------------------------------------------------------------- */
@@ -281,25 +271,21 @@ bizSite(['options' => bizOn()], function (App $kirby): void {
     expect('Musterweg 1', Business::field($kirby, 'street'), 'field(street) from the location page');
     expect('Testhof', Business::field($kirby, 'brand'), 'field(brand) from the site');
 });
-
 bizSite(
     ['options' => bizOn(), 'contact' => ['email' => ''], 'site' => ['email' => 'site@testhof.example']],
     function (App $kirby): void {
         expect('site@testhof.example', Business::field($kirby, 'email'), 'field(email) falls back to the site field');
     }
 );
-
 bizSite(
     ['options' => bizOn(), 'contact' => ['strasse' => ''], 'site' => ['strasse' => 'Altweg 3']],
     function (App $kirby): void {
         expect('Altweg 3', Business::field($kirby, 'street'), 'field(street) falls back to the site (a site keeps its address in site.txt)');
     }
 );
-
 bizSite(['options' => bizOn()], function (App $kirby): void {
     expect('', Business::field($kirby, 'fax'), 'field(fax): both empty gives ""');
 });
-
 /* ---------------------------------------------------------------------------
  * 4. facts()
  * ------------------------------------------------------------------------- */
@@ -331,7 +317,6 @@ bizSite(['options' => bizOn()], function (App $kirby): void {
     // meta description, so no tag, Markdown or Kirbytag reaches the JSON-LD or the llms.txt summary.
     expect('Bio-Hofladen mit Café x', $facts['description'], 'facts: description is the site field as plain text (tags gone, newline collapsed, not excerpted)');
 });
-
 bizSite(
     ['options' => bizOn(), 'site' => ['beschreibung' => "**Bio**-Hofladen mit Café.\n\nBestellen: (link: https://shop.example text: Online-Shop)"]],
     function (App $kirby): void {
@@ -340,7 +325,6 @@ bizSite(
         expect('Bio-Hofladen mit Café. Bestellen: Online-Shop', Business::jsonLd($kirby, $kirby->site()->homePage())['description'] ?? null, 'jsonLd: description is that plain text');
     }
 );
-
 bizSite(
     ['options' => bizOn(), 'site' => ['beschreibung' => trim(str_repeat('Gemüse vom Hof, Eier und Brot. ', 10)) . ' Kinder &lt;6 Jahre frei.']],
     function (App $kirby): void {
@@ -349,11 +333,9 @@ bizSite(
         holds(mb_strlen(Business::head($kirby, $kirby->site()->homePage())['description']) <= 155, 'head: the meta description of the same text is excerpted');
     }
 );
-
 bizSite(['options' => bizOn(), 'site' => ['marke' => '', 'title' => 'Hofwelt']], function (App $kirby): void {
     expect('Hofwelt', Business::facts($kirby)['name'], 'facts: name falls back to $site->title() when marke is empty');
 });
-
 bizSite(
     ['options' => bizOn(), 'contact' => ['marke' => 'Falsch', 'zusatz' => 'Falsch', 'beschreibung' => 'Falsch']],
     function (App $kirby): void {
@@ -363,7 +345,6 @@ bizSite(
         holds(str_starts_with($facts['description'], 'Bio-Hofladen'), 'facts: description is read from the site even when the location page has the field');
     }
 );
-
 bizSite(
     ['options' => bizOn(['annai.sameAs' => ['https://example.org/profil', '', 'https://www.instagram.com/testhof']])],
     function (App $kirby): void {
@@ -374,7 +355,6 @@ bizSite(
         );
     }
 );
-
 bizSite(
     ['options' => bizOn(['annai.sameAs' => fn () => ['https://example.org/closure']])],
     function (App $kirby): void {
@@ -385,15 +365,12 @@ bizSite(
         );
     }
 );
-
 bizSite(['options' => bizOn(['annai.geo' => ['breite' => 52.52, 'laenge' => 13.41]])], function (App $kirby): void {
     expect(['lat' => 52.52, 'lng' => 13.41], Business::facts($kirby)['geo'], 'facts: geo legacy breite/laenge');
 });
-
 bizSite(['options' => bizOn(['annai.geo' => [52.52, 13.41]])], function (App $kirby): void {
     expect(['lat' => 52.52, 'lng' => 13.41], Business::facts($kirby)['geo'], 'facts: geo as [lat, lng]');
 });
-
 bizSite(
     ['options' => bizOn(['annai.action' => ['typ' => 'OrderAction', 'name' => 'Online bestellen', 'ziel' => 'https://shop.example/testhof']])],
     function (App $kirby): void {
@@ -404,7 +381,6 @@ bizSite(
         );
     }
 );
-
 // annai.action als Closure: gelesen wie ein Wert; ein werfender Closure zählt als nicht gesetzt
 bizSite(
     ['options' => bizOn(['annai.action' => fn () => ['type' => 'ReserveAction', 'name' => 'Termin buchen', 'target' => 'https://booking.example/praxis']])],
@@ -416,25 +392,20 @@ bizSite(
         );
     }
 );
-
 bizSite(['options' => bizOn(['annai.action' => fn () => throw new RuntimeException('kaputt')])], function (App $kirby): void {
     expect(null, Business::facts($kirby)['action'], 'facts: a throwing action Closure counts as unset');
 });
-
 bizSite(['options' => bizOn(['annai.type' => false])], function (App $kirby): void {
     expect(false, Business::facts($kirby)['type'], 'facts: type false is kept');
 });
-
 bizSite(['options' => bizOn(['annai.type' => 'GroceryStore', 'annai.entityId' => 'betrieb'])], function (App $kirby): void {
     $facts = Business::facts($kirby);
     expect('GroceryStore', $facts['type'], 'facts: type option');
     expect('betrieb', $facts['entityId'], 'facts: entityId option');
 });
-
 bizSite(['options' => bizOn(['annai.image' => 'assets/teilen.jpg'])], function (App $kirby): void {
     expect('http://example.invalid/assets/teilen.jpg', Business::facts($kirby)['image'], 'facts: image is the home page image, absolute');
 });
-
 // `annai.phoneCountry` written with the international prefix ("0043") used to make
 // "+00431234"; the leading zeros are no part of the code. A field that
 // holds only a country code publishes nothing, also a foreign one.
@@ -457,7 +428,6 @@ bizSite(['options' => bizOn(['annai.phoneCountry' => '39']), 'contact' => ['tele
     [, $html] = annai_request($kirby, '');
     expect('+390471123456', annai_jsonld($html)[0]['telephone'] ?? null, "JSON-LD (phoneCountry '39'): telephone keeps the zero");
 });
-
 // ESC sequences and other control characters in marke, title and einleitung
 // used to reach <title>, the meta description and og:* raw — invalid HTML, and an escape
 // sequence for whoever curls the page in a terminal. Text::line() removes them.
@@ -471,7 +441,6 @@ bizSite(['options' => bizOn(), 'site' => ['marke' => "Test\e[31mhof", 'zusatz' =
     holds(str_contains($html, 'content="Gemüse vom [2JFeld, jeden Samstag'), 'head: meta description without the control characters of einleitung');
     holds(preg_match('/[\x00-\x08\x0B-\x1F\x7F]/', $html) !== 1, 'head: no C0 control character in the rendered page');
 });
-
 // The phone field (SPEC §3.2, the input contract): the raw value goes to
 // Text::phone(), the display string through line(). A field that is not empty and gives no
 // number is logged with its reason and is a site problem in the check; the JSON-LD then has
@@ -479,7 +448,8 @@ bizSite(['options' => bizOn(), 'site' => ['marke' => "Test\e[31mhof", 'zusatz' =
 $bizPhoneSaid = static fn (string $field, string $value, string $reason): string => 'Annai: field ' . $field . ' ' . match ($reason) {
     'characters' => 'holds more than the number (' . $value . ') — nothing is published as E.164; write only the number: digits, spaces, a leading +, "/", "-" and parentheses. Notes go into another field.',
     'invalid' => 'holds no valid phone number (' . $value . ') — nothing is published as E.164; write the whole number with its area code (a national number counts for +49, annai.phoneCountry) or with its country code (+…).',
-};
+}
+;
 $tmp = annai_site();
 try {
     // Two fields of the golden table as phone and fax: telephone and faxNumber, "(+E.164)" in
@@ -538,7 +508,6 @@ try {
 } finally {
     annai_remove_tree($tmp);
 }
-
 // Only http(s) URLs reach sameAs. "@testhof" in the instagram field and a
 // URL without a scheme in the option used to go into the JSON-LD as written.
 $tmp = annai_site();
@@ -557,7 +526,6 @@ try {
 } finally {
     annai_remove_tree($tmp);
 }
-
 // A page below a draft is unpublished like the draft itself (Kirby's
 // isDraft() is false for it): it is no business page either.
 $tmp = annai_site();
@@ -572,7 +540,6 @@ try {
 } finally {
     annai_remove_tree($tmp);
 }
-
 /* ---------------------------------------------------------------------------
  * 5. jsonLd()
  * ------------------------------------------------------------------------- */
@@ -582,7 +549,6 @@ bizSite(['options' => bizOn()], function (App $kirby): void {
     holds(is_array($document) && ($document['@context'] ?? null) === 'https://schema.org', 'jsonLd: document carries @context');
     expect(null, Business::jsonLd($kirby, $kirby->page('laden')), 'jsonLd: a subpage gives null');
 });
-
 bizSite(
     ['options' => bizOn(['annai.jsonld' => function (Page $page, array $nodes, array $facts): array {
         $nodes[] = ['@type' => 'WebSite', 'name' => 'Hook'];
@@ -598,14 +564,12 @@ bizSite(
         );
     }
 );
-
 bizSite(
     ['options' => bizOn(['annai.jsonld' => fn (Page $page, array $nodes, array $facts): array => []])],
     function (App $kirby): void {
         expect(null, Business::jsonLd($kirby, $kirby->site()->homePage()), 'jsonLd: hook returning [] gives null');
     }
 );
-
 bizSite(
     ['options' => bizOn(['annai.type' => false, 'annai.jsonld' => fn (Page $page, array $nodes, array $facts): array => [
         ['@type' => 'WebSite', 'name' => 'Hook'],
@@ -618,7 +582,6 @@ bizSite(
         );
     }
 );
-
 /* ---------------------------------------------------------------------------
  * 6. head()
  * ------------------------------------------------------------------------- */
@@ -642,11 +605,9 @@ bizSite(['options' => bizOn()], function (App $kirby): void {
     );
     holds(!str_contains($head['description'], '<'), 'head: description has no markup');
 });
-
 bizSite(['options' => bizOn(), 'site' => ['zusatz' => '']], function (App $kirby): void {
     expect('Testhof', Business::head($kirby, $kirby->site()->homePage())['title'], 'head: home title without tagline');
 });
-
 bizSite(['options' => bizOn()], function (App $kirby): void {
     $head = Business::head($kirby, $kirby->page('laden'));
     expect('Hofladen · Testhof', $head['title'], 'head: subpage title = title · brand');
@@ -654,11 +615,9 @@ bizSite(['options' => bizOn()], function (App $kirby): void {
     expect('http://example.invalid/laden', $head['canonical'], 'head: canonical is the page URL');
     holds(!str_contains($head['canonical'], '?'), 'head: canonical has no query string');
 });
-
 bizSite(['options' => bizOn(), 'site' => ['marke' => '', 'title' => 'Hofwelt']], function (App $kirby): void {
     expect('Hofwelt · Bio-Hofladen', Business::head($kirby, $kirby->site()->homePage())['title'], 'head: empty brand falls back to the site title');
 });
-
 bizSite(
     ['options' => bizOn(['annai.descriptionLength' => 20]), 'site' => ['beschreibung' => 'aaaa bbbb cccc dddd eeee ffff']],
     function (App $kirby): void {
@@ -666,7 +625,6 @@ bizSite(
         holds(mb_strlen($description) <= 20 && str_ends_with($description, '…'), 'head: description is excerpted to descriptionLength (20)');
     }
 );
-
 // annai.descriptionFallback (off by default): an intro under the check's 50 characters gives way to the
 // site description, if that is longer. The hook and a long intro are not touched.
 $shortIntro = 'Gemüse vom eigenen Feld.';
@@ -713,7 +671,6 @@ bizSite(
             'head: descriptionFallback on, home page (no intro) → the site description, as before');
     }
 );
-
 // The chain with descriptionFallback: intro, then the page's beschreibung, then the site's.
 // Each step gives way only while it is under 50 characters and the next one is longer.
 $pageLong = 'Hofladen mit Gemüse, Eiern und Brot aus eigener Herstellung, jeden Tag frisch.';
@@ -754,7 +711,6 @@ bizSite(
             'head: descriptionFallback off (default) → the page beschreibung is ignored, the site description as before');
     }
 );
-
 // Markdown and Kirbytags are rendered first.
 bizSite(
     [
@@ -769,14 +725,12 @@ bizSite(
             'head: Markdown and Kirbytags in the site beschreibung become plain text');
     }
 );
-
 bizSite(
     ['options' => bizOn(['annai.description' => fn (Page $page, array $facts): string => 'Hook text.'])],
     function (App $kirby): void {
         expect('Hook text.', Business::head($kirby, $kirby->page('laden'))['description'], 'head: annai.description Closure replaces the source');
     }
 );
-
 // The hook delivers plain text, not HTML. Text::excerpt() strips tags, and
 // strip_tags() used to eat everything from a literal "<6" on: "Kinder <6 Jahre …"
 // became "Kinder". What the hook writes is what the description says: "&amp;"
@@ -798,21 +752,18 @@ bizSite(
         holds(mb_strlen($description) <= 155 && str_ends_with($description, '…') && str_starts_with($description, 'Kinder <6 Jahre frei. Kinder <6'), 'head: a long hook text is excerpted, the "<6" kept');
     }
 );
-
 bizSite(
     ['options' => bizOn(['annai.title' => fn (Page $page, array $facts): string => 'Eigen: ' . $page->title()])],
     function (App $kirby): void {
         expect('Eigen: Hofladen', Business::head($kirby, $kirby->page('laden'))['title'], 'head: annai.title Closure replaces the rule');
     }
 );
-
 bizSite(
     ['options' => bizOn(['annai.canonical' => fn (Page $page): string => 'https://canonical.example/x'])],
     function (App $kirby): void {
         expect('https://canonical.example/x', Business::head($kirby, $kirby->page('laden'))['canonical'], 'head: annai.canonical Closure');
     }
 );
-
 // The rule that no control character from a Panel field reaches the head
 // once had two gaps: og:image:alt — the annai.image hook usually hands over
 // $page->image()->alt() — and the JSON-LD sameAs from the profile fields; the
@@ -846,7 +797,6 @@ try {
 } finally {
     annai_remove_tree($tmp);
 }
-
 bizSite(['options' => bizOn(['annai.image' => 'assets/teilen.jpg'])], function (App $kirby): void {
     expect(
         ['url' => 'http://example.invalid/assets/teilen.jpg', 'width' => null, 'height' => null, 'alt' => ''],
@@ -854,7 +804,6 @@ bizSite(['options' => bizOn(['annai.image' => 'assets/teilen.jpg'])], function (
         'head: image as a path becomes an absolute URL'
     );
 });
-
 bizSite(
     ['options' => bizOn(['annai.image' => ['url' => 'https://cdn.example/teilen.jpg', 'width' => 1200, 'height' => 630, 'alt' => 'Hofansicht']])],
     function (App $kirby): void {
@@ -865,7 +814,6 @@ bizSite(
         );
     }
 );
-
 bizSite(
     ['options' => bizOn(['annai.image' => fn (Page $page) => ['url' => 'assets/' . $page->id() . '.jpg']])],
     function (App $kirby): void {
@@ -876,27 +824,21 @@ bizSite(
         );
     }
 );
-
 bizSite(['options' => bizOn(['annai.image' => fn (Page $page): ?string => null])], function (App $kirby): void {
     expect(null, Business::resolveImage($kirby, $kirby->page('laden')), 'resolveImage: Closure returning null gives null');
 });
-
 bizSite(['options' => bizOn(['locale' => 'de_DE.utf8'])], function (App $kirby): void {
     expect('de_DE', Business::head($kirby, $kirby->site()->homePage())['locale'], 'head: locale from Kirby option de_DE.utf8 → de_DE');
 });
-
 bizSite(['options' => bizOn(['locale' => 'de_DE.utf8', 'annai.locale' => 'en-gb'])], function (App $kirby): void {
     expect('en_GB', Business::head($kirby, $kirby->site()->homePage())['locale'], 'head: annai.locale wins and is normalised to xx_YY');
 });
-
 bizSite(['options' => bizOn(['annai.twitterCard' => 'summary_large_image'])], function (App $kirby): void {
     expect('summary_large_image', Business::head($kirby, $kirby->site()->homePage())['twitterCard'], 'head: valid twitterCard kept');
 });
-
 bizSite(['options' => bizOn(['annai.twitterCard' => 'nope'])], function (App $kirby): void {
     expect(null, Business::head($kirby, $kirby->site()->homePage())['twitterCard'], 'head: invalid twitterCard → null');
 });
-
 /* ---------------------------------------------------------------------------
  * 7. Noren hours (needs kirby-noren; otherwise SKIP)
  * ------------------------------------------------------------------------- */
@@ -913,7 +855,6 @@ $norenChecks = [
     'units: a second location without areas becomes a department',
     'units: noren.mergeAreas keeps every area and its own closure',
 ];
-
 if ($norenPath === null) {
     foreach ($norenChecks as $what) {
         skip($what, 'kirby-noren not found (ANNAI_NOREN_PATH or ../kirby-noren)');
@@ -1353,14 +1294,12 @@ if ($norenPath === null) {
         annai_remove_tree($tmp);
     }
 }
-
 /* ---------------------------------------------------------------------------
  * 8. Without Noren: units stay empty even when noren.active is set
  * ------------------------------------------------------------------------- */
 bizSite(['options' => bizOn(['noren.active' => true])], function (App $kirby): void {
     expect([], Business::units($kirby), 'units: no Noren plugin installed → []');
 });
-
 // annai.labels: bekannte Schlüssel mit gleichen Platzhaltern bleiben; der Rest fällt weg
 bizSite(
     ['options' => bizOn(['annai.labels' => ['llms.hours' => 'Sprechzeiten', 'llms.hoursLine' => 'nur Uhr', 'llms.nope' => 'x', 'llms.closed' => '  ']])],
@@ -1368,5 +1307,5 @@ bizSite(
         expect(['llms.hours' => 'Sprechzeiten'], \Annai\Options::labels($kirby), 'labels: known keys only, placeholders kept');
     }
 );
-
-finish('BusinessTest');
+    }
+}

@@ -48,7 +48,7 @@ jobs:
           git clone --depth 1 https://github.com/sayamaapps/kirby-koyomi ../kirby-koyomi || true
 
       - name: Tests
-        run: sh tests/run.sh
+        run: vendor/bin/phpunit
 
   # Kirby 6 is a pre-release. This job runs the same tests against it so the
   # next major shows up early. Failing tests show up as a warning and never
@@ -92,4 +92,4 @@ jobs:
           git clone --depth 1 https://github.com/sayamaapps/kirby-koyomi ../kirby-koyomi || true
 
       - name: Tests
-        run: sh tests/run.sh || echo "::warning title=Kirby 6::Tests fail against the Kirby 6 pre-release, see the log"
+        run: vendor/bin/phpunit || echo "::warning title=Kirby 6::Tests fail against the Kirby 6 pre-release, see the log"

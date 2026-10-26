@@ -1,15 +1,21 @@
 <?php
+
+use Annai\Check;
+use PHPUnit\Framework\Attributes\CoversNothing;
+use PHPUnit\Framework\TestCase;
+
 /**
  * The check tool: Check::page(), Check::site(), render(), exitCode() and the
  * bin/annai-check CLI (SPEC.md §9.11). Kirby-booting; the CLI runs in a child
  * process against a throwaway site.
  *
- *   php tests/CheckTest.php
+ *   vendor/bin/phpunit tests/CheckTest.php
  */
-require_once __DIR__ . '/helpers.php';
-
-use Annai\Check;
-
+#[CoversNothing]
+final class CheckTest extends TestCase
+{
+    public function testSuite(): void
+    {
 $intro = 'Gemüse vom eigenen Feld, Eier vom Hof und Brot aus der Region – jeden Samstag frisch im Hofladen.';
 // The fixture keeps its address in site.txt and has no business page: `fn () => null` says so,
 // else the check reports the index search (Check::LOCATION_PROBLEM, tested below).
@@ -21,12 +27,11 @@ $goodSite = [
     'email'       => 'hof@example.test',
     'telefon'     => '030 / 34567000',
 ];
-
 /** Writes the site fields (content/site.txt) for the next Kirby boot. */
 $writeSite = function (string $tmp, array $fields) use ($goodSite): void {
     annai_page($tmp, '', 'site', $fields === [] ? $goodSite : $fields);
-};
-
+}
+;
 /** A minimal, well-formed page entry for the synthetic render/exit-code checks. */
 $pageEntry = function (array $problems = []): array {
     return [
@@ -36,8 +41,8 @@ $pageEntry = function (array $problems = []): array {
         'image' => null, 'alternates' => 0, 'jsonld' => ['types' => ['GroceryStore'], 'valid' => true],
         'problems' => $problems,
     ];
-};
-
+}
+;
 /** Runs bin/annai-check with these arguments: [exit code, stdout, stderr]. */
 $runCheck = function (array $arguments): array {
     $command = array_merge([PHP_BINARY, dirname(__DIR__) . '/bin/annai-check'], $arguments);
@@ -50,8 +55,8 @@ $runCheck = function (array $arguments): array {
     $stderr = (string) stream_get_contents($pipes[2]);
     fclose($pipes[2]);
     return [proc_close($process), $stdout, $stderr];
-};
-
+}
+;
 /* --------------------------------------------------------------------------
  * Page report: a good home page, a good subpage, and each problem wording.
  * -------------------------------------------------------------------------- */
@@ -480,14 +485,12 @@ try {
 } finally {
     annai_remove_tree($tmp);
 }
-
 /* --------------------------------------------------------------------------
  * bin/annai-check, in a child process.
  * -------------------------------------------------------------------------- */
 
 $bin = dirname(__DIR__) . '/bin/annai-check';
 holds(is_file($bin) && is_executable($bin), 'bin/annai-check is an executable file');
-
 $tmp = annai_site();
 try {
     // No vendor/ in the throwaway site: a clear usage error, exit 2.
@@ -667,5 +670,5 @@ try {
 } finally {
     annai_remove_tree($tmp);
 }
-
-finish('Annai Check');
+    }
+}

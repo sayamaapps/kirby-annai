@@ -1,10 +1,23 @@
 <?php
-/**
- * snippets/annai/head.php rendered by a booted Kirby (SPEC.md §3.7.3, §9.7).
- * Kirby loads the plugin through annai_site(); no src file is required here.
- *   php tests/SnippetTest.php
- */
-require_once __DIR__ . '/helpers.php';
+
+use PHPUnit\Framework\Attributes\CoversNothing;
+use PHPUnit\Framework\TestCase;
+
+const SNIPPET_TEST_HTML = <<<'HTML'
+<title>Hofladen · Testhof</title>
+<meta name="description" content="Gemüse vom eigenen Feld.">
+<meta name="robots" content="noindex, follow">
+<link rel="canonical" href="https://x/laden">
+<meta property="og:title" content="Hofladen · Testhof">
+<meta property="og:description" content="Gemüse vom eigenen Feld.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://x/laden">
+<meta property="og:site_name" content="Testhof">
+<meta property="og:locale" content="de_DE">
+<meta name="twitter:card" content="summary_large_image">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"Thing","name":"Testhof"}</script>
+
+HTML;
 
 /** The explicit model used by most checks, built by the plugin's own Head class. */
 function snippet_test_model(): array
@@ -22,23 +35,16 @@ function snippet_test_model(): array
     ]);
 }
 
-/** The exact output of snippet_test_model() through the snippet with title on. */
-const SNIPPET_TEST_HTML = <<<'HTML'
-<title>Hofladen · Testhof</title>
-<meta name="description" content="Gemüse vom eigenen Feld.">
-<meta name="robots" content="noindex, follow">
-<link rel="canonical" href="https://x/laden">
-<meta property="og:title" content="Hofladen · Testhof">
-<meta property="og:description" content="Gemüse vom eigenen Feld.">
-<meta property="og:type" content="website">
-<meta property="og:url" content="https://x/laden">
-<meta property="og:site_name" content="Testhof">
-<meta property="og:locale" content="de_DE">
-<meta name="twitter:card" content="summary_large_image">
-<script type="application/ld+json">{"@context":"https://schema.org","@type":"Thing","name":"Testhof"}</script>
-
-HTML;
-
+/**
+ * snippets/annai/head.php rendered by a booted Kirby (SPEC.md §3.7.3, §9.7).
+ * Kirby loads the plugin through annai_site(); no src file is required here.
+ *   vendor/bin/phpunit tests/SnippetTest.php
+ */
+#[CoversNothing]
+final class SnippetTest extends TestCase
+{
+    public function testSuite(): void
+    {
 /* --- Annai off ----------------------------------------------------------- */
 
 $tmp = annai_site();
@@ -53,7 +59,6 @@ try {
 } finally {
     annai_remove_tree($tmp);
 }
-
 /* --- explicit model (the snippet does not depend on Business) ------------ */
 
 $tmp = annai_site();
@@ -81,7 +86,6 @@ try {
 } finally {
     annai_remove_tree($tmp);
 }
-
 /* --- site override wins ------------------------------------------------- */
 
 $tmp = annai_site();
@@ -97,7 +101,6 @@ try {
 } finally {
     annai_remove_tree($tmp);
 }
-
 /* --- through a page: $page->annaiHead() on the home page ----------------- */
 
 $tmp = annai_site();
@@ -126,7 +129,6 @@ try {
 } finally {
     annai_remove_tree($tmp);
 }
-
 /* --- through a page with a site template that prints its own title ------- */
 
 $tmp = annai_site();
@@ -142,5 +144,5 @@ try {
 } finally {
     annai_remove_tree($tmp);
 }
-
-finish('SnippetTest');
+    }
+}

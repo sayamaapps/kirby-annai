@@ -1,49 +1,32 @@
 <?php
 /**
- * Shared test helpers.
- *
- *   require_once __DIR__ . '/helpers.php';
- *
- * Loads NO src file: Kirby-free tests require the classes they need
- * themselves (src/I18n.php first), Kirby tests load the plugin through
- * Kirby (annai_site()). That way a class is never declared twice.
- *
- * Every test file: call expect()/holds() as often as needed, then
- * finish('Suite name') at the end — it prints all failures and exits 1, or
- * prints the count and exits 0. A failing check does not stop the file, so
- * one run shows every problem.
+ * Shared test helpers. Loaded by tests/bootstrap.php, so every test class sees
+ * them. The checks are PHPUnit assertions: expect() compares strictly, holds()
+ * asserts a truth. A failing check fails the test method and PHPUnit prints
+ * the label.
  */
 
-$GLOBALS['annaiChecks'] = 0;
-$GLOBALS['annaiFailures'] = [];
+use PHPUnit\Framework\Assert;
 
 /** Strict comparison ($expected === $actual). */
 function expect(mixed $expected, mixed $actual, string $what): void
 {
-    $GLOBALS['annaiChecks']++;
-    if ($expected !== $actual) {
-        $GLOBALS['annaiFailures'][] = sprintf(
-            "  ✗ %s\n      expected: %s\n      actual:   %s",
-            $what,
-            var_export($expected, true),
-            var_export($actual, true)
-        );
-    }
+    Assert::assertSame($expected, $actual, $what);
 }
 
 function holds(bool $ok, string $what): void
 {
-    $GLOBALS['annaiChecks']++;
-    if (!$ok) {
-        $GLOBALS['annaiFailures'][] = '  ✗ ' . $what;
-    }
+    Assert::assertTrue($ok, $what);
 }
 
-/** Marks a check as skipped (counts as passed) and says why. */
+/**
+ * Counts as a passed check, like before the port. The reason stays in the
+ * source next to the call; a skipped PHPUnit test would hide the other checks
+ * of the method.
+ */
 function skip(string $what, string $why): void
 {
-    echo "  SKIP $what: $why\n";
-    holds(true, $what);
+    holds(true, $what . ' (skipped: ' . $why . ')');
 }
 
 /** Only these keys of an array, in this order. */
@@ -54,19 +37,6 @@ function only(array $array, array $keys): array
         $result[$key] = $array[$key] ?? null;
     }
     return $result;
-}
-
-/** Prints the result and exits: 0 when every check passed, 1 otherwise. */
-function finish(string $suite): never
-{
-    $failures = $GLOBALS['annaiFailures'];
-    $checks = $GLOBALS['annaiChecks'];
-    if ($failures !== []) {
-        fwrite(STDERR, "$suite: " . count($failures) . " of $checks checks failed\n" . implode("\n", $failures) . "\n");
-        exit(1);
-    }
-    echo "$suite: all $checks checks passed\n";
-    exit(0);
 }
 
 /* --------------------------------------------------------------------------
@@ -207,6 +177,10 @@ function annai_with_error_log(string $tmp, callable $fn): string
     $previous = ini_get('error_log');
     $file = $tmp . '/php-error.log';
     ini_set('error_log', $file);
+    // Options logs each message once per process. The tests share one process
+    // now, so the messages of earlier tests are forgotten here (a test seam
+    // outside the production code).
+    (new ReflectionProperty(Annai\Options::class, 'logged'))->setValue(null, []);
     try {
         $fn();
     } finally {

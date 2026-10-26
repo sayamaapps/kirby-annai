@@ -23,7 +23,8 @@
         "giggsey/libphonenumber-for-php-lite": "^9.0"
     },
     "require-dev": {
-        "getkirby/cms": "^5.0"
+        "getkirby/cms": "^5.0",
+        "phpunit/phpunit": "11.5.55"
     },
     "suggest": {
         "sayamaapps/kirby-noren": "Opening hours in JSON-LD and llms.txt come from Noren's schema.org arrays when it is installed and active",
@@ -34,7 +35,7 @@
         "bin/annai-check"
     ],
     "scripts": {
-        "test": "sh tests/run.sh"
+        "test": "vendor/bin/phpunit"
     },
     "config": {
         "optimize-autoloader": true,

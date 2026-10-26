@@ -1,15 +1,8 @@
 <?php
-/**
- * The <head> model and its tags (SPEC.md §3.7, §9.6). Kirby-free.
- *   php tests/HeadTest.php
- */
-require_once __DIR__ . '/helpers.php';
-require_once __DIR__ . '/../src/I18n.php';
-require_once __DIR__ . '/../src/Text.php';
-require_once __DIR__ . '/../src/JsonLd.php';
-require_once __DIR__ . '/../src/Head.php';
 
 use Annai\Head;
+use PHPUnit\Framework\Attributes\CoversNothing;
+use PHPUnit\Framework\TestCase;
 
 /** A complete Business::head() input. */
 function head_full_input(): array
@@ -29,6 +22,15 @@ function head_full_input(): array
     ];
 }
 
+/**
+ * The <head> model and its tags (SPEC.md §3.7, §9.6). Kirby-free.
+ *   vendor/bin/phpunit tests/HeadTest.php
+ */
+#[CoversNothing]
+final class HeadTest extends TestCase
+{
+    public function testSuite(): void
+    {
 /* --- build: model (§9.6) ------------------------------------------------- */
 
 $model = Head::build(head_full_input());
@@ -67,7 +69,6 @@ expect(
     'build: alternates as hreflang rows in input order'
 );
 expect($model['jsonld'], ['@context' => 'https://schema.org', '@type' => 'Thing', 'name' => 'Testhof'], 'build: jsonld kept');
-
 $sparse = Head::build([
     'title'       => 'Kontakt · Testhof',
     'description' => '',
@@ -91,18 +92,15 @@ expect(null, $sparse['jsonld'], 'build: no jsonld gives null');
 expect(null, $sparse['robots'], 'build: robots null kept as null');
 expect('', $sparse['description'], 'build: empty description kept empty');
 expect(Head::tags($sparse), $sparse['tags'], 'build: tags key is the tags() result');
-
 $imageNoSize = Head::build(array_merge(head_full_input(), ['image' => ['url' => 'https://x/a.jpg', 'width' => null, 'height' => null, 'alt' => '']]));
 holds(!array_key_exists('og:image:width', $imageNoSize['og']), 'build: no width key when width is null');
 holds(!array_key_exists('og:image:alt', $imageNoSize['og']), 'build: no alt key when alt is empty');
 expect('https://x/a.jpg', $imageNoSize['og']['og:image'] ?? null, 'build: og:image without size');
-
 // og:image:width/height/alt describe an og:image: without a URL they describe nothing.
 $imageNoUrl = Head::build(array_merge(head_full_input(), ['image' => ['url' => '', 'width' => 1200, 'height' => 630, 'alt' => 'Der Hof']]));
 expect([], array_filter($imageNoUrl['og'], fn (string $key): bool => str_starts_with($key, 'og:image'), ARRAY_FILTER_USE_KEY),
     'build: no og:image:* keys when the image has no URL');
 holds(!str_contains(Head::render($imageNoUrl), 'og:image'), 'render: no og:image tag at all without a URL');
-
 /* --- tags: order and exact strings (§9.6) -------------------------------- */
 
 $expected = [
@@ -138,7 +136,6 @@ expect(
     'tags: sparse model with title option false (no <title>, og:title kept)'
 );
 expect(['<title>Kontakt · Testhof</title>', '<link rel="canonical" href="https://x/kontakt">', '<meta property="og:title" content="Kontakt · Testhof">', '<meta property="og:type" content="website">', '<meta property="og:url" content="https://x/kontakt">'], Head::tags($sparse), 'tags: sparse model with title');
-
 /* --- tags: escaping (§9.6) ----------------------------------------------- */
 
 $escaped = Head::build(array_merge(head_full_input(), [
@@ -151,7 +148,6 @@ expect('<title>A &quot;B&quot; &amp; &lt;C&gt;</title>', $escapedTags[0], 'escap
 expect('<meta name="description" content="Text mit &lt;/script&gt; darin">', $escapedTags[1], 'escape: </script> in description attribute');
 expect('<link rel="canonical" href="https://x/a?b=1&amp;c=2">', $escapedTags[3], 'escape: & in canonical href');
 holds(!str_contains(implode('', $escapedTags), '</script> darin'), 'escape: no raw </script> outside the JSON-LD block');
-
 /* --- render (§9.6) ------------------------------------------------------- */
 
 expect(implode("\n", $expected) . "\n", Head::render($model), 'render: lines joined by newline, final newline');
@@ -163,5 +159,5 @@ expect(
 );
 expect('', Head::render([]), 'render: empty model renders nothing');
 expect('', Head::render(['title' => 'Nur Titel'], ['title' => false]), 'render: title false with nothing else renders nothing');
-
-finish('HeadTest');
+    }
+}

@@ -1,21 +1,26 @@
 <?php
+
+use Annai\I18n;
+use PHPUnit\Framework\Attributes\CoversNothing;
+use PHPUnit\Framework\TestCase;
+
 /**
  * Translations: every language has the same keys and placeholders as
  * English, no value is empty, and the helpers follow the language.
  *   php tests/I18nTest.php
  */
-require_once __DIR__ . '/helpers.php';
-require_once __DIR__ . '/../src/I18n.php';
-
-use Annai\I18n;
-
+#[CoversNothing]
+final class I18nTest extends TestCase
+{
+    public function testSuite(): void
+    {
 $placeholders = function (string $text): array {
     preg_match_all('/\{(\w+)\}/', $text, $m);
     $names = array_unique($m[1]);
     sort($names);
     return $names;
-};
-
+}
+;
 $en = I18n::table('en');
 holds(count($en) >= 24, 'English table loaded');
 foreach (I18n::LANGUAGES as $language) {
@@ -28,7 +33,6 @@ foreach (I18n::LANGUAGES as $language) {
     }
 }
 expect([], I18n::table('fr'), 'unknown language: no table');
-
 // Every key the code relies on exists (SPEC.md §5).
 foreach (['format.date', 'llms.contact', 'llms.address', 'llms.phone', 'llms.email', 'llms.action', 'llms.hours',
     'llms.hoursLine', 'llms.closed', 'llms.holidaysClosed', 'llms.onlyHours', 'llms.range', 'llms.events',
@@ -38,7 +42,6 @@ foreach (['format.date', 'llms.contact', 'llms.address', 'llms.phone', 'llms.ema
 for ($i = 1; $i <= 7; $i++) {
     holds(isset($en["day.$i"]), "weekday $i exists");
 }
-
 I18n::setLanguage('fr');
 expect('en', I18n::language(), 'unknown language falls back to English');
 expect('Contact', I18n::t('llms.contact'), 'English default');
@@ -49,7 +52,6 @@ expect('Sunday', I18n::day(6), 'day(6) is Sunday');
 expect('Monday', I18n::day(7), 'day(7) wraps to Monday');
 expect('12 Mar 2027', I18n::date('2027-03-12'), 'English date');
 expect('12 Mar 2027', I18n::date('2027-03-12 18:00:00'), 'date part of a longer string');
-
 I18n::setLanguage('de');
 expect('de', I18n::language(), 'German selected');
 expect('Kontakt', I18n::t('llms.contact'), 'German string');
@@ -59,7 +61,6 @@ expect('12.3.2027', I18n::date('2027-03-12'), 'German date');
 expect('12.3.2027', I18n::date(new DateTimeImmutable('2027-03-12')), 'German date from an object');
 expect('nonsense', I18n::date('nonsense'), 'unparsable date string comes back unchanged');
 I18n::setLanguage('en');
-
 // printable(): terminal-safe text for the check tool.
 expect("a\tb\nc", I18n::printable("a\tb\nc"), 'printable keeps tab and line feed');
 expect('Hof[2J', I18n::printable("Hof\e[2J"), 'printable drops ESC');
@@ -67,11 +68,10 @@ expect('Hof31m', I18n::printable("Hof\u{9B}31m"), 'printable drops C1 (U+009B CS
 expect('Hof?31m', I18n::printable("Hof\x9b31m"), 'printable turns a raw C1 byte (invalid UTF-8) into ?');
 expect('Gem?se[2J', I18n::printable("Gem\xfcse\e[2J"), 'printable on Latin-1 text: invalid byte ?, ESC dropped');
 expect('Gemüse', I18n::printable('Gemüse'), 'printable leaves valid UTF-8 alone');
-
 // annai.labels: Überschrift ersetzen, Rückfall auf die Tabelle nach dem Zurücksetzen
 I18n::setLabels(['llms.hours' => 'Sprechzeiten']);
 expect('Sprechzeiten', I18n::t('llms.hours'), 'label replaces the table text');
 I18n::setLabels([]);
 expect($en['llms.hours'], I18n::t('llms.hours'), 'label reset: table text again');
-
-finish('Annai I18n');
+    }
+}
