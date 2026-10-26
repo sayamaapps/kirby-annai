@@ -36,16 +36,16 @@ function arFixture(string $tmp, int $year): void
 function arOptions(array $extra = []): array
 {
 	// array_merge, not "+": the overrides must win over the defaults
-	// (arOptions(['annai.type' => false]) has to switch the node off).
+	// (arOptions(['sayamaapps.annai.type' => false]) has to switch the node off).
 	return array_merge([
-		'annai.active' => true,
-		'annai.language' => 'de',
+		'sayamaapps.annai.active' => true,
+		'sayamaapps.annai.language' => 'de',
 		'noren.active' => true,
 		'noren.language' => 'de',
-		'annai.exclude.templates' => ['error', 'weiter'],
-		'annai.type' => 'GroceryStore',
-		'annai.sameAs' => ['https://www.instagram.com/testhof', ''],
-		'annai.action' => ['type' => 'OrderAction', 'name' => 'Online bestellen', 'target' => 'https://shop.example/testhof'],
+		'sayamaapps.annai.exclude.templates' => ['error', 'weiter'],
+		'sayamaapps.annai.type' => 'GroceryStore',
+		'sayamaapps.annai.sameAs' => ['https://www.instagram.com/testhof', ''],
+		'sayamaapps.annai.action' => ['type' => 'OrderAction', 'name' => 'Online bestellen', 'target' => 'https://shop.example/testhof'],
 	], $extra);
 }
 
@@ -148,18 +148,18 @@ final class AgentReadyTest extends TestCase
 			expect([], annai_jsonld($sub), 'subpages carry no JSON-LD');
 
 			// Main area switched by annai.area, then JSON-LD off by annai.type = false.
-			$kirby = annai_kirby($tmp, arOptions(['annai.area' => 'cafe']));
+			$kirby = annai_kirby($tmp, arOptions(['sayamaapps.annai.area' => 'cafe']));
 			[, $html] = annai_request($kirby, '/');
 			$ld = annai_jsonld($html)[0] ?? [];
 			holds(($ld['openingHoursSpecification'][0]['dayOfWeek'] ?? '') === 'https://schema.org/Sunday' &&
 				($ld['department'][0]['name'] ?? '') === 'Testhof — Hofladen', 'annai.area picks the main hours');
 
-			$kirby = annai_kirby($tmp, arOptions(['annai.type' => false]));
+			$kirby = annai_kirby($tmp, arOptions(['sayamaapps.annai.type' => false]));
 			[, $html] = annai_request($kirby, '/');
 			expect([], annai_jsonld($html), 'annai.type = false switches the business node off');
 
 			$options = arOptions();
-			unset($options['annai.type']);
+			unset($options['sayamaapps.annai.type']);
 			$kirby = annai_kirby($tmp, $options);
 			[, $html] = annai_request($kirby, '/');
 			$blocks = annai_jsonld($html);

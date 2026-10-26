@@ -45,6 +45,7 @@ function annai_active(): bool
 Kirby::plugin(
 	name: 'sayamaapps/annai',
 	extends: [
+		'options'      => require __DIR__ . '/config/options.php',
 		'translations' => require __DIR__ . '/config/translations.php',
 		'snippets'     => require __DIR__ . '/config/snippets.php',
 		'routes'       => require __DIR__ . '/config/routes.php',

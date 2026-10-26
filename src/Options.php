@@ -4,9 +4,11 @@ namespace Sayamaapps\Annai;
 
 use Closure;
 use Kirby\Cms\App;
+use Kirby\Cms\Helpers;
 
 /**
- * Reads `annai.*` options. (docs/SPEC.md §3.1, §4).
+ * Reads `sayamaapps.annai.*` options, with the 2.x `annai.*` names as fallback
+ * (docs/SPEC.md §3.1, §4).
  *
  * `null` counts as "not set", like Kirby's own option(), so `'annai.type' => null`
  * falls back to the default. Both spellings work, flat (`'annai.robots.ai' => …`)
@@ -17,8 +19,9 @@ use Kirby\Cms\App;
  * with Kirby's `debug` option on: then it throws, so a developer sees it on
  * the page instead of in the log.
  *
- * Defaults are given here and at the call sites, never in an `options` block
- * of the plugin (Kirby would file them under sayamaapps.annai.*).
+ * The plugin's `options` block (config/options.php) declares every key with
+ * null; the defaults stay at the call sites, so a null there falls through to
+ * the 2.x key (Options::read()).
  */
 final class Options
 {
@@ -41,7 +44,7 @@ final class Options
 		'email'       => 'email',
 		'profiles'    => ['instagram', 'facebook'],
 	];
-	public const PREFIX = 'annai.';
+	public const PREFIX = 'sayamaapps.';
 
 	/** @var array<string,bool> messages already logged in this process */
 	private static array $logged = [];
@@ -286,7 +289,31 @@ final class Options
 
 	public static function get(App $kirby, string $key, mixed $default = null): mixed
 	{
-		return $kirby->option(self::PREFIX . $key) ?? $default;
+		return self::read($kirby, 'annai', $key) ?? $default;
+	}
+
+	/**
+	 * Reads `sayamaapps.<plugin>.<key>` (OPT-1). A value still under the 2.x name
+	 * `<plugin>.<key>` is returned as well and reported as deprecated (Kirby's
+	 * `debug` option turns the report on). Null when neither is set.
+	 *
+	 * Used for Annai's own options (plugin `annai`) and for the Noren options
+	 * Annai reads (plugin `noren`).
+	 */
+	public static function read(App $kirby, string $plugin, string $key): mixed
+	{
+		$value = $kirby->option(self::PREFIX . $plugin . '.' . $key);
+		if ($value !== null) {
+			return $value;
+		}
+		$legacy = $kirby->option($plugin . '.' . $key);
+		if ($legacy !== null) {
+			Helpers::deprecated(
+				$plugin . '.' . $key . ' is deprecated, use ' . self::PREFIX . $plugin . '.' . $key,
+				'option-prefix'
+			);
+		}
+		return $legacy;
 	}
 
 	/**

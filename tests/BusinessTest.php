@@ -98,7 +98,7 @@ function bizSite(array $setup, callable $fn): void
 /** The options that switch Annai on. */
 function bizOn(array $extra = []): array
 {
-	return ['annai.active' => true] + $extra;
+	return ['sayamaapps.annai.active' => true] + $extra;
 }
 
 /** First item of a list whose $key equals $value, or null. */
@@ -156,16 +156,16 @@ final class BusinessTest extends TestCase
 		bizSite(['options' => bizOn(), 'contactDir' => '1_anfahrt'], function (App $kirby): void {
 			expect('anfahrt', Business::location($kirby)?->id(), 'location(): found by template, not by slug (folder 1_anfahrt)');
 		});
-		bizSite(['options' => bizOn(['annai.location' => 'laden'])], function (App $kirby): void {
+		bizSite(['options' => bizOn(['sayamaapps.annai.location' => 'laden'])], function (App $kirby): void {
 			expect('laden', Business::location($kirby)?->id(), 'location(): annai.location id wins over the template');
 		});
-		bizSite(['options' => bizOn(['annai.location' => fn () => App::instance()->page('laden')])], function (App $kirby): void {
+		bizSite(['options' => bizOn(['sayamaapps.annai.location' => fn () => App::instance()->page('laden')])], function (App $kirby): void {
 			expect('laden', Business::location($kirby)?->id(), 'location(): annai.location Closure wins');
 		});
-		bizSite(['options' => bizOn(['annai.location' => fn () => App::instance()->page('entwurf')])], function (App $kirby): void {
+		bizSite(['options' => bizOn(['sayamaapps.annai.location' => fn () => App::instance()->page('entwurf')])], function (App $kirby): void {
 			expect(null, Business::location($kirby), 'location(): a draft returned by the Closure is never used');
 		});
-		bizSite(['options' => bizOn(['annai.location' => 'entwurf'])], function (App $kirby): void {
+		bizSite(['options' => bizOn(['sayamaapps.annai.location' => 'entwurf'])], function (App $kirby): void {
 			expect(null, Business::location($kirby), 'location(): a draft named by id is never used');
 		});
 		bizSite(['options' => bizOn(), 'contact' => false], function (App $kirby): void {
@@ -219,7 +219,7 @@ final class BusinessTest extends TestCase
 			$kirby = annai_kirby($tmp, bizOn());
 			expect('tief/ebene-1/kontakt', Business::location($kirby)?->id(), 'location(): a betrieb page on the third level is found through $site->index()');
 			expect(true, Business::searchesIndex($kirby), 'searchesIndex(): true when the business page is below the second level');
-			expect(false, Business::searchesIndex(annai_kirby($tmp, bizOn(['annai.location' => 'tief/ebene-1/kontakt']))), 'searchesIndex(): false with annai.location');
+			expect(false, Business::searchesIndex(annai_kirby($tmp, bizOn(['sayamaapps.annai.location' => 'tief/ebene-1/kontakt']))), 'searchesIndex(): false with annai.location');
 		} finally {
 			annai_remove_tree($tmp);
 		}
@@ -256,7 +256,7 @@ final class BusinessTest extends TestCase
 		// head() reads the facts once (they reach jsonLd() as an argument): the sameAs
 		// Closure, called once per facts(), runs once.
 		$calls = 0;
-		bizSite(['options' => bizOn(['annai.sameAs' => function () use (&$calls): array {
+		bizSite(['options' => bizOn(['sayamaapps.annai.sameAs' => function () use (&$calls): array {
 			$calls++;
 			return [];
 		}])], function (App $kirby) use (&$calls): void {
@@ -346,7 +346,7 @@ final class BusinessTest extends TestCase
 			}
 		);
 		bizSite(
-			['options' => bizOn(['annai.sameAs' => ['https://example.org/profil', '', 'https://www.instagram.com/testhof']])],
+			['options' => bizOn(['sayamaapps.annai.sameAs' => ['https://example.org/profil', '', 'https://www.instagram.com/testhof']])],
 			function (App $kirby): void {
 				expect(
 					['https://example.org/profil', 'https://www.instagram.com/testhof'],
@@ -356,7 +356,7 @@ final class BusinessTest extends TestCase
 			}
 		);
 		bizSite(
-			['options' => bizOn(['annai.sameAs' => fn () => ['https://example.org/closure']])],
+			['options' => bizOn(['sayamaapps.annai.sameAs' => fn () => ['https://example.org/closure']])],
 			function (App $kirby): void {
 				expect(
 					['https://example.org/closure', 'https://www.instagram.com/testhof'],
@@ -365,14 +365,14 @@ final class BusinessTest extends TestCase
 				);
 			}
 		);
-		bizSite(['options' => bizOn(['annai.geo' => ['breite' => 52.52, 'laenge' => 13.41]])], function (App $kirby): void {
+		bizSite(['options' => bizOn(['sayamaapps.annai.geo' => ['breite' => 52.52, 'laenge' => 13.41]])], function (App $kirby): void {
 			expect(['lat' => 52.52, 'lng' => 13.41], Business::facts($kirby)['geo'], 'facts: geo legacy breite/laenge');
 		});
-		bizSite(['options' => bizOn(['annai.geo' => [52.52, 13.41]])], function (App $kirby): void {
+		bizSite(['options' => bizOn(['sayamaapps.annai.geo' => [52.52, 13.41]])], function (App $kirby): void {
 			expect(['lat' => 52.52, 'lng' => 13.41], Business::facts($kirby)['geo'], 'facts: geo as [lat, lng]');
 		});
 		bizSite(
-			['options' => bizOn(['annai.action' => ['typ' => 'OrderAction', 'name' => 'Online bestellen', 'ziel' => 'https://shop.example/testhof']])],
+			['options' => bizOn(['sayamaapps.annai.action' => ['typ' => 'OrderAction', 'name' => 'Online bestellen', 'ziel' => 'https://shop.example/testhof']])],
 			function (App $kirby): void {
 				expect(
 					['type' => 'OrderAction', 'name' => 'Online bestellen', 'target' => 'https://shop.example/testhof'],
@@ -383,7 +383,7 @@ final class BusinessTest extends TestCase
 		);
 		// annai.action als Closure: gelesen wie ein Wert; ein werfender Closure zählt als nicht gesetzt
 		bizSite(
-			['options' => bizOn(['annai.action' => fn () => ['type' => 'ReserveAction', 'name' => 'Termin buchen', 'target' => 'https://booking.example/praxis']])],
+			['options' => bizOn(['sayamaapps.annai.action' => fn () => ['type' => 'ReserveAction', 'name' => 'Termin buchen', 'target' => 'https://booking.example/praxis']])],
 			function (App $kirby): void {
 				expect(
 					['type' => 'ReserveAction', 'name' => 'Termin buchen', 'target' => 'https://booking.example/praxis'],
@@ -392,30 +392,30 @@ final class BusinessTest extends TestCase
 				);
 			}
 		);
-		bizSite(['options' => bizOn(['annai.action' => fn () => throw new RuntimeException('kaputt')])], function (App $kirby): void {
+		bizSite(['options' => bizOn(['sayamaapps.annai.action' => fn () => throw new RuntimeException('kaputt')])], function (App $kirby): void {
 			expect(null, Business::facts($kirby)['action'], 'facts: a throwing action Closure counts as unset');
 		});
-		bizSite(['options' => bizOn(['annai.type' => false])], function (App $kirby): void {
+		bizSite(['options' => bizOn(['sayamaapps.annai.type' => false])], function (App $kirby): void {
 			expect(false, Business::facts($kirby)['type'], 'facts: type false is kept');
 		});
-		bizSite(['options' => bizOn(['annai.type' => 'GroceryStore', 'annai.entityId' => 'betrieb'])], function (App $kirby): void {
+		bizSite(['options' => bizOn(['sayamaapps.annai.type' => 'GroceryStore', 'sayamaapps.annai.entityId' => 'betrieb'])], function (App $kirby): void {
 			$facts = Business::facts($kirby);
 			expect('GroceryStore', $facts['type'], 'facts: type option');
 			expect('betrieb', $facts['entityId'], 'facts: entityId option');
 		});
-		bizSite(['options' => bizOn(['annai.image' => 'assets/teilen.jpg'])], function (App $kirby): void {
+		bizSite(['options' => bizOn(['sayamaapps.annai.image' => 'assets/teilen.jpg'])], function (App $kirby): void {
 			expect('http://example.invalid/assets/teilen.jpg', Business::facts($kirby)['image'], 'facts: image is the home page image, absolute');
 		});
 		// `annai.phoneCountry` written with the international prefix ("0043") used to make
 		// "+00431234"; the leading zeros are no part of the code. A field that
 		// holds only a country code publishes nothing, also a foreign one.
-		bizSite(['options' => bizOn(['annai.phoneCountry' => '0043']), 'contact' => ['telefon' => '01 234 56', 'fax' => '+43']], function (App $kirby): void {
+		bizSite(['options' => bizOn(['sayamaapps.annai.phoneCountry' => '0043']), 'contact' => ['telefon' => '01 234 56', 'fax' => '+43']], function (App $kirby): void {
 			$facts = Business::facts($kirby);
 			expect('43', Sayamaapps\Annai\Options::phoneCountry($kirby), "phoneCountry '0043' is read as 43");
 			expect('+43123456', $facts['phoneE164'], "phoneCountry '0043': a national number gets +43, not +0043");
 			expect('', $facts['faxE164'], 'facts: a fax field holding only "+43" publishes nothing');
 		});
-		bizSite(['options' => bizOn(['annai.phoneCountry' => '+43 ']), 'contact' => ['telefon' => '01 234 56']], function (App $kirby): void {
+		bizSite(['options' => bizOn(['sayamaapps.annai.phoneCountry' => '+43 ']), 'contact' => ['telefon' => '01 234 56']], function (App $kirby): void {
 			expect('+43123456', Business::facts($kirby)['phoneE164'], "phoneCountry '+43 ': the plus and the space are no part of the code");
 		});
 		bizSite(['options' => bizOn(), 'contact' => ['telefon' => '+43 (0)1 234 56']], function (App $kirby): void {
@@ -423,7 +423,7 @@ final class BusinessTest extends TestCase
 		});
 		// An Italian number written nationally: the zero of the area code is dialled
 		// from abroad too and stays in the E.164.
-		bizSite(['options' => bizOn(['annai.phoneCountry' => '39']), 'contact' => ['telefon' => '0471 123456']], function (App $kirby): void {
+		bizSite(['options' => bizOn(['sayamaapps.annai.phoneCountry' => '39']), 'contact' => ['telefon' => '0471 123456']], function (App $kirby): void {
 			expect('+390471123456', Business::facts($kirby)['phoneE164'], "phoneCountry '39': a national number keeps the zero of its area code");
 			[, $html] = annai_request($kirby, '');
 			expect('+390471123456', annai_jsonld($html)[0]['telephone'] ?? null, "JSON-LD (phoneCountry '39'): telephone keeps the zero");
@@ -521,7 +521,7 @@ final class BusinessTest extends TestCase
 		$tmp = annai_site();
 		try {
 			bizFixture($tmp, ['site' => ['instagram' => '@testhof', 'facebook' => 'facebook.com/testhof']]);
-			$kirby = annai_kirby($tmp, bizOn(['annai.sameAs' => ['https://g.page/testhof', 'g.page/testhof', 'HTTP://Example.org/x', ' https://example.org/y ']]));
+			$kirby = annai_kirby($tmp, bizOn(['sayamaapps.annai.sameAs' => ['https://g.page/testhof', 'g.page/testhof', 'HTTP://Example.org/x', ' https://example.org/y ']]));
 			$log = annai_with_error_log($tmp, function () use ($kirby, &$facts, &$document): void {
 				$facts = Business::facts($kirby);
 				$document = Business::jsonLd($kirby, $kirby->site()->homePage());
@@ -540,10 +540,10 @@ final class BusinessTest extends TestCase
 		try {
 			bizFixture($tmp, ['contact' => false]);
 			annai_page($tmp, '_drafts/entwurf/filiale', 'betrieb', ['title' => 'Filiale', 'strasse' => 'Nebenweg 2']);
-			$kirby = annai_kirby($tmp, bizOn(['annai.location' => 'entwurf/filiale']));
+			$kirby = annai_kirby($tmp, bizOn(['sayamaapps.annai.location' => 'entwurf/filiale']));
 			holds($kirby->page('entwurf/filiale') instanceof Page && !$kirby->page('entwurf/filiale')->isDraft(), 'fixture: the page below the draft exists and is not a draft for Kirby');
 			expect(null, Business::location($kirby)?->id(), 'location(): a page below a draft named by id is never used');
-			expect(null, Business::location(annai_kirby($tmp, bizOn(['annai.location' => fn () => App::instance()->page('entwurf/filiale')])))?->id(), 'location(): a page below a draft returned by the Closure is never used');
+			expect(null, Business::location(annai_kirby($tmp, bizOn(['sayamaapps.annai.location' => fn () => App::instance()->page('entwurf/filiale')])))?->id(), 'location(): a page below a draft returned by the Closure is never used');
 			expect(null, Business::location(annai_kirby($tmp, bizOn()))?->id(), 'location(): a betrieb page below a draft is not found by template');
 		} finally {
 			annai_remove_tree($tmp);
@@ -558,7 +558,7 @@ final class BusinessTest extends TestCase
 			expect(null, Business::jsonLd($kirby, $kirby->page('laden')), 'jsonLd: a subpage gives null');
 		});
 		bizSite(
-			['options' => bizOn(['annai.jsonld' => function (Page $page, array $nodes, array $facts): array {
+			['options' => bizOn(['sayamaapps.annai.jsonld' => function (Page $page, array $nodes, array $facts): array {
 				$nodes[] = ['@type' => 'WebSite', 'name' => 'Hook'];
 				return $nodes;
 			}])],
@@ -573,13 +573,13 @@ final class BusinessTest extends TestCase
 			}
 		);
 		bizSite(
-			['options' => bizOn(['annai.jsonld' => fn (Page $page, array $nodes, array $facts): array => []])],
+			['options' => bizOn(['sayamaapps.annai.jsonld' => fn (Page $page, array $nodes, array $facts): array => []])],
 			function (App $kirby): void {
 				expect(null, Business::jsonLd($kirby, $kirby->site()->homePage()), 'jsonLd: hook returning [] gives null');
 			}
 		);
 		bizSite(
-			['options' => bizOn(['annai.type' => false, 'annai.jsonld' => fn (Page $page, array $nodes, array $facts): array => [
+			['options' => bizOn(['sayamaapps.annai.type' => false, 'sayamaapps.annai.jsonld' => fn (Page $page, array $nodes, array $facts): array => [
 				['@type' => 'WebSite', 'name' => 'Hook'],
 			]])],
 			function (App $kirby): void {
@@ -627,7 +627,7 @@ final class BusinessTest extends TestCase
 			expect('Hofwelt · Bio-Hofladen', Business::head($kirby, $kirby->site()->homePage())['title'], 'head: empty brand falls back to the site title');
 		});
 		bizSite(
-			['options' => bizOn(['annai.descriptionLength' => 20]), 'site' => ['beschreibung' => 'aaaa bbbb cccc dddd eeee ffff']],
+			['options' => bizOn(['sayamaapps.annai.descriptionLength' => 20]), 'site' => ['beschreibung' => 'aaaa bbbb cccc dddd eeee ffff']],
 			function (App $kirby): void {
 				$description = Business::head($kirby, $kirby->site()->homePage())['description'];
 				holds(mb_strlen($description) <= 20 && str_ends_with($description, '…'), 'head: description is excerpted to descriptionLength (20)');
@@ -638,7 +638,7 @@ final class BusinessTest extends TestCase
 		$shortIntro = 'Gemüse vom eigenen Feld.';
 		$siteLong = 'Bio-Hofladen mit Café, Gemüse vom eigenen Hof und Eier aus Freilandhaltung.';
 		bizSite(
-			['options' => bizOn(['annai.descriptionFallback' => true]), 'intro' => $shortIntro, 'site' => ['beschreibung' => $siteLong]],
+			['options' => bizOn(['sayamaapps.annai.descriptionFallback' => true]), 'intro' => $shortIntro, 'site' => ['beschreibung' => $siteLong]],
 			function (App $kirby) use ($siteLong): void {
 				expect(
 					$siteLong,
@@ -658,7 +658,7 @@ final class BusinessTest extends TestCase
 			}
 		);
 		bizSite(
-			['options' => bizOn(['annai.descriptionFallback' => true]), 'intro' => 'Gemüse vom eigenen Feld, jeden Samstag frisch geerntet und direkt im Hofladen verkauft.', 'site' => ['beschreibung' => $siteLong]],
+			['options' => bizOn(['sayamaapps.annai.descriptionFallback' => true]), 'intro' => 'Gemüse vom eigenen Feld, jeden Samstag frisch geerntet und direkt im Hofladen verkauft.', 'site' => ['beschreibung' => $siteLong]],
 			function (App $kirby): void {
 				expect(
 					'Gemüse vom eigenen Feld, jeden Samstag frisch geerntet und direkt im Hofladen verkauft.',
@@ -668,7 +668,7 @@ final class BusinessTest extends TestCase
 			}
 		);
 		bizSite(
-			['options' => bizOn(['annai.descriptionFallback' => true]), 'intro' => $shortIntro, 'site' => ['beschreibung' => 'Bio-Hofladen.']],
+			['options' => bizOn(['sayamaapps.annai.descriptionFallback' => true]), 'intro' => $shortIntro, 'site' => ['beschreibung' => 'Bio-Hofladen.']],
 			function (App $kirby) use ($shortIntro): void {
 				expect(
 					$shortIntro,
@@ -678,7 +678,7 @@ final class BusinessTest extends TestCase
 			}
 		);
 		bizSite(
-			['options' => bizOn(['annai.descriptionFallback' => true, 'annai.description' => fn (Page $page, array $facts): string => 'Hook text.']), 'intro' => $shortIntro, 'site' => ['beschreibung' => $siteLong]],
+			['options' => bizOn(['sayamaapps.annai.descriptionFallback' => true, 'sayamaapps.annai.description' => fn (Page $page, array $facts): string => 'Hook text.']), 'intro' => $shortIntro, 'site' => ['beschreibung' => $siteLong]],
 			function (App $kirby): void {
 				expect(
 					'Hook text.',
@@ -688,7 +688,7 @@ final class BusinessTest extends TestCase
 			}
 		);
 		bizSite(
-			['options' => bizOn(['annai.descriptionFallback' => true]), 'site' => ['beschreibung' => $siteLong]],
+			['options' => bizOn(['sayamaapps.annai.descriptionFallback' => true]), 'site' => ['beschreibung' => $siteLong]],
 			function (App $kirby) use ($siteLong): void {
 				expect(
 					$siteLong,
@@ -703,7 +703,7 @@ final class BusinessTest extends TestCase
 		$pageShort = 'Hofladen mit Eiern.';
 		$pageMiddle = 'Hofladen mit Eiern und Gemüse vom Hof.';
 		bizSite(
-			['options' => bizOn(['annai.descriptionFallback' => true]), 'intro' => $shortIntro, 'page' => ['beschreibung' => $pageLong], 'site' => ['beschreibung' => $siteLong]],
+			['options' => bizOn(['sayamaapps.annai.descriptionFallback' => true]), 'intro' => $shortIntro, 'page' => ['beschreibung' => $pageLong], 'site' => ['beschreibung' => $siteLong]],
 			function (App $kirby) use ($pageLong): void {
 				expect(
 					$pageLong,
@@ -713,7 +713,7 @@ final class BusinessTest extends TestCase
 			}
 		);
 		bizSite(
-			['options' => bizOn(['annai.descriptionFallback' => true]), 'intro' => '', 'page' => ['beschreibung' => $pageShort], 'site' => ['beschreibung' => $siteLong]],
+			['options' => bizOn(['sayamaapps.annai.descriptionFallback' => true]), 'intro' => '', 'page' => ['beschreibung' => $pageShort], 'site' => ['beschreibung' => $siteLong]],
 			function (App $kirby) use ($siteLong): void {
 				expect(
 					$siteLong,
@@ -723,7 +723,7 @@ final class BusinessTest extends TestCase
 			}
 		);
 		bizSite(
-			['options' => bizOn(['annai.descriptionFallback' => true]), 'intro' => '', 'page' => ['beschreibung' => $pageLong], 'site' => ['beschreibung' => $siteLong]],
+			['options' => bizOn(['sayamaapps.annai.descriptionFallback' => true]), 'intro' => '', 'page' => ['beschreibung' => $pageLong], 'site' => ['beschreibung' => $siteLong]],
 			function (App $kirby) use ($pageLong): void {
 				expect(
 					$pageLong,
@@ -733,7 +733,7 @@ final class BusinessTest extends TestCase
 			}
 		);
 		bizSite(
-			['options' => bizOn(['annai.descriptionFallback' => true]), 'intro' => $shortIntro, 'page' => ['beschreibung' => $pageMiddle], 'site' => ['beschreibung' => $siteLong]],
+			['options' => bizOn(['sayamaapps.annai.descriptionFallback' => true]), 'intro' => $shortIntro, 'page' => ['beschreibung' => $pageMiddle], 'site' => ['beschreibung' => $siteLong]],
 			function (App $kirby) use ($siteLong): void {
 				expect(
 					$siteLong,
@@ -773,7 +773,7 @@ final class BusinessTest extends TestCase
 			}
 		);
 		bizSite(
-			['options' => bizOn(['annai.description' => fn (Page $page, array $facts): string => 'Hook text.'])],
+			['options' => bizOn(['sayamaapps.annai.description' => fn (Page $page, array $facts): string => 'Hook text.'])],
 			function (App $kirby): void {
 				expect('Hook text.', Business::head($kirby, $kirby->page('laden'))['description'], 'head: annai.description Closure replaces the source');
 			}
@@ -783,7 +783,7 @@ final class BusinessTest extends TestCase
 		// became "Kinder". What the hook writes is what the description says: "&amp;"
 		// stays "&amp;" (it is not rendered, so it is not decoded either).
 		bizSite(
-			['options' => bizOn(['annai.description' => fn (Page $page, array $facts): string => 'Tom & Jerry: Kinder <6 Jahre essen gratis, Eltern zahlen <b>den</b> normalen Preis. Ein &amp; bleibt.'])],
+			['options' => bizOn(['sayamaapps.annai.description' => fn (Page $page, array $facts): string => 'Tom & Jerry: Kinder <6 Jahre essen gratis, Eltern zahlen <b>den</b> normalen Preis. Ein &amp; bleibt.'])],
 			function (App $kirby): void {
 				expect(
 					'Tom & Jerry: Kinder <6 Jahre essen gratis, Eltern zahlen <b>den</b> normalen Preis. Ein &amp; bleibt.',
@@ -793,20 +793,20 @@ final class BusinessTest extends TestCase
 			}
 		);
 		bizSite(
-			['options' => bizOn(['annai.description' => fn (Page $page, array $facts): string => str_repeat('Kinder <6 Jahre frei. ', 20)])],
+			['options' => bizOn(['sayamaapps.annai.description' => fn (Page $page, array $facts): string => str_repeat('Kinder <6 Jahre frei. ', 20)])],
 			function (App $kirby): void {
 				$description = Business::head($kirby, $kirby->page('laden'))['description'];
 				holds(mb_strlen($description) <= 155 && str_ends_with($description, '…') && str_starts_with($description, 'Kinder <6 Jahre frei. Kinder <6'), 'head: a long hook text is excerpted, the "<6" kept');
 			}
 		);
 		bizSite(
-			['options' => bizOn(['annai.title' => fn (Page $page, array $facts): string => 'Eigen: ' . $page->title()])],
+			['options' => bizOn(['sayamaapps.annai.title' => fn (Page $page, array $facts): string => 'Eigen: ' . $page->title()])],
 			function (App $kirby): void {
 				expect('Eigen: Hofladen', Business::head($kirby, $kirby->page('laden'))['title'], 'head: annai.title Closure replaces the rule');
 			}
 		);
 		bizSite(
-			['options' => bizOn(['annai.canonical' => fn (Page $page): string => 'https://canonical.example/x'])],
+			['options' => bizOn(['sayamaapps.annai.canonical' => fn (Page $page): string => 'https://canonical.example/x'])],
 			function (App $kirby): void {
 				expect('https://canonical.example/x', Business::head($kirby, $kirby->page('laden'))['canonical'], 'head: annai.canonical Closure');
 			}
@@ -819,8 +819,8 @@ final class BusinessTest extends TestCase
 		try {
 			bizFixture($tmp, ['site' => ['instagram' => "https://www.instagram.com/testhof\u{9B}2J", 'facebook' => "https://www.facebook.com/test\e[2Jhof"]]);
 			$kirby = annai_kirby($tmp, bizOn([
-				'annai.image'     => fn (Page $page): array => ['url' => "https://cdn.example/\e[2Jteilen.jpg", 'alt' => "Hof\e[2J\u{9B}ansicht\n am  Berg"],
-				'annai.canonical' => fn (Page $page): string => "https://canonical.example/\u{9B}x\e[2J",
+				'sayamaapps.annai.image'     => fn (Page $page): array => ['url' => "https://cdn.example/\e[2Jteilen.jpg", 'alt' => "Hof\e[2J\u{9B}ansicht\n am  Berg"],
+				'sayamaapps.annai.canonical' => fn (Page $page): string => "https://canonical.example/\u{9B}x\e[2J",
 			]));
 			$log = annai_with_error_log($tmp, function () use ($kirby, &$head, &$facts, &$html): void {
 				$head = Business::head($kirby, $kirby->page('laden'));
@@ -844,7 +844,7 @@ final class BusinessTest extends TestCase
 		} finally {
 			annai_remove_tree($tmp);
 		}
-		bizSite(['options' => bizOn(['annai.image' => 'assets/teilen.jpg'])], function (App $kirby): void {
+		bizSite(['options' => bizOn(['sayamaapps.annai.image' => 'assets/teilen.jpg'])], function (App $kirby): void {
 			expect(
 				['url' => 'http://example.invalid/assets/teilen.jpg', 'width' => null, 'height' => null, 'alt' => ''],
 				Business::head($kirby, $kirby->site()->homePage())['image'],
@@ -852,7 +852,7 @@ final class BusinessTest extends TestCase
 			);
 		});
 		bizSite(
-			['options' => bizOn(['annai.image' => ['url' => 'https://cdn.example/teilen.jpg', 'width' => 1200, 'height' => 630, 'alt' => 'Hofansicht']])],
+			['options' => bizOn(['sayamaapps.annai.image' => ['url' => 'https://cdn.example/teilen.jpg', 'width' => 1200, 'height' => 630, 'alt' => 'Hofansicht']])],
 			function (App $kirby): void {
 				expect(
 					['url' => 'https://cdn.example/teilen.jpg', 'width' => 1200, 'height' => 630, 'alt' => 'Hofansicht'],
@@ -862,7 +862,7 @@ final class BusinessTest extends TestCase
 			}
 		);
 		bizSite(
-			['options' => bizOn(['annai.image' => fn (Page $page) => ['url' => 'assets/' . $page->id() . '.jpg']])],
+			['options' => bizOn(['sayamaapps.annai.image' => fn (Page $page) => ['url' => 'assets/' . $page->id() . '.jpg']])],
 			function (App $kirby): void {
 				expect(
 					['url' => 'http://example.invalid/assets/laden.jpg', 'width' => null, 'height' => null, 'alt' => ''],
@@ -871,19 +871,19 @@ final class BusinessTest extends TestCase
 				);
 			}
 		);
-		bizSite(['options' => bizOn(['annai.image' => fn (Page $page): string|null => null])], function (App $kirby): void {
+		bizSite(['options' => bizOn(['sayamaapps.annai.image' => fn (Page $page): string|null => null])], function (App $kirby): void {
 			expect(null, Business::resolveImage($kirby, $kirby->page('laden')), 'resolveImage: Closure returning null gives null');
 		});
 		bizSite(['options' => bizOn(['locale' => 'de_DE.utf8'])], function (App $kirby): void {
 			expect('de_DE', Business::head($kirby, $kirby->site()->homePage())['locale'], 'head: locale from Kirby option de_DE.utf8 → de_DE');
 		});
-		bizSite(['options' => bizOn(['locale' => 'de_DE.utf8', 'annai.locale' => 'en-gb'])], function (App $kirby): void {
+		bizSite(['options' => bizOn(['locale' => 'de_DE.utf8', 'sayamaapps.annai.locale' => 'en-gb'])], function (App $kirby): void {
 			expect('en_GB', Business::head($kirby, $kirby->site()->homePage())['locale'], 'head: annai.locale wins and is normalised to xx_YY');
 		});
-		bizSite(['options' => bizOn(['annai.twitterCard' => 'summary_large_image'])], function (App $kirby): void {
+		bizSite(['options' => bizOn(['sayamaapps.annai.twitterCard' => 'summary_large_image'])], function (App $kirby): void {
 			expect('summary_large_image', Business::head($kirby, $kirby->site()->homePage())['twitterCard'], 'head: valid twitterCard kept');
 		});
-		bizSite(['options' => bizOn(['annai.twitterCard' => 'nope'])], function (App $kirby): void {
+		bizSite(['options' => bizOn(['sayamaapps.annai.twitterCard' => 'nope'])], function (App $kirby): void {
 			expect(null, Business::head($kirby, $kirby->site()->homePage())['twitterCard'], 'head: invalid twitterCard → null');
 		});
 		/* ---------------------------------------------------------------------------
@@ -939,14 +939,14 @@ final class BusinessTest extends TestCase
 				holds(bizFind($schema['specialOpeningHoursSpecification'], 'validFrom', $year . '-12-24') !== null, 'schema: Heiligabend in specialOpeningHoursSpecification');
 			});
 
-			bizSite(['options' => bizOn(['noren.active' => true, 'noren.language' => 'de', 'annai.area' => 'cafe']), 'noren' => true], function (App $kirby): void {
+			bizSite(['options' => bizOn(['noren.active' => true, 'noren.language' => 'de', 'sayamaapps.annai.area' => 'cafe']), 'noren' => true], function (App $kirby): void {
 				$units = Business::units($kirby);
 				expect('cafe', $units[0]['area'] ?? null, 'units: annai.area = cafe puts the cafe first');
 				expect(true, $units[0]['primary'] ?? null, 'units: annai.area selects the primary unit');
 				expect(false, $units[1]['primary'] ?? null, 'units: laden is not primary when cafe is');
 			});
 
-			bizSite(['options' => bizOn(['noren.active' => true, 'noren.language' => 'de', 'annai.area' => 'nichts']), 'noren' => true], function (App $kirby): void {
+			bizSite(['options' => bizOn(['noren.active' => true, 'noren.language' => 'de', 'sayamaapps.annai.area' => 'nichts']), 'noren' => true], function (App $kirby): void {
 				$log = annai_with_error_log($kirby->root('base'), function () use ($kirby, &$units): void {
 					$units = Business::units($kirby);
 				});
@@ -956,14 +956,14 @@ final class BusinessTest extends TestCase
 				holds(str_contains($log, 'annai.area "nichts" is no area with hours of any Noren location'), 'units: unknown annai.area is reported');
 			});
 
-			bizSite(['options' => bizOn(['noren.active' => true, 'noren.language' => 'de', 'annai.area' => 'cafe']), 'noren' => true], function (App $kirby): void {
+			bizSite(['options' => bizOn(['noren.active' => true, 'noren.language' => 'de', 'sayamaapps.annai.area' => 'cafe']), 'noren' => true], function (App $kirby): void {
 				$log = annai_with_error_log($kirby->root('base'), function () use ($kirby): void {
 					Business::units($kirby);
 				});
 				expect('', $log, 'units: a matching annai.area logs nothing');
 			});
 
-			bizSite(['options' => bizOn(['noren.active' => true, 'noren.language' => 'de', 'annai.noren' => false]), 'noren' => true], function (App $kirby): void {
+			bizSite(['options' => bizOn(['noren.active' => true, 'noren.language' => 'de', 'sayamaapps.annai.noren' => false]), 'noren' => true], function (App $kirby): void {
 				expect([], Business::units($kirby), 'units: annai.noren false → []');
 				expect([], Business::facts($kirby)['units'], 'facts: annai.noren false → units []');
 			});
@@ -1009,7 +1009,7 @@ final class BusinessTest extends TestCase
 				annai_page($tmp, '2_zeiten', 'betrieb', ['title' => 'Zeiten',
 					'bereiche' => [['schluessel' => 'laden', 'name' => 'Laden']],
 					'zeiten' => [['bereich' => 'laden', 'tag' => 'Montag', 'von1' => '08:00', 'bis1' => '12:00']]]);
-				$kirby = annai_kirby($tmp, ['annai.active' => true, 'noren.active' => true, 'noren.language' => 'de', 'annai.language' => 'de', 'annai.location' => 'kontakt']);
+				$kirby = annai_kirby($tmp, ['sayamaapps.annai.active' => true, 'noren.active' => true, 'noren.language' => 'de', 'sayamaapps.annai.language' => 'de', 'sayamaapps.annai.location' => 'kontakt']);
 				$units = Business::units($kirby);
 				$doc = Business::jsonLd($kirby, $kirby->site()->homePage());
 				expect([null], array_column($units, 'place'), 'hours page without an address: no place of its own');
@@ -1029,7 +1029,7 @@ final class BusinessTest extends TestCase
 				annai_page($tmp, '2_zeiten', 'betrieb', ['title' => 'Zeiten', 'strasse' => 'Musterweg 1', 'plz' => '12345', 'ort' => 'Musterstadt',
 					'bereiche' => [['schluessel' => 'laden', 'name' => 'Laden']],
 					'zeiten' => [['bereich' => 'laden', 'tag' => 'Montag', 'von1' => '08:00', 'bis1' => '12:00']]]);
-				$kirby = annai_kirby($tmp, ['annai.active' => true, 'noren.active' => true, 'noren.language' => 'de', 'annai.language' => 'de', 'annai.location' => 'kontakt']);
+				$kirby = annai_kirby($tmp, ['sayamaapps.annai.active' => true, 'noren.active' => true, 'noren.language' => 'de', 'sayamaapps.annai.language' => 'de', 'sayamaapps.annai.location' => 'kontakt']);
 				$units = Business::units($kirby);
 				$doc = Business::jsonLd($kirby, $kirby->site()->homePage());
 				expect([null], array_column($units, 'place'), 'address in site fields, repeated on the hours page: no place');
@@ -1045,9 +1045,9 @@ final class BusinessTest extends TestCase
 			// `#zeiten-cafe` — a changed @id is a new entity for Google. The same without a
 			// business page (`fn () => null`) and with a business page that has no address ('home').
 			foreach ([
-				"annai.location => 'kontakt'" => ['annai.location' => 'kontakt'],
-				'annai.location => fn () => null' => ['annai.location' => fn () => null],
-				"annai.location => 'home'" => ['annai.location' => 'home'],
+				"annai.location => 'kontakt'" => ['sayamaapps.annai.location' => 'kontakt'],
+				'annai.location => fn () => null' => ['sayamaapps.annai.location' => fn () => null],
+				"annai.location => 'home'" => ['sayamaapps.annai.location' => 'home'],
 			] as $label => $extra) {
 				$tmp = annai_site(['noren']);
 				try {
@@ -1057,7 +1057,7 @@ final class BusinessTest extends TestCase
 						'bereiche' => [['schluessel' => 'laden', 'name' => 'Laden'], ['schluessel' => 'cafe', 'name' => 'Café']],
 						'zeiten' => [['bereich' => 'laden', 'tag' => 'Montag', 'von1' => '08:00', 'bis1' => '12:00'],
 							['bereich' => 'cafe', 'tag' => 'Dienstag', 'von1' => '09:00', 'bis1' => '17:00']]]);
-					$kirby = annai_kirby($tmp, ['annai.active' => true, 'noren.active' => true, 'noren.language' => 'de', 'annai.language' => 'de'] + $extra);
+					$kirby = annai_kirby($tmp, ['sayamaapps.annai.active' => true, 'noren.active' => true, 'noren.language' => 'de', 'sayamaapps.annai.language' => 'de'] + $extra);
 					$units = Business::units($kirby);
 					$doc = Business::jsonLd($kirby, $kirby->site()->homePage());
 					expect([true, true], array_column($units, 'atBusiness'), "$label, hours page without an address: both units are at the business");
@@ -1081,7 +1081,7 @@ final class BusinessTest extends TestCase
 				annai_page($tmp, '2_b', 'betrieb', ['title' => 'B'] + $address + [
 					'bereiche' => [['schluessel' => 'cafe', 'name' => 'Café']],
 					'zeiten' => [['bereich' => 'cafe', 'tag' => 'Mittwoch', 'von1' => '10:00', 'bis1' => '18:00']]]);
-				$kirby = annai_kirby($tmp, ['annai.active' => true, 'noren.active' => true, 'noren.language' => 'de', 'annai.language' => 'de']);
+				$kirby = annai_kirby($tmp, ['sayamaapps.annai.active' => true, 'noren.active' => true, 'noren.language' => 'de', 'sayamaapps.annai.language' => 'de']);
 				$doc = Business::jsonLd($kirby, $kirby->site()->homePage());
 				$ids = array_map(fn (array $d): string => (string)($d['@id'] ?? ''), $doc['department'] ?? []);
 				expect(count($ids), count(array_unique($ids)), 'same address, same area key on two pages: department @ids are unique');
@@ -1102,7 +1102,7 @@ final class BusinessTest extends TestCase
 						'zeiten' => [['bereich' => 'laden', 'tag' => 'Montag', 'von1' => '08:00', 'bis1' => '12:00']]]);
 					// $second may replace a field of location B (its telefon, for example).
 					annai_page($tmp, '2_b', 'betrieb', array_merge(['title' => 'Standort B', 'strasse' => 'Bahnhofstraße 2', 'ort' => 'Musterdorf', 'telefon' => '030 34567002'], $second));
-					$kirby = annai_kirby($tmp, bizOn(['noren.active' => true, 'noren.language' => 'de', 'annai.language' => 'de'] + $options));
+					$kirby = annai_kirby($tmp, bizOn(['noren.active' => true, 'noren.language' => 'de', 'sayamaapps.annai.language' => 'de'] + $options));
 					$log = annai_with_error_log($tmp, function () use ($kirby, &$units, &$document): void {
 						$units = Business::units($kirby);
 						$document = Business::jsonLd($kirby, $kirby->site()->homePage()) ?? [];
@@ -1139,7 +1139,7 @@ final class BusinessTest extends TestCase
 			$twoLocations([
 				'bereiche' => [['schluessel' => 'praxis', 'name' => 'Praxis B']],
 				'zeiten' => [['bereich' => 'praxis', 'tag' => 'Dienstag', 'von1' => '09:00', 'bis1' => '17:00']],
-			], ['annai.area' => 'praxis']);
+			], ['sayamaapps.annai.area' => 'praxis']);
 			[$units, $departments, $document, $log] = $GLOBALS['bizTwoLocations'];
 			expect(['laden', 'praxis'], array_column($units, 'area'), 'units: annai.area at another location → the business location\'s unit stays first');
 			expect([true, false], array_column($units, 'primary'), 'units: annai.area at another location → that unit is not primary');
@@ -1189,8 +1189,8 @@ final class BusinessTest extends TestCase
 					annai_page($tmp, '2_sued', 'betrieb', ['title' => 'Praxis Süd', 'strasse' => 'Südweg 3', 'plz' => '12346', 'ort' => 'Musterdorf', 'telefon' => '030 34567003',
 						'bereiche' => [['schluessel' => 'praxis', 'name' => 'Praxis']],
 						'zeiten' => [['bereich' => 'praxis', 'tag' => 'Dienstag', 'von1' => '09:00', 'bis1' => '17:00']]]);
-					$kirby = annai_kirby($tmp, bizOn(['noren.active' => true, 'noren.language' => 'de', 'annai.language' => 'de',
-						'noren.locations' => ['nord', 'sued'], 'annai.location' => fn () => null]));
+					$kirby = annai_kirby($tmp, bizOn(['noren.active' => true, 'noren.language' => 'de', 'sayamaapps.annai.language' => 'de',
+						'noren.locations' => ['nord', 'sued'], 'sayamaapps.annai.location' => fn () => null]));
 					$units = Business::units($kirby);
 					$document = Business::jsonLd($kirby, $kirby->site()->homePage()) ?? [];
 					[, $llms] = annai_request($kirby, 'llms.txt');
@@ -1249,8 +1249,8 @@ final class BusinessTest extends TestCase
 						'bereiche' => [['schluessel' => 'praxis', 'name' => 'Praxis']],
 						'zeiten' => [['bereich' => 'praxis', 'tag' => 'Dienstag', 'von1' => '09:00', 'bis1' => '17:00']],
 						'schliessungen' => [['anlass' => 'Umbau', 'von' => $year . '-03-01', 'bis' => $year . '-03-05']]]);
-					$kirby = annai_kirby($tmp, bizOn(['noren.active' => true, 'noren.language' => 'de', 'annai.language' => 'de',
-						'noren.locations' => ['nord', 'sued'], 'annai.location' => fn () => null]));
+					$kirby = annai_kirby($tmp, bizOn(['noren.active' => true, 'noren.language' => 'de', 'sayamaapps.annai.language' => 'de',
+						'noren.locations' => ['nord', 'sued'], 'sayamaapps.annai.location' => fn () => null]));
 					$log = annai_with_error_log($tmp, function () use ($kirby, &$units, &$document, &$llms): void {
 						$units = Business::units($kirby);
 						$document = Business::jsonLd($kirby, $kirby->site()->homePage()) ?? [];
@@ -1298,8 +1298,8 @@ final class BusinessTest extends TestCase
 				annai_page($tmp, '3_west', 'betrieb', ['title' => 'Praxis West', 'strasse' => 'Westweg 4', 'plz' => '12346', 'ort' => 'Musterdorf', 'telefon' => '030 34567000 / 0171 1234569',
 					'bereiche' => [['schluessel' => 'praxis', 'name' => 'Praxis']],
 					'zeiten' => [['bereich' => 'praxis', 'tag' => 'Mittwoch', 'von1' => '09:00', 'bis1' => '17:00']]]);
-				$kirby = annai_kirby($tmp, bizOn(['noren.active' => true, 'noren.language' => 'de', 'annai.language' => 'de',
-					'noren.locations' => ['nord', 'sued', 'west'], 'annai.location' => fn () => null]));
+				$kirby = annai_kirby($tmp, bizOn(['noren.active' => true, 'noren.language' => 'de', 'sayamaapps.annai.language' => 'de',
+					'noren.locations' => ['nord', 'sued', 'west'], 'sayamaapps.annai.location' => fn () => null]));
 				$log = annai_with_error_log($tmp, function () use ($kirby, &$units): void {
 					$units = Business::units($kirby);
 				});
@@ -1333,7 +1333,7 @@ final class BusinessTest extends TestCase
 				expect(false, $kirby->response()->cache(), 'units lazy: the home page with hours is kept out of the page cache (Noren)');
 				expect(false, $kirby->cache('pages')->exists('home.latest.html'), 'units lazy: the home page has no page cache entry');
 
-				$kirby = annai_kirby($tmp, $cached + ['annai.jsonld' => function (Page $page, array $nodes, array $facts): array {
+				$kirby = annai_kirby($tmp, $cached + ['sayamaapps.annai.jsonld' => function (Page $page, array $nodes, array $facts): array {
 					$GLOBALS['bizHookUnits'] = count($facts['units']);
 					return $nodes;
 				}]);
@@ -1356,7 +1356,7 @@ final class BusinessTest extends TestCase
 		});
 		// annai.labels: bekannte Schlüssel mit gleichen Platzhaltern bleiben; der Rest fällt weg
 		bizSite(
-			['options' => bizOn(['annai.labels' => ['llms.hours' => 'Sprechzeiten', 'llms.hoursLine' => 'nur Uhr', 'llms.nope' => 'x', 'llms.closed' => '  ']])],
+			['options' => bizOn(['sayamaapps.annai.labels' => ['llms.hours' => 'Sprechzeiten', 'llms.hoursLine' => 'nur Uhr', 'llms.nope' => 'x', 'llms.closed' => '  ']])],
 			function (App $kirby): void {
 				expect(['llms.hours' => 'Sprechzeiten'], \Sayamaapps\Annai\Options::labels($kirby), 'labels: known keys only, placeholders kept');
 			}

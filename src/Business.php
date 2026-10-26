@@ -515,7 +515,7 @@ final class Business
 	 */
 	private static function norenLocationsSet(App $kirby): bool
 	{
-		$locations = $kirby->option('noren.locations');
+		$locations = Options::read($kirby, 'noren', 'locations');
 		return $locations !== null && $locations !== false;
 	}
 
@@ -538,7 +538,7 @@ final class Business
 	private static function norenUsed(App $kirby): bool
 	{
 		return function_exists('noren_option') &&
-			$kirby->option('noren.active') === true &&
+			Options::read($kirby, 'noren', 'active') === true &&
 			Options::flag($kirby, 'noren', true);
 	}
 
