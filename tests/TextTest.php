@@ -1,8 +1,8 @@
 <?php
 
-use Sayamaapps\Annai\Text;
 use PHPUnit\Framework\Attributes\CoversNothing;
 use PHPUnit\Framework\TestCase;
+use Sayamaapps\Annai\Text;
 
 /**
  * Text helpers (docs/SPEC.md §3.2, §9.1): whitespace, excerpts, pruning, phone numbers,

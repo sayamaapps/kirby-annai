@@ -1,8 +1,8 @@
 <?php
 
-use Sayamaapps\Annai\I18n;
 use PHPUnit\Framework\Attributes\CoversNothing;
 use PHPUnit\Framework\TestCase;
+use Sayamaapps\Annai\I18n;
 
 /**
  * Translations: every language has the same keys and placeholders as

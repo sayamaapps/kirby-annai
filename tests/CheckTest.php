@@ -1,8 +1,8 @@
 <?php
 
-use Sayamaapps\Annai\Check;
 use PHPUnit\Framework\Attributes\CoversNothing;
 use PHPUnit\Framework\TestCase;
+use Sayamaapps\Annai\Check;
 
 /**
  * The check tool: Check::page(), Check::site(), render(), exitCode() and the

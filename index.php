@@ -24,7 +24,6 @@ use Kirby\Filesystem\F;
  * here can detect that at load time without recursing into plugins(); the
  * check tool reports it instead (Check::site(), 'problems').
  */
-
 F::loadClasses(require __DIR__ . '/autoload.php', __DIR__);
 require_once __DIR__ . '/legacy.php';
 

@@ -1,8 +1,8 @@
 <?php
 
-use Sayamaapps\Annai\JsonLd;
 use PHPUnit\Framework\Attributes\CoversNothing;
 use PHPUnit\Framework\TestCase;
+use Sayamaapps\Annai\JsonLd;
 
 /** The Testhof facts (docs/SPEC.md §3.8 shape): two units, the cafe is not primary. */
 function jsonld_testhof_facts(): array

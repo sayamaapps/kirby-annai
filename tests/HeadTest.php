@@ -1,8 +1,8 @@
 <?php
 
-use Sayamaapps\Annai\Head;
 use PHPUnit\Framework\Attributes\CoversNothing;
 use PHPUnit\Framework\TestCase;
+use Sayamaapps\Annai\Head;
 
 /** A complete Business::head() input. */
 function head_full_input(): array

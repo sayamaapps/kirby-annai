@@ -1,9 +1,9 @@
 <?php
 
-use Sayamaapps\Annai\I18n;
-use Sayamaapps\Annai\LlmsTxt;
 use PHPUnit\Framework\Attributes\CoversNothing;
 use PHPUnit\Framework\TestCase;
+use Sayamaapps\Annai\I18n;
+use Sayamaapps\Annai\LlmsTxt;
 
 /** One unit (§3.8 shape) with a Monday split shift, Saturday sales only, Sunday closed. */
 function annai_test_unit(string $name, array $overrides = []): array

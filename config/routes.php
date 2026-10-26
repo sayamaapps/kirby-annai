@@ -37,7 +37,7 @@ return [
 		'method'  => 'GET|HEAD',
 		'action'  => function (string $chunk) {
 			$kirby = App::instance();
-			return (Options::active($kirby) ? Routes::sitemap($kirby, (int) $chunk) : null) ?? $this->next();
+			return (Options::active($kirby) ? Routes::sitemap($kirby, (int)$chunk) : null) ?? $this->next();
 		},
 	],
 	[

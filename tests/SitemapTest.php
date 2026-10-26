@@ -1,8 +1,8 @@
 <?php
 
-use Sayamaapps\Annai\Sitemap;
 use PHPUnit\Framework\Attributes\CoversNothing;
 use PHPUnit\Framework\TestCase;
+use Sayamaapps\Annai\Sitemap;
 
 /**
  * sitemap.xml and sitemap index (docs/SPEC.md §3.4, §9.3): exact XML, escaping, hreflang

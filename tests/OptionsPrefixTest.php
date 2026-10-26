@@ -12,27 +12,24 @@ use Sayamaapps\Annai\Options;
 #[CoversClass(Options::class)]
 final class OptionsPrefixTest extends TestCase
 {
-	public function testTheNewNameWins(): void
+	/**
+	 * Runs $fn, collects the E_USER_DEPRECATED messages in $reported and returns the result of $fn.
+	 *
+	 * @param list<string> $reported
+	 */
+	private function captureDeprecations(array &$reported, callable $fn): mixed
 	{
-		$tmp = annai_site();
+		set_error_handler(static function (int $number, string $message) use (&$reported): bool {
+			if ($number !== E_USER_DEPRECATED) {
+				return false;
+			}
+			$reported[] = $message;
+			return true;
+		}, E_USER_DEPRECATED);
 		try {
-			$kirby = annai_kirby($tmp, ['sayamaapps.annai.type' => 'Bakery', 'annai.type' => 'Winery']);
-			expect('Bakery', Options::get($kirby, 'type'), 'both names set: the new one is read');
+			return $fn();
 		} finally {
-			annai_remove_tree($tmp);
-		}
-	}
-
-	public function testTheOldNameStillWorksAndIsReported(): void
-	{
-		$tmp = annai_site();
-		try {
-			$kirby = annai_kirby($tmp, ['debug' => true, 'annai.type' => 'Winery']);
-			$reported = [];
-			expect('Winery', $this->captureDeprecations($reported, fn () => Options::get($kirby, 'type')), 'only the old name: its value is read');
-			expect(['annai.type is deprecated, use sayamaapps.annai.type'], $reported, 'only the old name: one deprecation names the new key');
-		} finally {
-			annai_remove_tree($tmp);
+			restore_error_handler();
 		}
 	}
 
@@ -58,19 +55,6 @@ final class OptionsPrefixTest extends TestCase
 		}
 	}
 
-	public function testTheNorenOptionsFallBackToo(): void
-	{
-		$tmp = annai_site();
-		try {
-			$kirby = annai_kirby($tmp, ['debug' => true, 'noren.active' => true]);
-			$reported = [];
-			expect(true, $this->captureDeprecations($reported, fn () => Options::read($kirby, 'noren', 'active') === true), 'Noren 1.x name: its value is read');
-			expect(['noren.active is deprecated, use sayamaapps.noren.active'], $reported, 'Noren 1.x name: reported');
-		} finally {
-			annai_remove_tree($tmp);
-		}
-	}
-
 	public function testTheGlobalFunctionsStillWorkAndAreReported(): void
 	{
 		$tmp = annai_site();
@@ -85,24 +69,40 @@ final class OptionsPrefixTest extends TestCase
 		}
 	}
 
-	/**
-	 * Runs $fn, collects the E_USER_DEPRECATED messages in $reported and returns the result of $fn.
-	 *
-	 * @param list<string> $reported
-	 */
-	private function captureDeprecations(array &$reported, callable $fn): mixed
+	public function testTheNewNameWins(): void
 	{
-		set_error_handler(static function (int $number, string $message) use (&$reported): bool {
-			if ($number !== E_USER_DEPRECATED) {
-				return false;
-			}
-			$reported[] = $message;
-			return true;
-		}, E_USER_DEPRECATED);
+		$tmp = annai_site();
 		try {
-			return $fn();
+			$kirby = annai_kirby($tmp, ['sayamaapps.annai.type' => 'Bakery', 'annai.type' => 'Winery']);
+			expect('Bakery', Options::get($kirby, 'type'), 'both names set: the new one is read');
 		} finally {
-			restore_error_handler();
+			annai_remove_tree($tmp);
+		}
+	}
+
+	public function testTheNorenOptionsFallBackToo(): void
+	{
+		$tmp = annai_site();
+		try {
+			$kirby = annai_kirby($tmp, ['debug' => true, 'noren.active' => true]);
+			$reported = [];
+			expect(true, $this->captureDeprecations($reported, fn () => Options::read($kirby, 'noren', 'active') === true), 'Noren 1.x name: its value is read');
+			expect(['noren.active is deprecated, use sayamaapps.noren.active'], $reported, 'Noren 1.x name: reported');
+		} finally {
+			annai_remove_tree($tmp);
+		}
+	}
+
+	public function testTheOldNameStillWorksAndIsReported(): void
+	{
+		$tmp = annai_site();
+		try {
+			$kirby = annai_kirby($tmp, ['debug' => true, 'annai.type' => 'Winery']);
+			$reported = [];
+			expect('Winery', $this->captureDeprecations($reported, fn () => Options::get($kirby, 'type')), 'only the old name: its value is read');
+			expect(['annai.type is deprecated, use sayamaapps.annai.type'], $reported, 'only the old name: one deprecation names the new key');
+		} finally {
+			annai_remove_tree($tmp);
 		}
 	}
 }

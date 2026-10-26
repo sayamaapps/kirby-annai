@@ -1,8 +1,8 @@
 <?php
 
-use Sayamaapps\Annai\Robots;
 use PHPUnit\Framework\Attributes\CoversNothing;
 use PHPUnit\Framework\TestCase;
+use Sayamaapps\Annai\Robots;
 
 /**
  * robots.txt (docs/SPEC.md §3.3, §9.2): RFC 9309 groups, AI agent presets, warnings and parsing.

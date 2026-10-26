@@ -1,11 +1,11 @@
 <?php
 
-use Sayamaapps\Annai\Business;
-use Sayamaapps\Annai\Text;
 use Kirby\Cms\App;
 use Kirby\Cms\Page;
 use PHPUnit\Framework\Attributes\CoversNothing;
 use PHPUnit\Framework\TestCase;
+use Sayamaapps\Annai\Business;
+use Sayamaapps\Annai\Text;
 
 /** Default site.txt fields of the fixture. */
 function bizSiteDefaults(): array
