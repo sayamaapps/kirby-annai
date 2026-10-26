@@ -17,18 +17,16 @@
 		<exclude name="ElseExpression" />
 	</rule>
 
+	<!-- codesize: the cyclomatic threshold is raised to 21. The highest methods are the
+	     schema, rendering and page-selection builders (Pages::entries() 20, render() 19,
+	     localBusiness() 18), which branch on purpose: each branch is one documented
+	     output or selection rule. Lower it when they split. -->
 	<rule ref="rulesets/codesize.xml/CyclomaticComplexity">
-		<!-- Open: the check and the schema builders branch on purpose. Splitting them is a follow-up. -->
 		<properties>
-			<property name="reportLevel" value="31" />
+			<property name="reportLevel" value="21" />
 		</properties>
 	</rule>
-	<rule ref="rulesets/codesize.xml/ExcessiveMethodLength">
-		<!-- Open: the long check and rendering methods. Splitting them is a follow-up. -->
-		<properties>
-			<property name="minimum" value="140" />
-		</properties>
-	</rule>
+	<rule ref="rulesets/codesize.xml/ExcessiveMethodLength" />
 	<rule ref="rulesets/codesize.xml/ExcessiveParameterList" />
 
 	<rule ref="rulesets/design.xml">

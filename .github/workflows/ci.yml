@@ -16,7 +16,7 @@ permissions:
 
 jobs:
   tests:
-    name: PHP ${{ matrix.php }}
+    name: PHP ${{ matrix.php }}, ${{ matrix.deps }}
     runs-on: ubuntu-latest
     # Runs pull requests only from branches of this repository: a pull request
     # from a fork is skipped (the push to the fork runs CI there). The workflow
@@ -26,9 +26,17 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        php: ['8.2', '8.3', '8.4']
+        php: ['8.2', '8.3', '8.4', '8.5']
+        # lowest: the oldest Kirby 5 and the oldest dependencies allowed by composer.json.
+        # highest: the newest versions. composer.lock is not committed (see .gitignore).
+        deps: [lowest, highest]
     steps:
       - uses: actions/checkout@v4
+
+      # Ubuntu's PHP reads the system zoneinfo; since 24.04 the backward-compatible
+      # names (Europe/Kiev, US/Eastern) live in tzdata-legacy. Hosters keep them.
+      - name: Legacy time zone names
+        run: sudo apt-get update -qq && sudo apt-get install -y --no-install-recommends tzdata-legacy
 
       - uses: shivammathur/setup-php@v2
         with:
@@ -36,7 +44,12 @@ jobs:
           extensions: mbstring
           coverage: none
 
-      - name: Install dev dependencies (Kirby as fixture)
+      - name: Install dependencies, lowest versions
+        if: matrix.deps == 'lowest'
+        run: composer update --no-interaction --no-progress --prefer-dist --prefer-lowest --prefer-stable --ignore-platform-req=ext-gd
+
+      - name: Install dependencies, highest versions
+        if: matrix.deps == 'highest'
         run: composer install --no-interaction --no-progress --prefer-dist --ignore-platform-req=ext-gd
 
       # The integration tests symlink the sibling packages into the throwaway
@@ -49,6 +62,66 @@ jobs:
 
       - name: Tests
         run: vendor/bin/phpunit
+
+  # The static checks run once, on PHP 8.4: PHP Mess Detector 2.x prints
+  # deprecation notices on PHP 8.5.
+  analysis:
+    name: Analysis, PHP 8.4
+    runs-on: ubuntu-latest
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: mbstring
+          coverage: none
+
+      - name: Install dependencies
+        run: composer install --no-interaction --no-progress --prefer-dist --ignore-platform-req=ext-gd
+
+      - name: Composer validate
+        run: composer validate --strict --no-check-version --no-check-all
+
+      - name: Composer normalize
+        run: composer normalize:check
+
+      - name: Undeclared dependencies
+        run: composer analyze:require-checker
+
+      - name: Unused dependencies
+        run: composer analyze:unused
+
+      - name: Psalm
+        run: composer analyze:psalm
+
+      - name: PHP Mess Detector
+        run: composer analyze:phpmd
+
+  # getkirby/php-cs needs PHP 8.3 or newer, so it is installed globally and
+  # not as a dependency: the package itself supports PHP 8.2.
+  style:
+    name: Code style, PHP 8.4
+    runs-on: ubuntu-latest
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          coverage: none
+
+      - name: Install php-cs
+        run: |
+          composer global require --no-interaction getkirby/php-cs:0.2.1
+          echo "$(composer global config home)/vendor/bin" >> "$GITHUB_PATH"
+
+      - name: Check code style
+        run: kirby-cs fix --dry-run --diff
 
   # Kirby 6 is a pre-release. This job runs the same tests against it so the
   # next major shows up early. Failing tests show up as a warning and never
@@ -83,9 +156,6 @@ jobs:
           composer config --unset platform.php
           composer require --dev 'getkirby/cms:^6.0@beta' --with-all-dependencies --no-interaction --no-progress --prefer-dist --ignore-platform-req=ext-gd
 
-      # The integration tests symlink the sibling packages into the throwaway
-      # site when they exist (tests/helpers.php: ANNAI_NOREN_PATH,
-      # ANNAI_KOYOMI_PATH). Without them the Noren and Koyomi checks print SKIP.
       - name: Fetch Noren and Koyomi as fixtures
         run: |
           git clone --depth 1 https://github.com/sayamaapps/kirby-noren ../kirby-noren || true
