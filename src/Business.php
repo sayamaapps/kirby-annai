@@ -10,13 +10,13 @@ use Kirby\Content\Field;
 
 /**
  * The facts of the business: name, address, phone, hours from Noren, the
- * JSON-LD document and the head input (SPEC.md §3.8). Kirby side: reads the
+ * JSON-LD document and the head input (docs/SPEC.md §3.8). Kirby side: reads the
  * site and the location page, Noren's hours, and hands plain arrays to the
  * Kirby-free layer (Text, JsonLd, Head). Annai never computes hours itself.
  */
 final class Business
 {
-    /** Fields that live on the location page first, then on the site (SPEC.md §6). */
+    /** Fields that live on the location page first, then on the site (docs/SPEC.md §6). */
     /**
      * The address of a unit's location page when it is somewhere else than the
      * business: only with an address of its own (street or city) that differs
@@ -370,7 +370,7 @@ final class Business
         $holidays = $site->norenHolidays() !== [];
         $business = self::location($kirby);
         // A draft named in `noren.locations` (Noren's $kirby->page() finds drafts)
-        // is as unpublished as any draft (SPEC.md §1): its address, phone and hours
+        // is as unpublished as any draft (docs/SPEC.md §1): its address, phone and hours
         // used to go into llms.txt and the JSON-LD departments while the page itself
         // was in no sitemap. Filtered before the label rule below, so one
         // visible location keeps the bare area name.

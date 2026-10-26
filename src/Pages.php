@@ -11,9 +11,9 @@ use Kirby\Content\PlainTextStorage;
 
 /**
  * Which pages count, exclusions, preview state, hreflang, lastmod, Koyomi
- * events (SPEC.md §3.9).
+ * events (docs/SPEC.md §3.9).
  *
- * Every public list method returns [] when Annai is off (SPEC.md §3.9). The
+ * Every public list method returns [] when Annai is off (docs/SPEC.md §3.9). The
  * page-level checks (excluded, robots, alternates, lastmod) are plain
  * functions of their input; index.php checks Options::active() before it
  * calls them.
@@ -31,7 +31,7 @@ final class Pages
     }
 
     /**
-     * Drafts, excluded templates and excluded ids never count (SPEC.md §3.9).
+     * Drafts, excluded templates and excluded ids never count (docs/SPEC.md §3.9).
      * An id in `annai.exclude.pages` also excludes everything below it:
      * ['intern'] keeps out /intern/protokoll-vorstand too. A Closure's result
      * counts as truthy or falsy (1 excludes), not only a real true; a Closure
@@ -380,7 +380,7 @@ final class Pages
     }
 
     /**
-     * Sitemap lastmod (W3C datetime) from the INTEGER modified() (SPEC.md §3.9).
+     * Sitemap lastmod (W3C datetime) from the INTEGER modified() (docs/SPEC.md §3.9).
      * $language: the content file of this language code (hreflang entries);
      * null is the current language. Koyomi rule: an event page whose
      * event is past gets the later of its modified time and the event's end.
@@ -404,7 +404,7 @@ final class Pages
     }
 
     /**
-     * Sitemap entries (SPEC.md §3.9): one per page in all(), or one per language
+     * Sitemap entries (docs/SPEC.md §3.9): one per page in all(), or one per language
      * with alternates when hreflang is on (languageAlternates(): the same list
      * during a preview, when the head offers none); then `annai.sitemap.extra`.
      *
@@ -581,7 +581,7 @@ final class Pages
         return $events;
     }
 
-    /** Koyomi installed, active and `annai.koyomi` true (SPEC.md §7). */
+    /** Koyomi installed, active and `annai.koyomi` true (docs/SPEC.md §7). */
     private static function koyomiOn(App $kirby): bool
     {
         return function_exists('koyomi_active')

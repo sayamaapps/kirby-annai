@@ -51,7 +51,7 @@ function arOptions(array $extra = []): array
 }
 
 /**
- * What an agent fetches, with real Kirby (SPEC.md §9.10): llms.txt, robots
+ * What an agent fetches, with real Kirby (docs/SPEC.md §9.10): llms.txt, robots
  * and JSON-LD of the home page, against fixture content with two opening-hour
  * areas, an upcoming closure and a `</script>` in the description. The 41 checks of the agent-ready run, without the
  * PHP server: every request goes through annai_request().

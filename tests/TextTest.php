@@ -5,7 +5,7 @@ use PHPUnit\Framework\Attributes\CoversNothing;
 use PHPUnit\Framework\TestCase;
 
 /**
- * Text helpers (SPEC.md §3.2, §9.1): whitespace, excerpts, pruning, phone numbers,
+ * Text helpers (docs/SPEC.md §3.2, §9.1): whitespace, excerpts, pruning, phone numbers,
  * opening times and escaping.
  *   vendor/bin/phpunit tests/TextTest.php
  */

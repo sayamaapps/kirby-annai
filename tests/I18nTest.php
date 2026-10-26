@@ -33,7 +33,7 @@ foreach (I18n::LANGUAGES as $language) {
     }
 }
 expect([], I18n::table('fr'), 'unknown language: no table');
-// Every key the code relies on exists (SPEC.md §5).
+// Every key the code relies on exists (docs/SPEC.md §5).
 foreach (['format.date', 'llms.contact', 'llms.address', 'llms.phone', 'llms.email', 'llms.action', 'llms.hours',
     'llms.hoursLine', 'llms.closed', 'llms.holidaysClosed', 'llms.onlyHours', 'llms.range', 'llms.events',
     'llms.cancelled', 'llms.pages', 'llms.optional', 'llms.home'] as $key) {

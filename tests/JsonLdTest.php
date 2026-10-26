@@ -4,7 +4,7 @@ use Annai\JsonLd;
 use PHPUnit\Framework\Attributes\CoversNothing;
 use PHPUnit\Framework\TestCase;
 
-/** The Testhof facts (SPEC.md §3.8 shape): two units, the cafe is not primary. */
+/** The Testhof facts (docs/SPEC.md §3.8 shape): two units, the cafe is not primary. */
 function jsonld_testhof_facts(): array
 {
     return [
@@ -61,7 +61,7 @@ function jsonld_testhof_facts(): array
 }
 
 /**
- * JSON-LD arrays and encoding (SPEC.md §3.6, §9.5). Kirby-free.
+ * JSON-LD arrays and encoding (docs/SPEC.md §3.6, §9.5). Kirby-free.
  *   vendor/bin/phpunit tests/JsonLdTest.php
  */
 #[CoversNothing]

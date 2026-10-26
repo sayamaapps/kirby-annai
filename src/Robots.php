@@ -3,7 +3,7 @@
 namespace Annai;
 
 /**
- * robots.txt per RFC 9309 (SPEC.md §3.3).
+ * robots.txt per RFC 9309 (docs/SPEC.md §3.3).
  *
  * Plain strings in, string out. An explicitly named user agent gets its own
  * group, and per RFC 9309 §2.2.1 that group is not merged with the `*` group:

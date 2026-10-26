@@ -8,7 +8,7 @@ namespace Sudare {
      * Config::protects() of the configuration handle() remembered before the
      * guard decided, so it is true for an exempt path (robots.txt, sitemap.xml,
      * llms.txt let through to a crawler) as well: $on models that, and there
-     * is no "exempt" case to model (SPEC.md §7).
+     * is no "exempt" case to model (docs/SPEC.md §7).
      */
     class Sudare
     {

@@ -73,7 +73,7 @@ kirby-annai/
 ├── .gitignore, .gitattributes
 ├── .github/workflows/ci.yml
 ├── LICENSE
-├── SPEC.md
+├── docs/SPEC.md
 ├── index.php   (complete registration, §3.10)
 ├── src/
 │   ├── I18n.php   (§3.1)

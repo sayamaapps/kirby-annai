@@ -3,7 +3,7 @@
 namespace Annai;
 
 /**
- * The <head> model and its tags (SPEC.md §3.7).
+ * The <head> model and its tags (docs/SPEC.md §3.7).
  *
  * The meta part of a page head: the Open Graph and twitter tags, and the
  * noindex switch. Nothing here decides
@@ -13,7 +13,7 @@ namespace Annai;
 final class Head
 {
     /**
-     * Normalises the Business::head() input (SPEC.md §3.7.1) into the model the
+     * Normalises the Business::head() input (docs/SPEC.md §3.7.1) into the model the
      * snippet and own markup use. The model carries the tag strings too, as
      * 'tags', computed from the model without that key.
      *
@@ -74,7 +74,7 @@ final class Head
     }
 
     /**
-     * HTML tags in the order of SPEC.md §3.7.1, one string each. Attribute
+     * HTML tags in the order of docs/SPEC.md §3.7.1, one string each. Attribute
      * values and the title text are escaped with Text::esc(); the JSON-LD block
      * comes from JsonLd::script().
      *

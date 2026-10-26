@@ -3,7 +3,7 @@
 namespace Annai;
 
 /**
- * schema.org arrays and JSON-LD encoding (SPEC.md §3.6).
+ * schema.org arrays and JSON-LD encoding (docs/SPEC.md §3.6).
  *
  * The business node and its encoding. Nothing is typed
  * twice: every value comes from Business::facts() (§3.8). Empty values are
@@ -25,7 +25,7 @@ final class JsonLd
     public const FLAGS = JSON_HEX_TAG | JSON_HEX_AMP | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE;
 
     /**
-     * The business node (no @context), see SPEC.md §3.6. [] when the business
+     * The business node (no @context), see docs/SPEC.md §3.6. [] when the business
      * has no schema.org type (type false) or no name.
      *
      * @return array<string, mixed>

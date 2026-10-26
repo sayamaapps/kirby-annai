@@ -23,7 +23,7 @@ function head_full_input(): array
 }
 
 /**
- * The <head> model and its tags (SPEC.md §3.7, §9.6). Kirby-free.
+ * The <head> model and its tags (docs/SPEC.md §3.7, §9.6). Kirby-free.
  *   vendor/bin/phpunit tests/HeadTest.php
  */
 #[CoversNothing]

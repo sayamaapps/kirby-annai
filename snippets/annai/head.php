@@ -1,6 +1,6 @@
 <?php
 /**
- * Head markup of Annai (SPEC.md §3.7.3): title, description, robots,
+ * Head markup of Annai (docs/SPEC.md §3.7.3): title, description, robots,
  * canonical, hreflang, Open Graph, twitter card and JSON-LD. Head markup only:
  * no charset, viewport, theme colour, icons, fonts or stylesheets, and no
  * CSS classes. Those stay in the site's own <head>.

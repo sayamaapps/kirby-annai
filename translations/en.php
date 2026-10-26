@@ -4,7 +4,7 @@
  * English strings — the default and the fallback for missing keys.
  * `{name}` placeholders are filled in by Annai\I18n::t(). tests/I18nTest.php
  * checks that every language file has the same keys and placeholders as this
- * one. Keys are the contract (SPEC.md §5); never rename one without a
+ * one. Keys are the contract (docs/SPEC.md §5); never rename one without a
  * CHANGELOG entry. The check tool and the CLI are English only and do not
  * use this table.
  */
@@ -16,7 +16,7 @@ return [
     // PHP date() format for I18n::date().
     'format.date' => 'j M Y',
 
-    // llms.txt (LlmsTxt::render(), SPEC.md §3.5).
+    // llms.txt (LlmsTxt::render(), docs/SPEC.md §3.5).
     'llms.contact' => 'Contact',
     'llms.address' => 'Address',
     'llms.phone' => 'Phone',

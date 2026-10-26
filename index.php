@@ -34,7 +34,7 @@ use Annai\Routes;
  * Off by default: without `'annai.active' => true` every route falls through
  * to Kirby, every method returns null/[]/'' and the snippet prints nothing.
  *
- * Registration only: all logic lives in src/ (SPEC.md §3.10).
+ * Registration only: all logic lives in src/ (docs/SPEC.md §3.10).
  *
  * Defaults are passed as fallback values directly at each option call, NOT
  * in an 'options' block (Kirby would file them under sayamaapps.annai.*
@@ -127,12 +127,12 @@ App::plugin('sayamaapps/annai', [
     ],
 
     'siteMethods' => [
-        /** Business facts (SPEC.md §3.8), [] when off. */
+        /** Business facts (docs/SPEC.md §3.8), [] when off. */
         'annaiFacts' => function (): array {
             return Options::active($this->kirby()) ? Business::facts($this->kirby()) : [];
         },
 
-        /** Opening-hour units from Noren (SPEC.md §3.8), [] when off or without Noren. */
+        /** Opening-hour units from Noren (docs/SPEC.md §3.8), [] when off or without Noren. */
         'annaiUnits' => function (): array {
             return Options::active($this->kirby()) ? Business::units($this->kirby()) : [];
         },
@@ -142,7 +142,7 @@ App::plugin('sayamaapps/annai', [
             return Options::active($this->kirby()) ? Routes::robotsText($this->kirby()) : '';
         },
 
-        /** Sitemap entries (SPEC.md §3.9: loc, lastmod, alternates, page), [] when off. */
+        /** Sitemap entries (docs/SPEC.md §3.9: loc, lastmod, alternates, page), [] when off. */
         'annaiSitemap' => function (): array {
             return Options::active($this->kirby()) ? Pages::entries($this->kirby()) : [];
         },
@@ -152,19 +152,19 @@ App::plugin('sayamaapps/annai', [
             return Options::active($this->kirby()) ? Routes::llmsText($this->kirby()) : '';
         },
 
-        /** Upcoming Koyomi events for llms.txt (SPEC.md §3.9), [] when off or without Koyomi. */
+        /** Upcoming Koyomi events for llms.txt (docs/SPEC.md §3.9), [] when off or without Koyomi. */
         'annaiEvents' => function (): array {
             return Options::active($this->kirby()) ? Pages::events($this->kirby()) : [];
         },
 
-        /** Is the preview protection active (SPEC.md §7)? false when off. */
+        /** Is the preview protection active (docs/SPEC.md §7)? false when off. */
         'annaiPreview' => function (): bool {
             return Options::active($this->kirby()) && Pages::preview($this->kirby());
         },
     ],
 
     'pageMethods' => [
-        /** Head model (SPEC.md §3.7.1) for own markup, or null when off. */
+        /** Head model (docs/SPEC.md §3.7.1) for own markup, or null when off. */
         'annaiHead' => function (): ?array {
             $kirby = $this->kirby();
             if (!Options::active($kirby)) {
@@ -203,7 +203,7 @@ App::plugin('sayamaapps/annai', [
             return Options::active($kirby) ? Pages::lastmod($kirby, $this) : null;
         },
 
-        /** What engines and agents see on this page (SPEC.md §3.11), or null when off. */
+        /** What engines and agents see on this page (docs/SPEC.md §3.11), or null when off. */
         'annaiCheck' => function (): ?array {
             $kirby = $this->kirby();
             return Options::active($kirby) ? Check::page($kirby, $this) : null;

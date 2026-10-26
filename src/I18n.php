@@ -3,7 +3,7 @@
 namespace Annai;
 
 /**
- * Strings of the plugin, Kirby-free. (SPEC.md §3.1, §5).
+ * Strings of the plugin, Kirby-free. (docs/SPEC.md §3.1, §5).
  *
  * The tables live in translations/<language>.php and are also registered as
  * Kirby plugin translations under `annai.<key>` (index.php). Annai reads its

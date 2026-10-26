@@ -6,7 +6,7 @@ use PHPUnit\Framework\TestCase;
 
 /**
  * The check tool: Check::page(), Check::site(), render(), exitCode() and the
- * bin/annai-check CLI (SPEC.md §9.11). Kirby-booting; the CLI runs in a child
+ * bin/annai-check CLI (docs/SPEC.md §9.11). Kirby-booting; the CLI runs in a child
  * process against a throwaway site.
  *
  *   vendor/bin/phpunit tests/CheckTest.php

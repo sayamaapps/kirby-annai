@@ -166,14 +166,14 @@ function rtKoyomiGerman(string $tmp): void
 }
 
 /**
- * The routes and page selection with real Kirby (SPEC.md §9.9), in throwaway
+ * The routes and page selection with real Kirby (docs/SPEC.md §9.9), in throwaway
  * site directories: robots.txt, sitemap.xml (+ chunks), llms.txt, the page
  * methods Pages::robots/alternates/lastmod, the multilang fixture and the
  * Koyomi lastmod rule and llms list (skipped without Koyomi).
  *
  *   ASDF_PHP_VERSION=8.5.3 vendor/bin/phpunit tests/RoutesTest.php
  *
- * The fake Sudare class below is the contract of SPEC.md §7:
+ * The fake Sudare class below is the contract of docs/SPEC.md §7:
  * Pages::preview() asks `Sudare\Sudare::active()`, on the CLI also
  * `Sudare\Sudare::protects()`. Declared here, so the
  * file uses braced namespace blocks (a file cannot mix them with a global

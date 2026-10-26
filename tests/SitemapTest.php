@@ -5,7 +5,7 @@ use PHPUnit\Framework\Attributes\CoversNothing;
 use PHPUnit\Framework\TestCase;
 
 /**
- * sitemap.xml and sitemap index (SPEC.md §3.4, §9.3): exact XML, escaping, hreflang
+ * sitemap.xml and sitemap index (docs/SPEC.md §3.4, §9.3): exact XML, escaping, hreflang
  * alternates, chunking and W3C lastmod values.
  *   vendor/bin/phpunit tests/SitemapTest.php
  */

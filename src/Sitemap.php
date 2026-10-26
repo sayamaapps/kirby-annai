@@ -3,7 +3,7 @@
 namespace Annai;
 
 /**
- * sitemaps.org XML (SPEC.md §3.4).
+ * sitemaps.org XML (docs/SPEC.md §3.4).
  */
 final class Sitemap
 {

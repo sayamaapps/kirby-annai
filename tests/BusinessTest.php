@@ -114,7 +114,7 @@ function bizFind(array $items, string $key, mixed $value): ?array
 
 /**
  * Business facts, the JSON-LD document and the head input with real Kirby
- * (SPEC.md §9.8), in throwaway site directories:
+ * (docs/SPEC.md §9.8), in throwaway site directories:
  *  1. off: facts/jsonLd/head/units return [] / null;
  *  2. location(): by template, not by slug; annai.location and Closure win; drafts never;
  *  3. field(): location page first, site fallback, '' when both are empty;

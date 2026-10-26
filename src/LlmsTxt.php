@@ -3,7 +3,7 @@
 namespace Annai;
 
 /**
- * llms.txt per llmstxt.org (SPEC.md §3.5).
+ * llms.txt per llmstxt.org (docs/SPEC.md §3.5).
  *
  * Plain arrays in, markdown out. Every title, note and name from the Panel
  * goes through plain() (no markup, no links), the summary through summary();
@@ -53,7 +53,7 @@ final class LlmsTxt
      */
     private const LINK = '/\[(?<label>(?:[^\[\]]++|\[[^\[\]]*+\])*+)\]\(\s*(?:<(?<angle>[^<>]*)>|(?<bare>(?:[^\s()]++|\((?:[^\s()]++|\((?:[^\s()]++|\([^\s()]*+\))*+\))*+\))*+))(?:\s+(?:"[^"]*"|\'[^\']*\'|\([^()]*\)))?\s*\)/u';
 
-    /** @param array<string,mixed> $model SPEC.md §3.5 shape. */
+    /** @param array<string,mixed> $model docs/SPEC.md §3.5 shape. */
     public static function render(array $model): string
     {
         $blocks = [self::heading((string) ($model['title'] ?? ''))];

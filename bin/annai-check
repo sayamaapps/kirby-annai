@@ -2,7 +2,7 @@
 <?php
 /**
  * Shows, per page, what search engines and AI agents see on a Kirby site
- * (SPEC.md §3.11).
+ * (docs/SPEC.md §3.11).
  *
  *   vendor/bin/annai-check [--root=DIR] [--url=https://example.test] [--page=ID ...] [--json]
  *

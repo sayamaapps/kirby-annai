@@ -6,7 +6,7 @@ use Kirby\Cms\App;
 use Kirby\Cms\Page;
 
 /**
- * What search engines and agents see, per page and per site (SPEC.md §3.11).
+ * What search engines and agents see, per page and per site (docs/SPEC.md §3.11).
  *
  * Never fetches over HTTP: everything is read from the same methods the
  * site uses for its own output, so the report cannot disagree with the
@@ -170,7 +170,7 @@ final class Check
     }
 
     /**
-     * Site report (see the layout in SPEC.md §3.11): robots.txt and its
+     * Site report (see the layout in docs/SPEC.md §3.11): robots.txt and its
      * warnings, sitemap counts, llms.txt length and section headings, preview
      * state (preview, and hidden for an explicit annai.noindex => true), every
      * phone and fax field with its raw value and its E.164 number or the reason

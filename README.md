@@ -140,4 +140,4 @@ Tests: `composer test`. Issues and pull requests are welcome, without a support 
 
 ## License
 
-MIT, see [LICENSE](LICENSE).
+MIT, see [LICENSE](LICENSE.md).

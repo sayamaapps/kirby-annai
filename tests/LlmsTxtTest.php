@@ -55,7 +55,7 @@ function annai_test_model(array $overrides = []): array
 }
 
 /**
- * llms.txt (SPEC.md §3.5, §9.4): the lines in German, English labels,
+ * llms.txt (docs/SPEC.md §3.5, §9.4): the lines in German, English labels,
  * unit blocks, closures, events, sections, pages and link rules.
  *   vendor/bin/phpunit tests/LlmsTxtTest.php
  */

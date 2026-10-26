@@ -7,7 +7,7 @@ use Kirby\Content\Field;
 use Kirby\Http\Response;
 
 /**
- * The route bodies: robots.txt, sitemap.xml, llms.txt (SPEC.md §3.9).
+ * The route bodies: robots.txt, sitemap.xml, llms.txt (docs/SPEC.md §3.9).
  *
  * Every absolute URL comes from the site or page (never a hard-coded host).
  * Each public method returns null or a plain text when Annai is off; index.php
@@ -16,7 +16,7 @@ use Kirby\Http\Response;
 final class Routes
 {
     /**
-     * Robots::render() input (SPEC.md §3.3, §3.9). The Sitemap line uses Kirby's
+     * Robots::render() input (docs/SPEC.md §3.3, §3.9). The Sitemap line uses Kirby's
      * base URL: on a multi-language site $site->url() is the current language's
      * URL (/de), and /de/sitemap.xml does not exist. blockAll only while
      * Pages::hidden('/robots.txt') (annai.noindex => true, or the protection
@@ -105,7 +105,7 @@ final class Routes
     }
 
     /**
-     * LlmsTxt::render() input (SPEC.md §3.5, §3.9) from Business::facts() and
+     * LlmsTxt::render() input (docs/SPEC.md §3.5, §3.9) from Business::facts() and
      * Pages. Texts follow the site language (applyLanguage first).
      */
     public static function llmsModel(App $kirby): array

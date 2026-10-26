@@ -7,7 +7,7 @@ use libphonenumber\PhoneNumberFormat;
 use libphonenumber\PhoneNumberUtil;
 
 /**
- * Kirby-free text helpers (SPEC.md §3.2). phone() needs
+ * Kirby-free text helpers (docs/SPEC.md §3.2). phone() needs
  * giggsey/libphonenumber-for-php-lite (composer.json `require`).
  */
 final class Text

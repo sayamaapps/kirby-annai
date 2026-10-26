@@ -5,7 +5,7 @@ use PHPUnit\Framework\Attributes\CoversNothing;
 use PHPUnit\Framework\TestCase;
 
 /**
- * robots.txt (SPEC.md §3.3, §9.2): RFC 9309 groups, AI agent presets, warnings and parsing.
+ * robots.txt (docs/SPEC.md §3.3, §9.2): RFC 9309 groups, AI agent presets, warnings and parsing.
  *   vendor/bin/phpunit tests/RobotsTest.php
  */
 #[CoversNothing]

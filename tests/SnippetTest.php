@@ -36,7 +36,7 @@ function snippet_test_model(): array
 }
 
 /**
- * snippets/annai/head.php rendered by a booted Kirby (SPEC.md §3.7.3, §9.7).
+ * snippets/annai/head.php rendered by a booted Kirby (docs/SPEC.md §3.7.3, §9.7).
  * Kirby loads the plugin through annai_site(); no src file is required here.
  *   vendor/bin/phpunit tests/SnippetTest.php
  */

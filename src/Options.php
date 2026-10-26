@@ -6,7 +6,7 @@ use Closure;
 use Kirby\Cms\App;
 
 /**
- * Reads `annai.*` options. (SPEC.md §3.1, §4).
+ * Reads `annai.*` options. (docs/SPEC.md §3.1, §4).
  *
  * `null` counts as "not set", like Kirby's own option(), so `'annai.type' => null`
  * falls back to the default. Both spellings work, flat (`'annai.robots.ai' => …`)
@@ -24,7 +24,7 @@ final class Options
 {
     public const PREFIX = 'annai.';
 
-    /** Content field names (SPEC.md §6). Each key can be overridden in `annai.fields`. */
+    /** Content field names (docs/SPEC.md §6). Each key can be overridden in `annai.fields`. */
     public const FIELDS = [
         'brand'       => 'marke',
         'tagline'     => 'zusatz',
