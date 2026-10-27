@@ -308,7 +308,7 @@ final class Pages
 		if (!is_object($config) || !method_exists($config, 'isExempt')) {
 			return false;
 		}
-		return $config->isExempt($path, $kirby->request()->method(), $_SERVER['REQUEST_METHOD'] ?? null) === true;
+		return $config->isExempt($path, $kirby->request()->method(), $kirby->environment()->get('REQUEST_METHOD')) === true;
 	}
 
 	/**
