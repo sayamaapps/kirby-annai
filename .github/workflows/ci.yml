@@ -30,8 +30,8 @@ jobs:
       matrix:
         php: ['8.2', '8.3', '8.4', '8.5']
         # lowest: the oldest Kirby 5 and the oldest dependencies allowed by composer.json.
-        # highest: the newest versions. composer.lock is not committed (see .gitignore).
-        deps: [lowest, highest]
+        # locked: the versions in composer.lock. highest: the newest versions allowed.
+        deps: [lowest, locked, highest]
     steps:
       - uses: actions/checkout@v4
 
@@ -50,9 +50,13 @@ jobs:
         if: matrix.deps == 'lowest'
         run: composer update --no-interaction --no-progress --prefer-dist --prefer-lowest --prefer-stable --ignore-platform-req=ext-gd
 
+      - name: Install dependencies, locked versions
+        if: matrix.deps == 'locked'
+        run: composer install --no-interaction --no-progress --prefer-dist --ignore-platform-req=ext-gd
+
       - name: Install dependencies, highest versions
         if: matrix.deps == 'highest'
-        run: composer install --no-interaction --no-progress --prefer-dist --ignore-platform-req=ext-gd
+        run: composer update --no-interaction --no-progress --prefer-dist --ignore-platform-req=ext-gd
 
       # The integration tests symlink the sibling packages into the throwaway
       # site when they exist (tests/helpers.php: ANNAI_NOREN_PATH,
