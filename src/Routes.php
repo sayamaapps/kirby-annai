@@ -22,7 +22,7 @@ use Kirby\Http\Route;
  * @copyright Simon Räder
  * @license   https://opensource.org/licenses/MIT
  */
-final class Routes
+class Routes
 {
 	/**
 	 * Response headers: `Cache-Control: no-store` while the preview is on, also

@@ -32,7 +32,7 @@ use Kirby\Toolkit\A;
  * @copyright Simon Räder
  * @license   https://opensource.org/licenses/MIT
  */
-final class Options
+class Options
 {
 	public const DEFAULT_TIMEZONE = 'Europe/Berlin';
 	public const DESCRIPTION_LENGTH = 155;

@@ -16,7 +16,7 @@ use libphonenumber\PhoneNumberUtil;
  * @copyright Simon Räder
  * @license   https://opensource.org/licenses/MIT
  */
-final class Text
+class Text
 {
 	/**
 	 * The pattern that splits user text into lines: CR, LF or CRLF. Never

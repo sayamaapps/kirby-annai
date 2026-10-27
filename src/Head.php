@@ -19,7 +19,7 @@ use Kirby\Cms\Page;
  * @copyright Simon Räder
  * @license   https://opensource.org/licenses/MIT
  */
-final class Head
+class Head
 {
 	/**
 	 * Normalises the Business::head() input (docs/SPEC.md §3.7.1) into the model the

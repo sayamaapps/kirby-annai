@@ -18,7 +18,7 @@ use Kirby\Cms\Page;
  * @copyright Simon Räder
  * @license   https://opensource.org/licenses/MIT
  */
-final class Check
+class Check
 {
 	/** Site-level problem (sprintf with the message) for an option Options::warn() reported during the run. */
 	public const CONFIGURATION_PROBLEM = 'configuration: %s';

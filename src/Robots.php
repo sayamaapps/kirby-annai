@@ -15,7 +15,7 @@ namespace Sayamaapps\Annai;
  * @copyright Simon Räder
  * @license   https://opensource.org/licenses/MIT
  */
-final class Robots
+class Robots
 {
 	/**
 	 * Known AI user agents and their role. Compiled 2026-10-11 from the vendor pages

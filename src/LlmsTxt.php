@@ -16,7 +16,7 @@ namespace Sayamaapps\Annai;
  * @copyright Simon Räder
  * @license   https://opensource.org/licenses/MIT
  */
-final class LlmsTxt
+class LlmsTxt
 {
 	/** An e-mail address in angle brackets, kept as the bare address instead of being stripped as a tag. */
 	private const BRACKETED_EMAIL = '/<([A-Za-z0-9.!#$%&\'*+\/=?^_`{|}~-]+@[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?(?:\.[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?)*)>/u';

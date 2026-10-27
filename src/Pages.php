@@ -28,7 +28,7 @@ use Sudare\Sudare;
  * @copyright Simon Räder
  * @license   https://opensource.org/licenses/MIT
  */
-final class Pages
+class Pages
 {
 	/** $site->index() (no drafts) minus excluded(), in index order. [] when Annai is off. @return list<Page> */
 	public static function all(App $kirby): array

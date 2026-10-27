@@ -14,7 +14,7 @@ use DateTimeZone;
  * @copyright Simon Räder
  * @license   https://opensource.org/licenses/MIT
  */
-final class Sitemap
+class Sitemap
 {
 	private const DECLARATION = '<?xml version="1.0" encoding="UTF-8"?>';
 	public const MAX_BYTES = 52428800;   // sitemaps.org limit per file, uncompressed

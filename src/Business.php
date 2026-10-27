@@ -23,7 +23,7 @@ use WeakMap;
  * @copyright Simon Räder
  * @license   https://opensource.org/licenses/MIT
  */
-final class Business
+class Business
 {
 	private const LOCATION_KEYS = ['street', 'postalCode', 'city', 'phone', 'fax', 'email'];
 
