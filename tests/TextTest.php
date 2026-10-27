@@ -1,6 +1,6 @@
 <?php
 
-use PHPUnit\Framework\Attributes\CoversNothing;
+use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Sayamaapps\Annai\Text;
 
@@ -9,7 +9,7 @@ use Sayamaapps\Annai\Text;
  * opening times and escaping.
  *   vendor/bin/phpunit tests/TextTest.php
  */
-#[CoversNothing]
+#[CoversClass(Text::class)]
 final class TextTest extends TestCase
 {
 	public function testSuite(): void

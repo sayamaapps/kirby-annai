@@ -1,6 +1,6 @@
 <?php
 
-use PHPUnit\Framework\Attributes\CoversNothing;
+use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Sayamaapps\Annai\Sitemap;
 
@@ -9,7 +9,7 @@ use Sayamaapps\Annai\Sitemap;
  * alternates, chunking and W3C lastmod values.
  *   vendor/bin/phpunit tests/SitemapTest.php
  */
-#[CoversNothing]
+#[CoversClass(Sitemap::class)]
 final class SitemapTest extends TestCase
 {
 	public function testSuite(): void

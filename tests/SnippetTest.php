@@ -1,7 +1,8 @@
 <?php
 
-use PHPUnit\Framework\Attributes\CoversNothing;
+use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
+use Sayamaapps\Annai\Head;
 
 const SNIPPET_TEST_HTML = <<<'HTML'
 <title>Hofladen · Testhof</title>
@@ -40,7 +41,7 @@ function snippet_test_model(): array
  * Kirby loads the plugin through annai_site(); no src file is required here.
  *   vendor/bin/phpunit tests/SnippetTest.php
  */
-#[CoversNothing]
+#[CoversClass(Head::class)]
 final class SnippetTest extends TestCase
 {
 	public function testSuite(): void

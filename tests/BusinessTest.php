@@ -2,7 +2,7 @@
 
 use Kirby\Cms\App;
 use Kirby\Cms\Page;
-use PHPUnit\Framework\Attributes\CoversNothing;
+use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Sayamaapps\Annai\Business;
 use Sayamaapps\Annai\Text;
@@ -129,7 +129,7 @@ function bizFind(array $items, string $key, mixed $value): array|null
  *
  *   ASDF_PHP_VERSION=8.5.3 vendor/bin/phpunit tests/BusinessTest.php
  */
-#[CoversNothing]
+#[CoversClass(Business::class)]
 final class BusinessTest extends TestCase
 {
 	public function testSuite(): void

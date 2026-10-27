@@ -1,6 +1,6 @@
 <?php
 
-use PHPUnit\Framework\Attributes\CoversNothing;
+use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Sayamaapps\Annai\Robots;
 
@@ -8,7 +8,7 @@ use Sayamaapps\Annai\Robots;
  * robots.txt (docs/SPEC.md §3.3, §9.2): RFC 9309 groups, AI agent presets, warnings and parsing.
  *   vendor/bin/phpunit tests/RobotsTest.php
  */
-#[CoversNothing]
+#[CoversClass(Robots::class)]
 final class RobotsTest extends TestCase
 {
 	public function testSuite(): void

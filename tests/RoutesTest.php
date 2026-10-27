@@ -2,8 +2,9 @@
 
 use Kirby\Cms\App;
 use Kirby\Cms\Page;
-use PHPUnit\Framework\Attributes\CoversNothing;
+use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
+use Sayamaapps\Annai\Routes;
 
 /**
  * Pages::hasContent() reads Kirby's `@internal` Version::contentFile().
@@ -179,7 +180,7 @@ function rtKoyomiGerman(string $tmp): void
  * file uses braced namespace blocks (a file cannot mix them with a global
  * block).
  */
-#[CoversNothing]
+#[CoversClass(Routes::class)]
 final class RoutesTest extends TestCase
 {
 	public function testSuite(): void

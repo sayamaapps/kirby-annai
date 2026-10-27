@@ -1,6 +1,6 @@
 <?php
 
-use PHPUnit\Framework\Attributes\CoversNothing;
+use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Sayamaapps\Annai\JsonLd;
 
@@ -64,7 +64,7 @@ function jsonld_testhof_facts(): array
  * JSON-LD arrays and encoding (docs/SPEC.md §3.6, §9.5). Kirby-free.
  *   vendor/bin/phpunit tests/JsonLdTest.php
  */
-#[CoversNothing]
+#[CoversClass(JsonLd::class)]
 final class JsonLdTest extends TestCase
 {
 	public function testSuite(): void

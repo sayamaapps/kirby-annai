@@ -6,6 +6,8 @@ use PHPUnit\Framework\TestCase;
 /**
  * The class map in autoload.php matches src/: one entry per file, the file
  * name is the class name, and every class loads through the map.
+ *
+ * Covers no single class: it checks the class map itself.
  */
 #[CoversNothing]
 final class AutoloadTest extends TestCase

@@ -1,6 +1,6 @@
 <?php
 
-use PHPUnit\Framework\Attributes\CoversNothing;
+use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Sayamaapps\Annai\Check;
 
@@ -11,7 +11,7 @@ use Sayamaapps\Annai\Check;
  *
  *   vendor/bin/phpunit tests/CheckTest.php
  */
-#[CoversNothing]
+#[CoversClass(Check::class)]
 final class CheckTest extends TestCase
 {
 	public function testSuite(): void

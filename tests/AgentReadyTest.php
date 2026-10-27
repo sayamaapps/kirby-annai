@@ -59,6 +59,8 @@ function arOptions(array $extra = []): array
  *
  * Skipped (with the reason printed) when Noren is not available: the hours
  * come from Noren's schema.org arrays.
+ *
+ * Covers no single class: it runs the agent-ready checks end to end through Kirby.
  */
 #[CoversNothing]
 final class AgentReadyTest extends TestCase

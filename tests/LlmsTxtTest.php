@@ -1,6 +1,6 @@
 <?php
 
-use PHPUnit\Framework\Attributes\CoversNothing;
+use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Sayamaapps\Annai\I18n;
 use Sayamaapps\Annai\LlmsTxt;
@@ -59,7 +59,7 @@ function annai_test_model(array $overrides = []): array
  * unit blocks, closures, events, sections, pages and link rules.
  *   vendor/bin/phpunit tests/LlmsTxtTest.php
  */
-#[CoversNothing]
+#[CoversClass(LlmsTxt::class)]
 final class LlmsTxtTest extends TestCase
 {
 	public function testSuite(): void

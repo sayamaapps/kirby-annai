@@ -1,6 +1,6 @@
 <?php
 
-use PHPUnit\Framework\Attributes\CoversNothing;
+use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Sayamaapps\Annai\I18n;
 
@@ -9,7 +9,7 @@ use Sayamaapps\Annai\I18n;
  * English, no value is empty, and the helpers follow the language.
  *   php tests/I18nTest.php
  */
-#[CoversNothing]
+#[CoversClass(I18n::class)]
 final class I18nTest extends TestCase
 {
 	public function testSuite(): void

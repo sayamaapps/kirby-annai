@@ -1,6 +1,6 @@
 <?php
 
-use PHPUnit\Framework\Attributes\CoversNothing;
+use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Sayamaapps\Annai\Head;
 
@@ -26,7 +26,7 @@ function head_full_input(): array
  * The <head> model and its tags (docs/SPEC.md §3.7, §9.6). Kirby-free.
  *   vendor/bin/phpunit tests/HeadTest.php
  */
-#[CoversNothing]
+#[CoversClass(Head::class)]
 final class HeadTest extends TestCase
 {
 	public function testSuite(): void
