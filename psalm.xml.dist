@@ -1,8 +1,6 @@
 <?xml version="1.0"?>
-<!-- errorLevel 4, not the target 3: at level 3 the remaining findings need casts or guards that
-     change what malformed option values do (structure fields may hold arrays), see the PR. -->
 <psalm
-    errorLevel="4"
+    errorLevel="3"
     phpVersion="8.2"
     resolveFromConfigFile="true"
     findUnusedBaselineEntry="false"
@@ -12,7 +10,6 @@
         <directory name="src" />
         <file name="index.php" />
         <file name="legacy.php" />
-        <file name="autoload.php" />
         <ignoreFiles>
             <directory name="vendor" />
             <directory name="tests" />
@@ -31,6 +28,8 @@
         <UndefinedFunction>
             <errorLevel type="suppress">
                 <file name="src/Pages.php" />
+                <!-- noren_option() exists only when Noren is installed; Business::norenUsed() checks function_exists() first. -->
+                <file name="src/Business.php" />
             </errorLevel>
         </UndefinedFunction>
         <TypeDoesNotContainType>

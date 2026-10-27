@@ -4,6 +4,7 @@ namespace Sayamaapps\Annai;
 
 use Kirby\Cms\App;
 use Kirby\Cms\Page;
+use Kirby\Content\Field;
 
 /**
  * What search engines and agents see, per page and per site (docs/SPEC.md §3.11).
@@ -346,7 +347,8 @@ class Check
 				continue;
 			}
 			$placePages[$page] = true;
-			$raw = (string)$kirby->page($page)?->content()->get($phoneField);
+			$field = $kirby->page($page)?->content()->get($phoneField);
+			$raw = $field instanceof Field ? (string)$field : '';
 			$phones[] = self::phone(['field' => 'phone', 'page' => $page], $raw, (string)$place['phoneE164'], $country);
 		}
 		return $phones;

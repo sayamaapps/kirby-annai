@@ -7,6 +7,7 @@ use Kirby\Cms\App;
 use Kirby\Cms\Language;
 use Kirby\Cms\Page;
 use Kirby\Content\Content;
+use Kirby\Content\Field;
 use Kirby\Content\PlainTextStorage;
 use Koyomi\Format;
 use Koyomi\Models\EventPage;
@@ -79,7 +80,7 @@ class Pages
 	 */
 	public static function base(App $kirby): string
 	{
-		return rtrim($kirby->url(), '/');
+		return rtrim((string)$kirby->url(), '/');
 	}
 
 	/**
@@ -313,7 +314,7 @@ class Pages
 	 */
 	public static function exempt(App $kirby, string $path): bool
 	{
-		if (!class_exists('Sudare\\Sudare') || !method_exists('Sudare\\Sudare', 'config')) {
+		if (!class_exists('Sudare\\Sudare') || !method_exists(Sudare::class, 'config')) {
 			return false;
 		}
 		$config = Sudare::config();
@@ -581,11 +582,11 @@ class Pages
 		if (!class_exists('Sudare\\Sudare')) {
 			return false;
 		}
-		if (method_exists('Sudare\\Sudare', 'active') && Sudare::active() === true) {
+		if (method_exists(Sudare::class, 'active') && Sudare::active() === true) {
 			return true;
 		}
 		return PHP_SAPI === 'cli' &&
-			method_exists('Sudare\\Sudare', 'protects') &&
+			method_exists(Sudare::class, 'protects') &&
 			Sudare::protects($kirby->root('base') ?? dirname((string)$kirby->root('site'))) === true;
 	}
 
@@ -627,6 +628,8 @@ class Pages
 		if ($code === null) {
 			return (string)$page->title()->value();
 		}
-		return (string)$page->content($code)->get('title')->or($page->slug($code))->value();
+		$title = $page->content($code)->get('title');
+		assert($title instanceof Field);
+		return (string)$title->or($page->slug($code))->value();
 	}
 }

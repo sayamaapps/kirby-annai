@@ -200,7 +200,7 @@ class Text
 	public static function shown(string $value): string
 	{
 		$json = (string)json_encode($value, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE);
-		return (string)preg_replace_callback('/[\x{80}-\x{9F}]/u', static fn (array $c): string => sprintf('\\u%04x', mb_ord($c[0], 'UTF-8')), $json);
+		return (string)preg_replace_callback('/[\x{80}-\x{9F}]/u', static fn (array $c): string => sprintf('\\u%04x', (int)mb_ord($c[0], 'UTF-8')), $json);
 	}
 
 	/** "G:i" without leading hour zero, modulo one day. */

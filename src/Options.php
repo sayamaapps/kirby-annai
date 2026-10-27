@@ -229,6 +229,7 @@ class Options
 	 */
 	public static function fields(App $kirby): array
 	{
+		/** @var array{brand: string, tagline: string, description: string, intro: string, street: string, postalCode: string, city: string, phone: string, fax: string, email: string, profiles: list<string>} $fields */
 		$fields = self::FIELDS;
 		$option = self::get($kirby, 'fields');
 		if (!is_array($option)) {
@@ -606,7 +607,11 @@ class Options
 		return $value;
 	}
 
-	/** Non-empty trimmed strings of a list, re-indexed. @return list<string> */
+	/**
+	 * Non-empty trimmed strings of a list, re-indexed.
+	 *
+	 * @return list<string>
+	 */
 	private static function stringList(array $values): array
 	{
 		$list = [];
@@ -622,7 +627,7 @@ class Options
 	public static function timezone(App $kirby): string
 	{
 		$zone = self::get($kirby, 'timezone', self::DEFAULT_TIMEZONE);
-		if (is_string($zone)) {
+		if (is_string($zone) && $zone !== '') {
 			try {
 				new DateTimeZone($zone);
 				return $zone;

@@ -84,6 +84,7 @@ class Sitemap
 		if ($time === null || $time === 0) {
 			return null;
 		}
+		/** @psalm-suppress ArgumentTypeCoercion An empty zone throws, as it did before the type was checked. */
 		$zone = new DateTimeZone($zone);
 		if (is_int($time)) {
 			$date = (new DateTimeImmutable('@' . $time))->setTimezone($zone);

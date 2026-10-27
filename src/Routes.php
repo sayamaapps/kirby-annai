@@ -77,12 +77,14 @@ class Routes
 		$intro = Options::fields($kirby)['intro'];
 		foreach (Pages::menu($kirby) as $page) {
 			$code = Pages::contentLanguage($kirby, $page);
+			$introField = Pages::contentIn($page, $code)->get($intro);
+			assert($introField instanceof Field);
 			$pages[] = [
 				'title' => Pages::titleIn($page, $code),
 				'url'   => $code === null ? $page->url() : $page->url($code),
 				// kirbytext() first, like the meta description: no raw Markdown or Kirbytags in the note.
 				// Invalid UTF-8 before it, else kirbytext() returns "<p></p>".
-				'note'  => self::note(Pages::contentIn($page, $code)->get($intro)),
+				'note'  => self::note($introField),
 			];
 		}
 
@@ -192,11 +194,13 @@ class Routes
 	 */
 	private static function plainEntries(array $entries): array
 	{
-		return array_map(fn (array $entry): array => [
+		/** @var list<array{loc: string, lastmod: string|null, alternates: array<string, string>}> $plain */
+		$plain = array_map(fn (array $entry): array => [
 			'loc'        => $entry['loc'],
 			'lastmod'    => $entry['lastmod'],
 			'alternates' => $entry['alternates'],
 		], $entries);
+		return $plain;
 	}
 
 	/** Response text/plain. */

@@ -7,6 +7,7 @@ use Kirby\Cms\App;
 use Kirby\Cms\Page;
 use Kirby\Cms\Site;
 use Kirby\Cms\Url;
+use Kirby\Content\Content;
 use Kirby\Content\Field;
 use Noren\Schedule;
 use WeakMap;
@@ -27,7 +28,7 @@ class Business
 {
 	private const LOCATION_KEYS = ['street', 'postalCode', 'city', 'phone', 'fax', 'email'];
 
-	/** @var ?WeakMap<Site, array{page: ?Page, index: bool}> byTemplate() per site object */
+	/** @var WeakMap<Site, array{index: bool, page: Page|null}>|null byTemplate() per site object */
 	private static WeakMap|null $byTemplate = null;
 
 	/**
@@ -74,12 +75,16 @@ class Business
 	 * on a site with 2,000 posts); the business page is almost always at the top.
 	 * 'index' says whether the whole index was searched.
 	 *
-	 * @return array{page: ?Page, index: bool}
+	 * @return array{index: bool, page: Page|null}
 	 */
 	private static function byTemplate(App $kirby): array
 	{
 		$site = $kirby->site();
-		self::$byTemplate ??= new WeakMap();
+		if (self::$byTemplate === null) {
+			/** @var WeakMap<Site, array{index: bool, page: Page|null}> $map */
+			$map = new WeakMap();
+			self::$byTemplate = $map;
+		}
 		$cached = self::$byTemplate[$site] ?? null;
 		if ($cached !== null) {
 			return $cached;
@@ -131,6 +136,14 @@ class Business
 		return self::pageCanonical($kirby, $page);
 	}
 
+	/** A named content field: Kirby's get() returns a Field for a field name, so the assertion holds. */
+	private static function contentField(Content $content, string $name): Field
+	{
+		$field = $content->get($name);
+		assert($field instanceof Field);
+		return $field;
+	}
+
 	/**
 	 * Meta description source (§3.7.2): page intro field, else site description; excerpted.
 	 * The fields are rendered with kirbytext() first: Markdown and Kirbytags (`**x**`, `(link: …)`) become plain text, not raw syntax.
@@ -154,11 +167,11 @@ class Business
 			$source = Text::esc($source);
 		} else {
 			$fields = Options::fields($kirby);
-			$intro = $page->content()->get($fields['intro']);
+			$intro = self::contentField($page->content(), $fields['intro']);
 			if (Options::descriptionFallback($kirby)) {
 				$source = self::fallbackSource($kirby, $page, $fields);
 			} else {
-				$source = self::kirbytext($intro->isEmpty() ? $kirby->site()->content()->get($fields['description']) : $intro);
+				$source = self::kirbytext($intro->isEmpty() ? self::contentField($kirby->site()->content(), $fields['description']) : $intro);
 			}
 		}
 		return Text::excerpt($source, Options::descriptionLength($kirby));
@@ -248,7 +261,7 @@ class Business
 		$read = static fn (string $key): string => self::value(
 			$kirby,
 			in_array($key, self::LOCATION_KEYS, true) ? $location : null,
-			(string)$fields[$key]
+			self::fieldName($fields, $key)
 		);
 
 		$name = Text::line($read('brand'));
@@ -307,15 +320,15 @@ class Business
 			'tagline'     => Text::line($read('tagline')),
 			// Rendered like the meta description: "**Bio**" and "(link: …)" went into
 			// the JSON-LD and the llms.txt summary as written. Plain text, not shortened.
-			'description' => Text::plain(self::kirbytext($site->content()->get((string)$fields['description']))),
+			'description' => Text::plain(self::kirbytext(self::contentField($site->content(), $fields['description']))),
 			// The base URL, not $site->url(): on a multi-language site that is the
 			// current language's URL, and the business @id must not change with it.
 			'url'         => Pages::base($kirby),
 			'image'       => $image,
 			'phone'       => $phone,
-			'phoneE164'   => $phone !== '' ? self::e164($kirby, $phoneRaw, $country, (string)$fields['phone']) : '',
+			'phoneE164'   => $phone !== '' ? self::e164($kirby, $phoneRaw, $country, $fields['phone']) : '',
 			'fax'         => $fax,
-			'faxE164'     => $fax !== '' ? self::e164($kirby, $faxRaw, $country, (string)$fields['fax']) : '',
+			'faxE164'     => $fax !== '' ? self::e164($kirby, $faxRaw, $country, $fields['fax']) : '',
 			'email'       => Text::line($read('email')),
 			'street'      => Text::line($read('street')),
 			'postalCode'  => Text::line($read('postalCode')),
@@ -338,14 +351,14 @@ class Business
 	 * one is longer, so the minimum applies to every step. A text that is shorter than
 	 * the minimum and has no longer successor stays as it is.
 	 *
-	 * @param array<string, mixed> $fields Options::fields()
+	 * @param array{brand: string, tagline: string, description: string, intro: string, street: string, postalCode: string, city: string, phone: string, fax: string, email: string, profiles: list<string>} $fields Options::fields()
 	 */
 	private static function fallbackSource(App $kirby, Page $page, array $fields): string
 	{
-		$source = self::kirbytext($page->content()->get($fields['intro']));
+		$source = self::kirbytext(self::contentField($page->content(), $fields['intro']));
 		$steps = [
-			$page->content()->get($fields['description']),
-			$kirby->site()->content()->get($fields['description']),
+			self::contentField($page->content(), $fields['description']),
+			self::contentField($kirby->site()->content(), $fields['description']),
 		];
 		foreach ($steps as $field) {
 			if (mb_strlen(Text::plain($source)) >= Check::DESCRIPTION_MIN) {
@@ -373,6 +386,19 @@ class Business
 		}
 		$location = in_array($key, self::LOCATION_KEYS, true) ? self::location($kirby) : null;
 		return self::value($kirby, $location, $name);
+	}
+
+	/** A field name from Options::fields(), as a string (the names are strings; a list is no name). */
+	private static function fieldName(array $fields, string $key): string
+	{
+		$name = $fields[$key];
+		return is_string($name) ? $name : '';
+	}
+
+	/** The text of a named content field, as a string. */
+	private static function fieldText(Content $content, string $name): string
+	{
+		return (string)self::contentField($content, $name);
 	}
 
 	/**
@@ -524,9 +550,9 @@ class Business
 	 * the option instead of walking $site->index()? Noren's own rule: null and
 	 * false mean "unset" (Noren\Locations::pages()).
 	 */
-	private static function norenLocationsSet(App $kirby): bool
+	private static function norenLocationsSet(): bool
 	{
-		$locations = $kirby->option('noren.locations');
+		$locations = noren_option('locations');
 		return $locations !== null && $locations !== false;
 	}
 
@@ -538,7 +564,7 @@ class Business
 	 */
 	public static function norenSearchesIndex(App $kirby): bool
 	{
-		return self::norenUsed($kirby) && !self::norenLocationsSet($kirby);
+		return self::norenUsed($kirby) && !self::norenLocationsSet();
 	}
 
 	/* ----------------------------------------------------------------------
@@ -549,7 +575,7 @@ class Business
 	private static function norenUsed(App $kirby): bool
 	{
 		return function_exists('noren_option') &&
-			$kirby->option('noren.active') === true &&
+			noren_option('active') === true &&
 			Options::flag($kirby, 'noren', true);
 	}
 
@@ -606,15 +632,15 @@ class Business
 	private static function place(App $kirby, Page $page): array
 	{
 		$fields = Options::fields($kirby);
-		$read = static fn (string $key): string => Text::line((string)$page->content()->get($fields[$key]));
-		$phoneRaw = (string)$page->content()->get($fields['phone']);
+		$content = $page->content();
+		$phoneRaw = self::fieldText($content, $fields['phone']);
 		$phone = Text::line($phoneRaw);
 		return [
-			'street'     => $read('street'),
-			'postalCode' => $read('postalCode'),
-			'city'       => $read('city'),
+			'street'     => Text::line(self::fieldText($content, $fields['street'])),
+			'postalCode' => Text::line(self::fieldText($content, $fields['postalCode'])),
+			'city'       => Text::line(self::fieldText($content, $fields['city'])),
 			'phone'      => $phone,
-			'phoneE164'  => $phone !== '' ? self::e164($kirby, $phoneRaw, Options::phoneCountry($kirby), (string)$fields['phone']) : '',
+			'phoneE164'  => $phone !== '' ? self::e164($kirby, $phoneRaw, Options::phoneCountry($kirby), $fields['phone']) : '',
 		];
 	}
 
@@ -904,11 +930,11 @@ class Business
 	private static function value(App $kirby, Page|null $location, string $name): string
 	{
 		if ($location !== null) {
-			$value = trim((string)$location->content()->get($name));
+			$value = trim(self::fieldText($location->content(), $name));
 			if ($value !== '') {
 				return $value;
 			}
 		}
-		return trim((string)$kirby->site()->content()->get($name));
+		return trim(self::fieldText($kirby->site()->content(), $name));
 	}
 }

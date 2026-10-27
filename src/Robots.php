@@ -153,7 +153,7 @@ class Robots
 	 * share one group, a User-agent line after a rule starts the next group,
 	 * field names are case-insensitive.
 	 *
-	 * @return array{groups: list<array{agents: list<string>, rules: list<array{type: string, path: string}>}>, sitemaps: list<string>}
+	 * @return array{groups: array<int, array{agents?: list<string>, rules: list<array{type: 'allow'|'disallow', path: string}>}>, sitemaps: list<string>}
 	 */
 	public static function parse(string $text): array
 	{
