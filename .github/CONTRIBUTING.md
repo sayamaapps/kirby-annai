@@ -52,6 +52,7 @@ composer fix:check                # the same command, once kirby-cs is on PATH
 
 - Tabs for indentation, LF line endings. `.editorconfig` lists the rest.
 - Classes live in `src/`, one class per file. The class map in `autoload.php` lists them, and `tests/AutoloadTest.php` checks it.
+- Blame ignores the style commits: `git config blame.ignoreRevsFile .github/git-blame-ignore-revs`.
 - Keep public names stable. A rename gets a deprecation wrapper first, see the README section Deprecations.
 - Commit messages follow Conventional Commits (`feat:`, `fix:`, `refactor:`, `test:`, `docs:`, `style:`, `chore:`).
 

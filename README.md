@@ -155,7 +155,6 @@ Not in 2.x: each item changes what a site sees, how it is configured or what it 
 | Options under the plugin's own name, `sayamaapps.annai.<key>`, with `annai.<key>` as fallback | `annai.<key>` only | Options written under the new name are not read in 2.x |
 | Option errors in debug mode throw Kirby's `Kirby\Exception\InvalidArgumentException` | `\InvalidArgumentException` | A `catch (\InvalidArgumentException)` stops catching them |
 | Deprecation reports (Kirby's `deprecated()`) for `annai.<key>`, `annai_option()` and `annai_active()` | Silent | In debug mode Kirby turns each report into an exception |
-| Noren's options read through `noren_option()` | `noren.locations`, `noren.active` read directly | Noren decides its own option names |
 
 The classes live in the namespace `Sayamaapps\Annai\`. The names `Annai\Text`, `Annai\Pages` and so on are aliases in `legacy.php` and stay until 3.0.
 

@@ -16,9 +16,14 @@ All notable changes to this project are documented here. Versions follow
   `Sayamaapps\Annai\`; the `Annai\` names are aliases and keep working. The two
   global functions `annai_option()` and `annai_active()` still exist. Options,
   output, exception types and routes are as in 2.2.3.
+- **Noren's options are read through `noren_option()`**, the function Noren
+  publishes, with the same option names and the same values.
 - **Tests and tooling.** The suite runs with PHPUnit (`composer test`), with
-  static analysis (Psalm, PHPMD, composer-require-checker, composer-unused) and
-  the Kirby code style in CI.
+  static analysis (Psalm at error level 3, PHPMD, composer-require-checker,
+  composer-unused) and the Kirby code style in CI. Each test class names the
+  class it covers; the tests load `index.php` as Kirby does. CI runs the
+  locked dependency set as well (`composer.lock` is committed). The analysis
+  configurations and the blame ignore list moved into `.github/`.
 
 ## [2.2.3] — 2026-10-26
 
