@@ -2,7 +2,6 @@
     "scan-files": [
         "index.php",
         "legacy.php",
-        "autoload.php",
         "config/*.php",
         "src/*.php"
     ],
