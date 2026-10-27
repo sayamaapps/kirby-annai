@@ -1363,10 +1363,10 @@ final class RoutesTest extends TestCase
 			$thrown = null;
 			try {
 				Sayamaapps\Annai\Business::jsonLd($kirby, $kirby->site()->homePage());
-			} catch (InvalidArgumentException $error) {
+			} catch (Kirby\Exception\InvalidArgumentException $error) {
 				$thrown = $error->getMessage();
 			}
-			holds(is_string($thrown) && str_contains($thrown, 'annai.jsonld threw RuntimeException: kaputt'), 'debug on: a throwing hook is thrown as InvalidArgumentException naming the hook');
+			holds(is_string($thrown) && str_contains($thrown, 'annai.jsonld threw RuntimeException: kaputt'), 'debug on: a throwing hook is thrown as Kirby InvalidArgumentException naming the hook');
 		}, 'rtFixture');
 
 		// A hook result that cannot be encoded (NAN, INF, too deep) used to fail only in

@@ -4,9 +4,9 @@ namespace Sayamaapps\Annai;
 
 use Closure;
 use DateTimeZone;
-use InvalidArgumentException;
 use Kirby\Cms\App;
 use Kirby\Cms\Helpers;
+use Kirby\Exception\InvalidArgumentException;
 
 /**
  * Reads `sayamaapps.annai.*` options, with the 2.x `annai.*` names as fallback
@@ -682,7 +682,7 @@ final class Options
 	public static function warn(App $kirby, string $message): void
 	{
 		if ($kirby->option('debug') === true) {
-			throw new InvalidArgumentException($message);
+			throw new InvalidArgumentException(message: $message);
 		}
 		if (isset(self::$logged[$message])) {
 			return;

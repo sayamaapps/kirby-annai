@@ -618,7 +618,7 @@ final class CheckTest extends TestCase
 				proc_close($process);
 			}
 			expect(
-				'InvalidArgumentException: Annai: phone numbers need giggsey/libphonenumber-for-php-lite, which is not installed — nothing is published as E.164; install Annai with Composer (README, Installation).',
+				'Kirby\\Exception\\InvalidArgumentException: Annai: phone numbers need giggsey/libphonenumber-for-php-lite, which is not installed — nothing is published as E.164; install Annai with Composer (README, Installation).',
 				$rendered,
 				'without libphonenumber, debug on: the page throws the library message'
 			);
