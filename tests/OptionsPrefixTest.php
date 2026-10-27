@@ -80,14 +80,14 @@ final class OptionsPrefixTest extends TestCase
 		}
 	}
 
-	public function testTheNorenOptionsFallBackToo(): void
+	public function testTheNestedSpellingIsRead(): void
 	{
 		$tmp = annai_site();
 		try {
-			$kirby = annai_kirby($tmp, ['debug' => true, 'noren.active' => true]);
-			$reported = [];
-			expect(true, $this->captureDeprecations($reported, fn () => Options::read($kirby, 'noren', 'active') === true), 'Noren 1.x name: its value is read');
-			expect(['noren.active is deprecated, use sayamaapps.noren.active'], $reported, 'Noren 1.x name: reported');
+			$kirby = annai_kirby($tmp, ['sayamaapps' => ['annai' => ['type' => 'Bakery', 'robots' => ['ai' => 'block']]]]);
+			expect('Bakery', Options::get($kirby, 'type'), 'nested under sayamaapps: the value is read');
+			expect('block', Options::get($kirby, 'robots.ai'), 'nested under sayamaapps with a dotted key: the value is read');
+			expect('LocalBusiness', Options::get($kirby, 'locationTemplate', 'LocalBusiness'), 'nested: an unset key gives the default');
 		} finally {
 			annai_remove_tree($tmp);
 		}

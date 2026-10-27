@@ -7,15 +7,16 @@ use DateTimeZone;
 use Kirby\Cms\App;
 use Kirby\Cms\Helpers;
 use Kirby\Exception\InvalidArgumentException;
+use Kirby\Toolkit\A;
 
 /**
  * Reads `sayamaapps.annai.*` options, with the 2.x `annai.*` names as fallback
  * (docs/SPEC.md §3.1, §4).
  *
  * `null` counts as "not set", like Kirby's own option(), so `'annai.type' => null`
- * falls back to the default. Both spellings work, flat (`'annai.robots.ai' => …`)
- * and nested (`'annai' => ['robots' => ['ai' => …]]`), because Kirby's option()
- * resolves dotted keys in both forms.
+ * falls back to the default. Each option works flat (`'sayamaapps.annai.robots.ai' => …`)
+ * and nested (`'sayamaapps' => ['annai' => ['robots' => ['ai' => …]]]`); the 2.x
+ * names work flat and nested under `annai`.
  *
  * A broken value is logged once per process and the default is used, except
  * with Kirby's `debug` option on: then it throws, so a developer sees it on
@@ -506,12 +507,11 @@ final class Options
 	 * `<plugin>.<key>` is returned as well and reported as deprecated (Kirby's
 	 * `debug` option turns the report on). Null when neither is set.
 	 *
-	 * Used for Annai's own options (plugin `annai`) and for the Noren options
-	 * Annai reads (plugin `noren`).
+	 * Used for Annai's own options (plugin `annai`).
 	 */
 	public static function read(App $kirby, string $plugin, string $key): mixed
 	{
-		$value = $kirby->option(self::PREFIX . $plugin . '.' . $key);
+		$value = $kirby->option(self::PREFIX . $plugin . '.' . $key) ?? self::nested($kirby, $plugin . '.' . $key);
 		if ($value !== null) {
 			return $value;
 		}
@@ -523,6 +523,18 @@ final class Options
 			);
 		}
 		return $legacy;
+	}
+
+	/**
+	 * The nested spelling `'sayamaapps' => ['annai' => […]]`. Kirby's dot lookup
+	 * finds the plugin's own `sayamaapps.<plugin>` block first, which holds the
+	 * null defaults, and never reaches the nested user array. So it is looked
+	 * up in that array here.
+	 */
+	private static function nested(App $kirby, string $path): mixed
+	{
+		$nested = $kirby->option('sayamaapps');
+		return is_array($nested) ? A::get($nested, $path) : null;
 	}
 
 	/**
