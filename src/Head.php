@@ -2,6 +2,9 @@
 
 namespace Sayamaapps\Annai;
 
+use Kirby\Cms\App;
+use Kirby\Cms\Page;
+
 /**
  * The <head> model and its tags (docs/SPEC.md §3.7).
  *
@@ -19,6 +22,12 @@ final class Head
 	 *
 	 * @return array<string, mixed>
 	 */
+	/** Head model of a page (annaiHead()), null when Annai is off. */
+	public static function forPage(App $kirby, Page $page): array|null
+	{
+		return Options::active($kirby) ? self::build(Business::head($kirby, $page)) : null;
+	}
+
 	public static function build(array $input): array
 	{
 		$title = (string)($input['title'] ?? '');

@@ -185,6 +185,12 @@ final class Check
 	 *   canonical: string, image: ?string, alternates: int,
 	 *   jsonld: array{types: list<string>, valid: bool}, problems: list<string>, notes: list<string>}
 	 */
+	/** annaiCheck(): what engines and agents see on this page, null when Annai is off. */
+	public static function pageWhenOn(App $kirby, Page $page): array|null
+	{
+		return Options::active($kirby) ? self::page($kirby, $page) : null;
+	}
+
 	public static function page(App $kirby, Page $page): array
 	{
 		// JSON-LD that cannot be encoded is left out of the head (Business::head()

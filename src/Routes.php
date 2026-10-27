@@ -7,6 +7,7 @@ use Kirby\Cms\App;
 use Kirby\Cms\Page;
 use Kirby\Content\Field;
 use Kirby\Http\Response;
+use Kirby\Http\Route;
 
 /**
  * The route bodies: robots.txt, sitemap.xml, llms.txt (docs/SPEC.md §3.9).
@@ -202,6 +203,30 @@ final class Routes
 			'extra'    => Options::robotsExtra($kirby),
 			'blockAll' => Pages::hidden($kirby, '/robots.txt'),
 		];
+	}
+
+	/** annaiRobots() of the site: the robots.txt text, '' when Annai is off. */
+	public static function robotsTextWhenOn(App $kirby): string
+	{
+		return Options::active($kirby) ? self::robotsText($kirby) : '';
+	}
+
+	/** annaiLlms(): the llms.txt text, '' when Annai is off. */
+	public static function llmsTextWhenOn(App $kirby): string
+	{
+		return Options::active($kirby) ? self::llmsText($kirby) : '';
+	}
+
+	/** The robots.txt route: the response, or the next route when Annai is off. */
+	public static function robotsRoute(App $kirby, Route $route): mixed
+	{
+		return Options::active($kirby) ? self::robots($kirby) : $route->next();
+	}
+
+	/** The llms.txt route: the response, or the next route when Annai is off. */
+	public static function llmsRoute(App $kirby, Route $route): mixed
+	{
+		return Options::active($kirby) ? self::llms($kirby) : $route->next();
 	}
 
 	public static function robotsText(App $kirby): string

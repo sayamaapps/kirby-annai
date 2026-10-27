@@ -1,7 +1,6 @@
 <?php
 
 use Kirby\Cms\App;
-use Sayamaapps\Annai\Options;
 use Sayamaapps\Annai\Routes;
 
 /**
@@ -16,16 +15,14 @@ return [
 		'pattern' => 'robots.txt',
 		'method'  => 'GET|HEAD',
 		'action'  => function () {
-			$kirby = App::instance();
-			return Options::active($kirby) ? Routes::robots($kirby) : $this->next();
+			return Routes::robotsRoute(App::instance(), $this);
 		},
 	],
 	[
 		'pattern' => 'sitemap.xml',
 		'method'  => 'GET|HEAD',
 		'action'  => function () {
-			$kirby = App::instance();
-			return (Options::active($kirby) ? Routes::sitemap($kirby) : null) ?? $this->next();
+			return Routes::sitemap(App::instance()) ?? $this->next();
 		},
 	],
 	[
@@ -36,16 +33,14 @@ return [
 		'pattern' => 'sitemap-([1-9][0-9]*)\.xml',
 		'method'  => 'GET|HEAD',
 		'action'  => function (string $chunk) {
-			$kirby = App::instance();
-			return (Options::active($kirby) ? Routes::sitemap($kirby, (int)$chunk) : null) ?? $this->next();
+			return Routes::sitemap(App::instance(), (int)$chunk) ?? $this->next();
 		},
 	],
 	[
 		'pattern' => 'llms.txt',
 		'method'  => 'GET|HEAD',
 		'action'  => function () {
-			$kirby = App::instance();
-			return Options::active($kirby) ? Routes::llms($kirby) : $this->next();
+			return Routes::llmsRoute(App::instance(), $this);
 		},
 	],
 ];

@@ -445,6 +445,36 @@ final class Pages
 	 * event is past gets the later of its modified time and the event's end.
 	 * null when `annai.sitemap.lastmod` is false.
 	 */
+	/** annaiAlternates(): the hreflang map, [] when Annai is off. */
+	public static function alternatesWhenOn(App $kirby, Page $page): array
+	{
+		return Options::active($kirby) ? self::alternates($kirby, $page) : [];
+	}
+
+	/** annaiIndexable(): in sitemap, llms.txt and the check, false when Annai is off. */
+	public static function indexableWhenOn(App $kirby, Page $page): bool
+	{
+		return Options::active($kirby) && !self::excluded($kirby, $page);
+	}
+
+	/** annaiLastmod(): the sitemap lastmod, null when Annai is off. */
+	public static function lastmodWhenOn(App $kirby, Page $page): string|null
+	{
+		return Options::active($kirby) ? self::lastmod($kirby, $page) : null;
+	}
+
+	/** annaiRobots(): the robots meta value, null when Annai is off. */
+	public static function robotsWhenOn(App $kirby, Page $page): string|null
+	{
+		return Options::active($kirby) ? self::robots($kirby, $page) : null;
+	}
+
+	/** annaiPreview() of the site: the preview state, false when Annai is off. */
+	public static function previewWhenOn(App $kirby): bool
+	{
+		return Options::active($kirby) && self::preview($kirby);
+	}
+
 	public static function lastmod(App $kirby, Page $page, string|null $language = null): string|null
 	{
 		if (!Options::flag($kirby, 'sitemap.lastmod', true)) {
