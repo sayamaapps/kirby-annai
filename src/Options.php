@@ -302,9 +302,7 @@ final class Options
 	 * A hook option (`annai.title`, `annai.canonical`, `annai.jsonld`, …): the
 	 * Closure when one is set, null when the option is unset. A set value that
 	 * is no Closure (`'annai.title' => 'Eigener Titel'`, an array of nodes as
-	 * `annai.jsonld`) is reported once per process and counts as unset; it
-	 * used to be ignored in silence, although the README promised a log line
-	 * for a broken value.
+	 * `annai.jsonld`) is reported once per process and counts as unset.
 	 */
 	public static function hook(App $kirby, string $key): Closure|null
 	{
@@ -433,7 +431,7 @@ final class Options
 	/**
 	 * `annai.location`: a page id string or a Closure returning ?Page; null when
 	 * unset. Any other value (an integer, an array, a Page object) is reported
-	 * once and counts as unset (it used to be ignored in silence).
+	 * once and counts as unset.
 	 */
 	public static function location(App $kirby): string|Closure|null
 	{
@@ -480,7 +478,7 @@ final class Options
 	/**
 	 * Country calling code (digits only, no leading zeros) for national phone
 	 * numbers, default '49'. "+43", "0043" and " 43 " all mean 43: the international
-	 * prefix is no part of the code (`'0043'` used to make "+00431234").
+	 * prefix is no part of the code: `'0043'` is read as 43.
 	 */
 	public static function phoneCountry(App $kirby): string
 	{
@@ -567,7 +565,7 @@ final class Options
 	 * (as one "line" it landed inside the * group and its rules were repeated for
 	 * every allowed agent). A byte that is not UTF-8 becomes U+FFFD
 	 * (Text::utf8()): robots.txt must be UTF-8 (RFC 9309 §2.2), and the raw
-	 * line used to go into the file as written. The split is at
+	 * line would go into the file as written. The split is at
 	 * CR, LF and CRLF only (RFC 9309's EOL), never with `\R` in byte mode:
 	 * there `\R` is also NEL = 0x85, the second byte of "Å" and of many CJK
 	 * characters, and "Disallow: /Åland/" came out as two broken lines.
@@ -610,7 +608,7 @@ final class Options
 	/**
 	 * URLs per sitemap file: a whole number from 1, default and at most
 	 * Sitemap::MAX_URLS (50000, the sitemaps.org limit per file). Anything else
-	 * (false, 'abc', 0, '100') used to become 1 URL per file: it is reported and
+	 * (false, 'abc', 0, '100') would become 1 URL per file: it is reported and
 	 * the default is used. A larger number is reported and capped.
 	 */
 	public static function sitemapChunk(App $kirby): int

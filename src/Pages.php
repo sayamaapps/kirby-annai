@@ -114,8 +114,8 @@ final class Pages
 	 * The URL the canonical of a page points to when the page has no content
 	 * in the current language: Kirby renders `/en/kontakt` without
 	 * `kontakt/default.en.txt` with the default language's content, and the
-	 * head used to give that copy a canonical on itself, no noindex — duplicate
-	 * content in every language a page is not translated into.
+	 * head points that copy's canonical at the version with content. A canonical on
+	 * itself would be duplicate content in every language a page is not translated into.
 	 * The default language's URL when the page has content in it, else the
 	 * first listed language's with content (the x-default of
 	 * languageAlternates(), whatever `annai.hreflang` says). null on a
@@ -124,8 +124,8 @@ final class Pages
 	 *
 	 * Every output that names a page by its URL follows the same rule
 	 * (`contentUrl() ?? $page->url()`): the sitemap entry without hreflang
-	 * (entries()), the llms.txt links (Routes::llmsModel(), events()), which
-	 * used to list the current language's URL although its canonical points
+	 * (entries()), the llms.txt links (Routes::llmsModel(), events()), so that the
+	 * llms.txt never lists the current language's URL while its canonical points
 	 * elsewhere.
 	 */
 	public static function contentUrl(App $kirby, Page $page): string|null
@@ -403,7 +403,7 @@ final class Pages
 	 * the check tool and $site->annaiSitemap() count one entry per language
 	 * behind a preview too, as the file is served after the go-live. Built
 	 * from alternates(), which answers [] for every page while the preview is
-	 * on, the sitemap count behind Sudare used to be one per page. The route
+	 * on, the sitemap count behind Sudare would be one per page. The route
 	 * serves no entries while hidden() (Routes::sitemap()); drafts and
 	 * excluded pages never reach entries() (all()).
 	 *

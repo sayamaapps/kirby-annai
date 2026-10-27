@@ -78,7 +78,7 @@ final class JsonLd
 
 	/**
 	 * Fragment of a department's @id: the area key for a unit at the business
-	 * (`#cafe`, as before; Business::units() says so with `atBusiness`: no
+	 * (`#cafe`; Business::units() says so with `atBusiness`: no
 	 * address of its own, or the business page itself); for a unit at another
 	 * location (or one without an area) the location's page id with "/" as "-",
 	 * plus "-" and the area key when there is one (`#standort-b`,

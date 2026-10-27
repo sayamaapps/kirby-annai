@@ -109,7 +109,7 @@ final class LlmsTxt
 		}
 
 		// Hook lines like sections and intro: Text::line() (one line, trimmed), no
-		// escaping. It used to be rtrim() alone here, against SPEC §3.5.
+		// escaping.
 		foreach ((array)($contact['extra'] ?? []) as $line) {
 			$line = Text::line((string)$line);
 			if ($line !== '') {

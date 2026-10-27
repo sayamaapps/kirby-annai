@@ -33,8 +33,8 @@ final class Business
 	 * site.txt (also with `fn () => null`, no business page at all). Only a page
 	 * with an address of its own — even the business's — keeps its page id in
 	 * the fragment (`#b-cafe`), so two pages with the same area key never share
-	 * an @id. The fragment used to carry the page id whenever the Noren page was
-	 * not the business page, and a changed @id is a new entity for Google.
+	 * an @id. A changed @id is a new entity for Google, so the fragment stays
+	 * stable for the same page.
 	 */
 	private static function atBusiness(App $kirby, Page|null $page, Page|null $business, array|null $place): bool
 	{
@@ -104,7 +104,7 @@ final class Business
 	 * `annai.canonical` first. On a multi-language site a page without content
 	 * in the current language (Kirby renders it with the default language's
 	 * content) points to the language version that has the content
-	 * (Pages::contentUrl()): it used to point to itself, a duplicate of the
+	 * (Pages::contentUrl()), never to itself: that would duplicate the
 	 * default language's page in every language it is not translated into.
 	 * The hook keeps its precedence; its URL goes through Text::line() like
 	 * every other head text.
@@ -287,7 +287,7 @@ final class Business
 				continue;
 			}
 			// A URL holds no whitespace and no control character (C0, DEL, C1):
-			// an escape sequence from a Panel field used to reach the JSON-LD raw.
+			// an escape sequence from a Panel field must not reach the JSON-LD raw.
 			if (preg_match('/[\x{00}-\x{20}\x{7F}-\x{9F}]/u', $url) === 1) {
 				Options::warn($kirby, 'Annai: sameAs entry ' . $shown . ' (' . $source . ') holds a space or a control character — left out.');
 				continue;
@@ -547,7 +547,6 @@ final class Business
 			Options::flag($kirby, 'noren', true);
 	}
 
-	/** Fields that live on the location page first, then on the site (docs/SPEC.md §6). */
 	/**
 	 * The address of a unit's location page when it is somewhere else than the
 	 * business: only with an address of its own (street or city) that differs
@@ -555,9 +554,9 @@ final class Business
 	 * fields, else the site's; the site's alone without a business page
 	 * (`annai.location => fn () => null`). A Noren page with hours but no address
 	 * (the business address lives on `annai.location` or in site.txt) is at the
-	 * business: null. Without a business page every Noren page used to count as
-	 * at the business, so a second location became a department with the MAIN
-	 * address and phone, and llms.txt lost its address lines.
+	 * business: null. Without a business page no Noren page counts as at the
+	 * business, so a second location keeps its own address and phone, and llms.txt
+	 * keeps its address lines.
 	 *
 	 * @return ?array{street: string, postalCode: string, city: string, phone: string, phoneE164: string}
 	 */
@@ -620,8 +619,7 @@ final class Business
 	 * `annai.area`, else the first. An `annai.area` that names only an area of
 	 * another location is reported; that unit stays a department with its own
 	 * address. An `annai.area` that matches no unit at all (a typo, an area
-	 * without hours) is reported too — it used to fall back to the first unit
-	 * in silence. null when no unit is at the business location.
+	 * without hours) is reported too; it does not fall back to the first unit. null when no unit is at the business location.
 	 */
 	private static function primary(App $kirby, array $units): int|null
 	{
@@ -656,8 +654,8 @@ final class Business
 	 * ['url' => …, 'width' => …, 'height' => …, 'alt' => …] → same with url resolved; Closure(Page): string|array|null.
 	 * Returns ['url' => string, 'width' => ?int, 'height' => ?int, 'alt' => string] or null.
 	 * The url and the alt go through Text::line(): the alt usually comes from a
-	 * Panel field ($page->image()->alt()), and an escape sequence in it used to reach
-	 * og:image:alt raw while every other head text was filtered.
+	 * Panel field ($page->image()->alt()), so an escape sequence in it is removed
+	 * before it reaches og:image:alt, like every other head text.
 	 */
 	public static function resolveImage(App $kirby, Page $page): array|null
 	{
@@ -703,7 +701,7 @@ final class Business
 	 * pages by walking $site->index() (Noren\Locations::pages()), on every page
 	 * view that asks for the business page — the cost byTemplate() avoids. That
 	 * counts as an index search too (on a site with 2,000 posts the head of every
-	 * page took twenty times as long, and the check used to say nothing).
+	 * page would take twenty times as long).
 	 * That comes first: `annai.location` spares the business page lookup, not
 	 * Noren's walk — units() asks Noren for the hours on the home page, in
 	 * llms.txt and with an `annai.jsonld` hook on every page (the check used
@@ -814,7 +812,7 @@ final class Business
 		$business = self::location($kirby);
 		// A draft named in `noren.locations` (Noren's $kirby->page() finds drafts)
 		// is as unpublished as any draft (docs/SPEC.md §1): its address, phone and hours
-		// used to go into llms.txt and the JSON-LD departments while the page itself
+		// would otherwise go into llms.txt and the JSON-LD departments while the page itself
 		// was in no sitemap. Filtered before the label rule below, so one
 		// visible location keeps the bare area name.
 		$units = array_values(array_filter($units, static function (array $unit) use ($kirby): bool {

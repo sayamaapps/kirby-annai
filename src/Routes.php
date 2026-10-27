@@ -282,7 +282,7 @@ final class Routes
 	/**
 	 * The name for the llms.txt H1: the business name (brand field, else the
 	 * site title), else the host of Kirby's base URL. llmstxt.org requires an
-	 * H1 with a name, and without brand and title the file used to begin with
+	 * H1 with a name. Without brand and title the file would begin with
 	 * "# " alone; the check reports the missing name (Check::NAME_PROBLEM).
 	 * '' only without a host as well (the CLI without --url: NO_HOST_NOTE).
 	 */

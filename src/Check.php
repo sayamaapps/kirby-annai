@@ -20,8 +20,8 @@ final class Check
 
 	/**
 	 * The description limit is `annai.descriptionLength` plus this tolerance:
-	 * 155 + 5 = 160 by default, as before. It used to be a fixed 160, so a site
-	 * with a length of 200 was told its 192 characters were too long.
+	 * 155 + 5 = 160 by default. The tolerance is added to the configured limit,
+	 * so a length of 200 accepts up to 205 characters.
 	 */
 	public const DESCRIPTION_TOLERANCE = 5;
 

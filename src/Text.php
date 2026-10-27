@@ -57,7 +57,7 @@ final class Text
 	 * entities, collapse whitespace; cut to $max characters, drop the last
 	 * partial word and append "…". The result is never longer than $max,
 	 * ellipsis included: a text without a space in the cut keeps $max - 1
-	 * characters plus the ellipsis (it used to come back as $max + 1).
+	 * characters plus the ellipsis.
 	 */
 	public static function excerpt(string $text, int $max): string
 	{
@@ -80,9 +80,9 @@ final class Text
 	 * Bytes that are not valid UTF-8 (a Latin-1 "ü" from an import) become
 	 * U+FFFD, as in the JSON-LD, instead of emptying the whole text. C0 and C1
 	 * control characters that are not whitespace (ESC, DEL, CSI …) are removed,
-	 * the class of I18n::printable(): they used to reach <title>, the meta
+	 * the class of I18n::printable(): without it they would reach <title>, the meta
 	 * description and og:* raw from a Panel field, while every other output
-	 * filtered them. excerpt() and plain() inherit it.
+	 * filters them. excerpt() and plain() inherit it.
 	 */
 	public static function line(string $text): string
 	{
