@@ -19,7 +19,7 @@ Annai builds these from the site's own content, so they cannot drift from the pa
 - PHP 8.2 or newer with `ext-mbstring` and `ext-json`
 - Kirby 5 (`^5.0`), the site at the host root
 - Multilingual sites with language prefixes on one domain are supported. Languages on their own domains in one installation are not.
-- Optional: Noren, Koyomi and Sudare, detected and never required. With Noren, set `sayamaapps.noren.locations` (also when `sayamaapps.annai.location` is set), or Noren walks the whole page index on every page view that shows hours.
+- Optional: Noren, Koyomi and Sudare, detected and never required. With Noren, set Noren's `locations` option (`noren.locations` in Noren 1.x; also when `sayamaapps.annai.location` is set), or Noren walks the whole page index on every page view that shows hours.
 
 ## Installation
 
@@ -151,7 +151,7 @@ Still working in 2.x, removed in 3.0:
 | Old | Use instead | Note |
 |---|---|---|
 | Options `annai.<key>` | `sayamaapps.annai.<key>` | Read as fallback; reported in debug mode (`option-prefix`) |
-| Options `noren.locations`, `noren.active` | `sayamaapps.noren.locations`, `sayamaapps.noren.active` | Read as fallback; reported in debug mode |
+| Options `noren.locations`, `noren.active` | Noren's own option names | Annai reads them through `noren_option()`, so Noren decides the names |
 | `annai_option($key, $default)` | `Sayamaapps\Annai\Options::get(App::instance(), $key, $default)` | Reported in debug mode (`annai-function`) |
 | `annai_active()` | `Sayamaapps\Annai\Options::active(App::instance())` | Reported in debug mode (`annai-function`) |
 | Classes `Annai\Text`, `Annai\Pages`, … | `Sayamaapps\Annai\Text`, `Sayamaapps\Annai\Pages`, … | Class aliases in `legacy.php` |

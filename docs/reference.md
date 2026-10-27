@@ -77,7 +77,7 @@ Empty values are left out. The output is encoded so that a `</script>` typed int
 | `no indexable page with id: <id>` | site |
 | `name missing: set the brand field (<marke>) or the site title` | site |
 | `no business page in the top two page levels: every request searches the whole page index …` | site |
-| `Noren runs without sayamaapps.noren.locations: …` | site |
+| `Noren runs without noren.locations: …` | site |
 | `configuration: <message>` for each broken option logged while the report was built | site |
 | `phone: "<stored value>" → <E.164>`, or `→ (none: <reason>)` | note |
 | `no content in <code>: canonical points to <url>` | note |

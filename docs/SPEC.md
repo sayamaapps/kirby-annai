@@ -779,7 +779,7 @@ final class Business
     /**
      * The location page: option `sayamaapps.annai.location` (page id string, or Closure(): ?Page),
      * else $site->norenLocation() when Noren is installed (function_exists('noren_option')) and
-     * `sayamaapps.noren.active` is true and `sayamaapps.annai.noren` is true, else the first page whose intendedTemplate
+     * `noren.active` is true and `sayamaapps.annai.noren` is true, else the first page whose intendedTemplate
      * is in Options::locationTemplates() ('betrieb' by default): the top-level pages first, then
      * their children, and only when neither level holds one the rest of $site->index() (building
      * the index reads every page folder: seven to ten times the time of a page view with 2,000 posts).
@@ -791,7 +791,7 @@ final class Business
     /**
      * true when location() came to the template search and found nothing in the top two
      * levels, so it searched the whole $site->index(): Check reports Check::LOCATION_PROBLEM.
-     * Also true with Noren in use and `sayamaapps.noren.locations` unset (null or false, Noren's rule):
+     * Also true with Noren in use and `noren.locations` unset (null or false, Noren's rule):
      * then $site->norenLocation() walks $site->index() itself on every request.
      * That case is tested first, before `sayamaapps.annai.location`: an `sayamaapps.annai.location` spares Annai's
      * lookup, not Noren's walk for the hours (units()).
@@ -799,7 +799,7 @@ final class Business
     public static function searchesIndex(App $kirby): bool;
 
     /**
-     * The Noren case of searchesIndex(): Noren used and `sayamaapps.noren.locations` unset, whatever
+     * The Noren case of searchesIndex(): Noren used and `noren.locations` unset, whatever
      * `sayamaapps.annai.location` says. Check reports Check::NOREN_LOCATIONS_PROBLEM for it.
      */
     public static function norenSearchesIndex(App $kirby): bool;
@@ -1228,8 +1228,8 @@ final class Check
      *                  Check::OLD_PLUGIN_PROBLEM when the predecessor plugin folder still exists;
      *                  Check::STATIC_FILE_PROBLEM (sprintf, file name) for a robots.txt, sitemap.xml or llms.txt
      *                  in root 'index': the web server serves it before Kirby runs (.htaccess !-f);
-     *                  Check::NOREN_LOCATIONS_PROBLEM ('Noren runs without sayamaapps.noren.locations: … set
-     *                  sayamaapps.noren.locations (sayamaapps.annai.location does not stop it)') when Business::norenSearchesIndex(),
+     *                  Check::NOREN_LOCATIONS_PROBLEM ('Noren runs without noren.locations: … set
+     *                  noren.locations (sayamaapps.annai.location does not stop it)') when Business::norenSearchesIndex(),
      *                  also with sayamaapps.annai.location set; else Check::LOCATION_PROBLEM ('no business
      *                  page in the top two page levels: … set sayamaapps.annai.location …') when Business::searchesIndex()
      *                  (no sayamaapps.annai.location, no business page in the top two levels: every request walks the
@@ -1392,7 +1392,7 @@ German names of the earlier copies, so no content changes.
 Location page: `sayamaapps.annai.location`, else Noren's location, else the first page
 with template `betrieb` (`sayamaapps.annai.locationTemplate`), searched on the top level,
 then on the second level, and only then in the whole index (§3.8). With Noren,
-`sayamaapps.noren.locations` should be set, also next to `sayamaapps.annai.location`: without it Noren
+`noren.locations` should be set, also next to `sayamaapps.annai.location`: without it Noren
 walks the whole index for its location pages on every request that shows hours,
 and the check reports it (`Check::NOREN_LOCATIONS_PROBLEM`). Opening hours are Noren's
 contract (`bereiche`, `zeiten`, `schliessungen`), never read by Annai directly.
@@ -1423,17 +1423,17 @@ built from Kirby's base URL (`Pages::base()`, no language prefix).
   preview, and computes the robots warnings for that state too; the preview is one
   site problem. While the preview is on, the response is kept out of Kirby's page cache.
 - **Noren**: detected by `function_exists('noren_option')`; used only when
-  `sayamaapps.noren.active` is true (`$site->norenUnits()` returns `[]` otherwise) and
+  `noren.active` is true (`$site->norenUnits()` returns `[]` otherwise) and
   `sayamaapps.annai.noren` is true. Annai never builds hours itself. Noren is asked only
   where hours are shown (the home page head, an `sayamaapps.annai.jsonld` hook, llms.txt,
   the site methods), because every Noren schema call takes the response out of
   Kirby's page cache; the other pages stay cacheable. Without
-  `sayamaapps.noren.locations` Noren resolves its location pages by walking
+  `noren.locations` Noren resolves its location pages by walking
   `$site->index()` on every request that asks for the business page or the
   hours — with `sayamaapps.annai.location` too, which spares Annai's lookup but not
   `units()`; `Business::norenSearchesIndex()` is then true and the
   check reports `Check::NOREN_LOCATIONS_PROBLEM` — README and SPEC recommend
-  `sayamaapps.noren.locations`.
+  `noren.locations`.
 - **Koyomi**: detected by `function_exists('koyomi_active')`; used only when
   `koyomi_active()` and `sayamaapps.annai.koyomi`. Event pages are ordinary pages and are
   in the sitemap anyway; Annai adds the lastmod rule and the llms.txt list.
@@ -1548,7 +1548,7 @@ Fixture: site.txt with `Marke`, `Zusatz`, `Beschreibung`, `Instagram`; page
 - `location()` next to 50 nested pages: `head()` of the deepest page leaves the `index` property of `$site->children()` null (Reflection); a second-level betrieb page is found without the index, a third-level one through it (`searchesIndex()` true); the top level wins over the second; the search runs once per site object; `head()` calls `facts()` once (a counting `sameAs` Closure)
 - `field('street')` from the page; `field('email')` falls back to site; both empty → `''`
 - `facts()`: name from `marke`, fallback to title when `marke` empty; `description` is the rendered field as plain text (`**Bio**`, `(link: …)` and tags gone, not shortened); `phoneE164`; `sameAs` merges option + `instagram` field; `geo` legacy keys; `action` legacy keys; `type` default; `units` `[]` without Noren
-- With Noren (symlinked when `ANNAI_NOREN_PATH` exists, else print `SKIP` lines and `holds(true)`): `sayamaapps.noren.active`, two areas → two units, primary = `sayamaapps.annai.area` else first, `days[0]['blocks']` `[[480,720],[840,1080]]`, `note`, `closures` with `hours`, `schema` keys present
+- With Noren (symlinked when `ANNAI_NOREN_PATH` exists, else print `SKIP` lines and `holds(true)`): `noren.active`, two areas → two units, primary = `sayamaapps.annai.area` else first, `days[0]['blocks']` `[[480,720],[840,1080]]`, `note`, `closures` with `hours`, `schema` keys present
 - With Noren: the address page as `sayamaapps.annai.location` (or `fn () => null`, or a page without an address) and two areas on a Noren page without an address of its own → both units `atBusiness`, the department `@id` is `#cafe`; two Noren pages with the same address and area key → `#cafe` and `#b-cafe`
 - With Noren, `sayamaapps.annai.location => fn () => null` and two Noren pages with addresses of their own: with the site address equal to the first page's, that unit is primary (`place` null) and the second a department with its OWN address and phone, its llms.txt block with address lines; with a site address of neither, both are departments with their own addresses, no primary, the business node keeps the site address without hours. Two locations with the same area name → names `Praxis Nord · Praxis` / `Praxis Süd · Praxis` (headings, department name), no bare `### Praxis`. `sayamaapps.annai.area` without a match is logged; a matching one logs nothing
 - With Noren and the page cache on: a subpage keeps `response()->cache()` true and its cache entry (`laden.latest.html`); the home page keeps its hours and stays out of the cache; with an `sayamaapps.annai.jsonld` hook the facts carry the units on the subpage; `facts($kirby, false)['units']` is `[]`
@@ -1571,7 +1571,7 @@ The 41 checks of the agent-ready run, one to one with these
 substitutions: fixture through `annai_site()`/`annai_page()`, requests through
 `annai_request()` (no `php -S`), templates print
 `<html><head><?php snippet('annai/head') ?></head><body>Fixture</body></html>`,
-config `'sayamaapps.annai.active' => true, 'sayamaapps.annai.language' => 'de', 'sayamaapps.noren.active' =>
+config `'sayamaapps.annai.active' => true, 'sayamaapps.annai.language' => 'de', 'noren.active' =>
 true, 'noren.language' => 'de', 'sayamaapps.annai.exclude.templates' => ['error',
 'weiter'], 'sayamaapps.annai.type' => 'GroceryStore', 'sayamaapps.annai.sameAs' => [...],
 'sayamaapps.annai.action' => ['type' => 'OrderAction', 'name' => 'Online bestellen',
@@ -1589,7 +1589,7 @@ check messages as English sentences.
 - problems: title > 60, description missing/short/long, `canonical` hook returning another URL, image `http://` → absolute-https problem; `noindex => true` is the one site problem `Check::PREVIEW_PROBLEM`, never a page problem; multilang fixture (de default, en; a page with only `default.en.txt`) checked in German → canonical `/en/english`, no problem, `notes` `['no content in de: canonical points to http://example.invalid/en/english']`, rendered as `  ~ `, summary `2 pages, 0 problems`, exit 0; a translated page has no note
 - `notes`: Kirby `url` `/` (the CLI without `--url`) → `[Check::NO_HOST_NOTE]`, exit code unchanged, rendered as `  ~ `; with a host `[]`
 - `phones` (§3.2, the input contract): the fixture's `telefon` `030 / 34567000` → `[['field' => 'phone', 'raw' => '030 / 34567000', 'e164' => '+493034567000', 'problem' => null]]`, rendered `  ~ phone: "030 / 34567000" → +493034567000` right after `preview: off`; `telefon` `"(0049) 30\u{A0}34567000"` → `+493034567000` and `fax` `"Fax\x1b folgt"` → `null`, `'characters'`, rendered `  ~ fax: "Fax\u001b folgt" → (none: more than the number)` without ESC (a CSI as `\u009b` in the line and in the problem), one `configuration: field fax holds more than the number …` problem, exit 1, `1 problems`, the `~` lines themselves not counted; `telefon` `34567000` → `'invalid'`, `(none: no valid number)`; an empty `telefon` → `[]`, no line; with Noren (three location pages, B with two areas and `030 34567030`, C with `"folgt\nab Mai"`): `phones` lists the business phone, then `page` `b` with `+493034567030` once and `page` `c` with `raw` `"folgt\nab Mai"` (the stored field, not the one-line display value) and `'characters'`, rendered `  ~ phone (b): "030 34567030" → +493034567030`, `  ~ phone (c): "folgt\nab Mai" → (none: more than the number)`, C a configuration problem; CLI: the phone line in the text report, `phones` in `--json`; a site whose `vendor/autoload.php` leaves out libphonenumber → `(none: libphonenumber is not installed)`, the configuration problem `phone numbers need giggsey/libphonenumber-for-php-lite …`, exit 1, `problem` `library` in `--json`; the same site rendered with Kirby's `debug` on (child process) throws `InvalidArgumentException` with the `library` message (README "Installation")
-- `site()` → `robots.warnings` with `robots.agents => ['Claude-User' => false]`; duplicate title detection; `sitemap.count`; `llms.headings`; `Check::LOCATION_PROBLEM` without `sayamaapps.annai.location` and without a business page in the top two levels (the fixture keeps its address in site.txt and sets `sayamaapps.annai.location => fn () => null`); with Noren (sibling fixture, else SKIP) and without `sayamaapps.noren.locations` the problem is reported although the business page is on the top level, with `sayamaapps.noren.locations => ['kontakt']` it is not; that is `Check::NOREN_LOCATIONS_PROBLEM` (`LOCATION_PROBLEM` names no Noren), also with `sayamaapps.annai.location => 'kontakt'` (`searchesIndex()` true), none with both options
+- `site()` → `robots.warnings` with `robots.agents => ['Claude-User' => false]`; duplicate title detection; `sitemap.count`; `llms.headings`; `Check::LOCATION_PROBLEM` without `sayamaapps.annai.location` and without a business page in the top two levels (the fixture keeps its address in site.txt and sets `sayamaapps.annai.location => fn () => null`); with Noren (sibling fixture, else SKIP) and without `noren.locations` the problem is reported although the business page is on the top level, with `noren.locations => ['kontakt']` it is not; that is `Check::NOREN_LOCATIONS_PROBLEM` (`LOCATION_PROBLEM` names no Noren), also with `sayamaapps.annai.location => 'kontakt'` (`searchesIndex()` true), none with both options
 - `render()` contains the summary line and `  ! ` prefixes; `exitCode()` 0/1
 - `bin/annai-check`: `proc_open` the script with `--root=$tmp --url=http://example.invalid` on an `annai_site()` directory (write `site/config/config.php` with `sayamaapps.annai.active`): exit 0 and output contains `pages`; `--json` parses; without `sayamaapps.annai.active` exit 2; `--json` with an `sayamaapps.annai.llms.extra` section `案内` and `sayamaapps.annai.robots.extra` `# Filialen: Åland` → exit 0, `llms.headings` holds `案内` whole, `robots.text` the line whole; `--page=caf\xE9` → exit 1 and the problem text with U+FFFD, not exit 3
 

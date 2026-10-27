@@ -520,7 +520,7 @@ final class Business
 	 */
 	private static function norenLocationsSet(App $kirby): bool
 	{
-		$locations = Options::read($kirby, 'noren', 'locations');
+		$locations = self::norenOption('locations');
 		return $locations !== null && $locations !== false;
 	}
 
@@ -539,12 +539,21 @@ final class Business
 	 * Helpers
 	 * -------------------------------------------------------------------- */
 
-	/** Noren's hours are used: Noren active, its option set, and `annai.noren` not false. */
+	/** Noren's hours are used: Noren active, and `annai.noren` not false. */
 	private static function norenUsed(App $kirby): bool
 	{
-		return function_exists('noren_option') &&
-			Options::read($kirby, 'noren', 'active') === true &&
+		return self::norenOption('active') === true &&
 			Options::flag($kirby, 'noren', true);
+	}
+
+	/**
+	 * A Noren option through Noren's own function, so the option name is Noren's
+	 * to decide. Null when Noren is not installed.
+	 */
+	private static function norenOption(string $key): mixed
+	{
+		/** @psalm-suppress UndefinedFunction noren_option() exists only when Noren is installed */
+		return function_exists('noren_option') ? noren_option($key) : null;
 	}
 
 	/**
