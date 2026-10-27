@@ -51,6 +51,9 @@ final class Options
 	/** @var array<string,bool> messages already logged in this process */
 	private static array $logged = [];
 
+	/** @var array<string,bool> deprecations already reported in this process, by option */
+	private static array $deprecated = [];
+
 	/**
 	 * `annai.action` → ['type' => string, 'name' => string, 'target' => string] or null.
 	 * Legacy keys `typ` and `ziel` are accepted. Without a non-empty target → null.
@@ -502,9 +505,9 @@ final class Options
 		}
 		$legacy = $kirby->option($plugin . '.' . $key);
 		if ($legacy !== null) {
-			Helpers::deprecated(
-				$plugin . '.' . $key . ' is deprecated, use ' . self::PREFIX . $plugin . '.' . $key,
-				'option-prefix'
+			self::deprecatedOnce(
+				$plugin . '.' . $key,
+				$plugin . '.' . $key . ' is deprecated, use ' . self::PREFIX . $plugin . '.' . $key
 			);
 		}
 		return $legacy;
@@ -672,6 +675,20 @@ final class Options
 		}
 		self::warn($kirby, 'Annai: annai.type must be a schema.org type name or false — using LocalBusiness.');
 		return 'LocalBusiness';
+	}
+
+	/**
+	 * Reports a deprecated 2.x option name once per process. Kirby's deprecated()
+	 * reports on every call, and a page reads its options on every request.
+	 */
+	private static function deprecatedOnce(string $key, string $message): void
+	{
+		if (isset(self::$deprecated[$key])) {
+			return;
+		}
+		if (Helpers::deprecated($message, 'option-prefix')) {
+			self::$deprecated[$key] = true;
+		}
 	}
 
 	/**

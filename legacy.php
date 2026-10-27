@@ -24,7 +24,8 @@ if (Kirby\Cms\Helpers::hasOverride('annai_option') === false) {
 	/** Reads `sayamaapps.annai.<key>` (2.x: `annai.<key>`). Deprecated: use Sayamaapps\Annai\Options::get(). */
 	function annai_option(string $key, mixed $default = null): mixed
 	{
-		Kirby\Cms\Helpers::deprecated(
+		static $reported = false;
+		$reported = $reported || Kirby\Cms\Helpers::deprecated(
 			'annai_option() is deprecated, use Sayamaapps\Annai\Options::get()',
 			'annai-function'
 		);
@@ -37,7 +38,8 @@ if (Kirby\Cms\Helpers::hasOverride('annai_active') === false) {
 	/** Is Annai switched on? Deprecated: use Sayamaapps\Annai\Options::active(). */
 	function annai_active(): bool
 	{
-		Kirby\Cms\Helpers::deprecated(
+		static $reported = false;
+		$reported = $reported || Kirby\Cms\Helpers::deprecated(
 			'annai_active() is deprecated, use Sayamaapps\Annai\Options::active()',
 			'annai-function'
 		);
