@@ -144,6 +144,8 @@ Every option is written as `sayamaapps.annai.<key>`, for example `'sayamaapps.an
 | `llms.extra` | `null` | `Closure(array $model, array $facts): array` |
 | `timezone` | `'Europe/Berlin'` | Time zone of `<lastmod>` offsets |
 
+Annai keeps its own string table (`translations/`) instead of Kirby's translations: `annai.labels` overrides texts per request, `{name}` placeholders are filled in, and the language follows `sayamaapps.annai.language`, not the Panel language. A missing Kirby translation cannot turn a German llms.txt English.
+
 ## Deprecations
 
 Still working in 2.x, removed in 3.0:
