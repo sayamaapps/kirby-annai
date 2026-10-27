@@ -652,7 +652,8 @@ final class Options
 			return Sitemap::MAX_URLS;
 		}
 		if ($value > Sitemap::MAX_URLS) {
-			self::warn($kirby, 'Annai: annai.sitemap.chunk ' . $value . ' is above the sitemaps.org limit of ' . Sitemap::MAX_URLS . ' URLs per file — using ' . Sitemap::MAX_URLS . '.');
+			self::warn($kirby, 'Annai: annai.sitemap.chunk ' . $value . ' is above the sitemaps.org limit of ' . Sitemap::MAX_URLS
+				. ' URLs per file — using ' . Sitemap::MAX_URLS . '.');
 			return Sitemap::MAX_URLS;
 		}
 		return $value;
