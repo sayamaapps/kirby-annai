@@ -7,6 +7,12 @@ use DateTimeZone;
 
 /**
  * sitemaps.org XML (docs/SPEC.md §3.4).
+ *
+ * @package   Kirby Annai
+ * @author    Simon Räder
+ * @link      https://github.com/sayamaapps/kirby-annai
+ * @copyright Simon Räder
+ * @license   https://opensource.org/licenses/MIT
  */
 final class Sitemap
 {

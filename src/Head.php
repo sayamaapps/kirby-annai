@@ -12,6 +12,12 @@ use Kirby\Cms\Page;
  * noindex switch. Nothing here decides
  * a value: Business::head() (§3.8) does, this class only normalises it and prints
  * it in a fixed order.
+ *
+ * @package   Kirby Annai
+ * @author    Simon Räder
+ * @link      https://github.com/sayamaapps/kirby-annai
+ * @copyright Simon Räder
+ * @license   https://opensource.org/licenses/MIT
  */
 final class Head
 {

@@ -15,6 +15,12 @@ use Kirby\Http\Route;
  * Every absolute URL comes from the site or page (never a hard-coded host).
  * Each public method returns null or a plain text when Annai is off; index.php
  * decides the fall-through ($this->next()).
+ *
+ * @package   Kirby Annai
+ * @author    Simon Räder
+ * @link      https://github.com/sayamaapps/kirby-annai
+ * @copyright Simon Räder
+ * @license   https://opensource.org/licenses/MIT
  */
 final class Routes
 {

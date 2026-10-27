@@ -11,6 +11,12 @@ use Kirby\Cms\Page;
  * Never fetches over HTTP: everything is read from the same methods the
  * site uses for its own output, so the report cannot disagree with the
  * page. Problem wording is fixed (tests check it).
+ *
+ * @package   Kirby Annai
+ * @author    Simon Räder
+ * @link      https://github.com/sayamaapps/kirby-annai
+ * @copyright Simon Räder
+ * @license   https://opensource.org/licenses/MIT
  */
 final class Check
 {

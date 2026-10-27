@@ -16,6 +16,12 @@ use WeakMap;
  * JSON-LD document and the head input (docs/SPEC.md §3.8). Kirby side: reads the
  * site and the location page, Noren's hours, and hands plain arrays to the
  * Kirby-free layer (Text, JsonLd, Head). Annai never computes hours itself.
+ *
+ * @package   Kirby Annai
+ * @author    Simon Räder
+ * @link      https://github.com/sayamaapps/kirby-annai
+ * @copyright Simon Räder
+ * @license   https://opensource.org/licenses/MIT
  */
 final class Business
 {

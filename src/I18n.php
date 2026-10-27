@@ -12,6 +12,12 @@ namespace Sayamaapps\Annai;
  *
  * The language is set once per request (Options::applyLanguage()) and
  * defaults to English. Missing keys fall back to English, then to the key.
+ *
+ * @package   Kirby Annai
+ * @author    Simon Räder
+ * @link      https://github.com/sayamaapps/kirby-annai
+ * @copyright Simon Räder
+ * @license   https://opensource.org/licenses/MIT
  */
 final class I18n
 {

@@ -25,6 +25,12 @@ use Kirby\Toolkit\A;
  * The plugin's `options` block (config/options.php) declares every key with
  * null; the defaults stay at the call sites, so a null there falls through to
  * the 2.x key (Options::read()).
+ *
+ * @package   Kirby Annai
+ * @author    Simon Räder
+ * @link      https://github.com/sayamaapps/kirby-annai
+ * @copyright Simon Räder
+ * @license   https://opensource.org/licenses/MIT
  */
 final class Options
 {

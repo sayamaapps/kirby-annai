@@ -21,6 +21,12 @@ use Sudare\Sudare;
  * page-level checks (excluded, robots, alternates, lastmod) are plain
  * functions of their input; index.php checks Options::active() before it
  * calls them.
+ *
+ * @package   Kirby Annai
+ * @author    Simon Räder
+ * @link      https://github.com/sayamaapps/kirby-annai
+ * @copyright Simon Räder
+ * @license   https://opensource.org/licenses/MIT
  */
 final class Pages
 {

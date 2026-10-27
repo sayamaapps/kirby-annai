@@ -8,6 +8,12 @@ namespace Sayamaapps\Annai;
  * Plain strings in, string out. An explicitly named user agent gets its own
  * group, and per RFC 9309 §2.2.1 that group is not merged with the `*` group:
  * an allowed agent group therefore repeats the `*` disallows.
+ *
+ * @package   Kirby Annai
+ * @author    Simon Räder
+ * @link      https://github.com/sayamaapps/kirby-annai
+ * @copyright Simon Räder
+ * @license   https://opensource.org/licenses/MIT
  */
 final class Robots
 {

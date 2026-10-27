@@ -9,6 +9,12 @@ namespace Sayamaapps\Annai;
  * twice: every value comes from Business::facts() (§3.8). Empty values are
  * removed by Text::prune(), so an empty email or a missing geo point never
  * reaches the output (an empty string is a wrong statement for an agent).
+ *
+ * @package   Kirby Annai
+ * @author    Simon Räder
+ * @link      https://github.com/sayamaapps/kirby-annai
+ * @copyright Simon Räder
+ * @license   https://opensource.org/licenses/MIT
  */
 final class JsonLd
 {

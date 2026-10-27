@@ -9,6 +9,12 @@ use libphonenumber\PhoneNumberUtil;
 /**
  * Kirby-free text helpers (docs/SPEC.md §3.2). phone() needs
  * giggsey/libphonenumber-for-php-lite (composer.json `require`).
+ *
+ * @package   Kirby Annai
+ * @author    Simon Räder
+ * @link      https://github.com/sayamaapps/kirby-annai
+ * @copyright Simon Räder
+ * @license   https://opensource.org/licenses/MIT
  */
 final class Text
 {

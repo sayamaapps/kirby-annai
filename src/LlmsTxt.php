@@ -9,6 +9,12 @@ namespace Sayamaapps\Annai;
  * goes through plain() (no markup, no links), the summary through summary();
  * the labels come from I18n (§5), so the German file is the
  * German text and nothing is hard-coded here.
+ *
+ * @package   Kirby Annai
+ * @author    Simon Räder
+ * @link      https://github.com/sayamaapps/kirby-annai
+ * @copyright Simon Räder
+ * @license   https://opensource.org/licenses/MIT
  */
 final class LlmsTxt
 {
