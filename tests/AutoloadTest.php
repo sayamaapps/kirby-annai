@@ -1,15 +1,39 @@
 <?php
 
-use PHPUnit\Framework\Attributes\CoversNothing;
+use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
+use Sayamaapps\Annai\Business;
+use Sayamaapps\Annai\Check;
+use Sayamaapps\Annai\Head;
+use Sayamaapps\Annai\I18n;
+use Sayamaapps\Annai\JsonLd;
+use Sayamaapps\Annai\LlmsTxt;
+use Sayamaapps\Annai\Options;
+use Sayamaapps\Annai\Pages;
+use Sayamaapps\Annai\Robots;
+use Sayamaapps\Annai\Routes;
+use Sayamaapps\Annai\Sitemap;
+use Sayamaapps\Annai\Text;
 
 /**
  * The class map in autoload.php matches src/: one entry per file, the file
  * name is the class name, and every class loads through the map.
  *
- * Covers no single class: it checks the class map itself.
+ * The test loads every class of the package through the map, so it covers each
+ * of them.
  */
-#[CoversNothing]
+#[CoversClass(Business::class)]
+#[CoversClass(Check::class)]
+#[CoversClass(Head::class)]
+#[CoversClass(I18n::class)]
+#[CoversClass(JsonLd::class)]
+#[CoversClass(LlmsTxt::class)]
+#[CoversClass(Options::class)]
+#[CoversClass(Pages::class)]
+#[CoversClass(Robots::class)]
+#[CoversClass(Routes::class)]
+#[CoversClass(Sitemap::class)]
+#[CoversClass(Text::class)]
 final class AutoloadTest extends TestCase
 {
 	public function testEveryEntryLoadsItsClass(): void

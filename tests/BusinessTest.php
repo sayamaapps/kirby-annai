@@ -1093,7 +1093,8 @@ final class BusinessTest extends TestCase
 			}
 
 			// Two Noren locations (two betrieb pages): each unit's hours come from its own page.
-			$twoLocations = function (array $second, array $options = []): void {
+			$shared = [];
+			$twoLocations = function (array $second, array $options = []) use (&$shared): void {
 				$tmp = annai_site(['noren']);
 				try {
 					annai_page($tmp, '', 'site', ['title' => 'Praxis', 'marke' => 'Praxis']);
@@ -1108,7 +1109,7 @@ final class BusinessTest extends TestCase
 						$document = Business::jsonLd($kirby, $kirby->site()->homePage()) ?? [];
 					});
 					[, $llms] = annai_request($kirby, 'llms.txt');
-					$GLOBALS['bizTwoLocations'] = [$units, $document['department'] ?? [], $document, $log, $llms];
+					$shared['bizTwoLocations'] = [$units, $document['department'] ?? [], $document, $log, $llms];
 				} finally {
 					annai_remove_tree($tmp);
 				}
@@ -1119,7 +1120,7 @@ final class BusinessTest extends TestCase
 				'bereiche' => [['schluessel' => 'praxis', 'name' => 'Praxis B']],
 				'zeiten' => [['bereich' => 'praxis', 'tag' => 'Dienstag', 'von1' => '09:00', 'bis1' => '17:00']],
 			]);
-			[$units, $departments, $document] = $GLOBALS['bizTwoLocations'];
+			[$units, $departments, $document] = $shared['bizTwoLocations'];
 			expect(['a', 'b'], array_column($units, 'location'), 'units: two locations, each unit names its location page');
 			expect(['https://schema.org/Monday'], $days($document), 'units: two locations, the business node has location A\'s Monday');
 			expect(1, count($departments), 'units: two locations, one department for location B');
@@ -1129,7 +1130,7 @@ final class BusinessTest extends TestCase
 			expect('+493034567002', $departments[0]['telephone'] ?? null, 'units: two locations, department phone from its own page');
 			// With units of two location pages the name is Noren's label ("<location> · <area>"), see below.
 			holds(
-				str_contains($GLOBALS['bizTwoLocations'][4], "### Standort B · Praxis B\n\n- Adresse: Bahnhofstraße 2, Musterdorf\n- Telefon: 030 34567002 (tel:+493034567002)\n\n- Montag: geschlossen\n- Dienstag: 9:00–17:00 Uhr"),
+				str_contains($shared['bizTwoLocations'][4], "### Standort B · Praxis B\n\n- Adresse: Bahnhofstraße 2, Musterdorf\n- Telefon: 030 34567002 (tel:+493034567002)\n\n- Montag: geschlossen\n- Dienstag: 9:00–17:00 Uhr"),
 				'units: two locations, llms.txt has location B\'s address and phone under its heading'
 			);
 			expect(['Standort A · Laden A', 'Standort B · Praxis B'], array_column($units, 'name'), 'units: two locations, the names carry the location (Noren\'s label)');
@@ -1140,7 +1141,7 @@ final class BusinessTest extends TestCase
 				'bereiche' => [['schluessel' => 'praxis', 'name' => 'Praxis B']],
 				'zeiten' => [['bereich' => 'praxis', 'tag' => 'Dienstag', 'von1' => '09:00', 'bis1' => '17:00']],
 			], ['annai.area' => 'praxis']);
-			[$units, $departments, $document, $log] = $GLOBALS['bizTwoLocations'];
+			[$units, $departments, $document, $log] = $shared['bizTwoLocations'];
 			expect(['laden', 'praxis'], array_column($units, 'area'), 'units: annai.area at another location → the business location\'s unit stays first');
 			expect([true, false], array_column($units, 'primary'), 'units: annai.area at another location → that unit is not primary');
 			expect(
@@ -1158,14 +1159,14 @@ final class BusinessTest extends TestCase
 			// A location page's phone follows the input contract like the business phone (SPEC §3.2):
 			// within it the department has its number, a note around it gives none.
 			$twoLocations(['telefon' => '030 34567030', 'zeiten' => [['tag' => 'Dienstag', 'von1' => '09:00', 'bis1' => '17:00']]]);
-			[, $departments] = $GLOBALS['bizTwoLocations'];
+			[, $departments] = $shared['bizTwoLocations'];
 			expect('+493034567030', $departments[0]['telephone'] ?? null, 'units: a department phone "030 34567030" is read');
 			$twoLocations(['telefon' => '(Tel. 030 34567030)', 'zeiten' => [['tag' => 'Dienstag', 'von1' => '09:00', 'bis1' => '17:00']]]);
-			[, $departments] = $GLOBALS['bizTwoLocations'];
+			[, $departments] = $shared['bizTwoLocations'];
 			expect(null, $departments[0]['telephone'] ?? null, 'units: a department phone "(Tel. 030 34567030)" is outside the contract, no telephone');
 
 			$twoLocations(['zeiten' => [['tag' => 'Dienstag', 'von1' => '09:00', 'bis1' => '17:00']]]);
-			[$units, $departments] = $GLOBALS['bizTwoLocations'];
+			[$units, $departments] = $shared['bizTwoLocations'];
 			expect([null], array_column(array_slice($units, 1), 'area'), 'units: second location without areas is a unit with area null');
 			expect(1, count($departments), 'units: a second location without areas becomes a department');
 			expect('http://example.invalid/#b', $departments[0]['@id'] ?? null, 'units: department @id of a location without areas is the page id');
@@ -1179,7 +1180,7 @@ final class BusinessTest extends TestCase
 			// site fields, as facts() reads them. Two locations with the same area name
 			// used to give two identical `### Praxis` headings; the name is Noren's label
 			// "<location> · <area>" as soon as units of two location pages exist.
-			$twoNoren = function (array $site): void {
+			$twoNoren = function (array $site) use (&$shared): void {
 				$tmp = annai_site(['noren']);
 				try {
 					annai_page($tmp, '', 'site', ['title' => 'Praxis', 'marke' => 'Praxis Muster', 'telefon' => '030 34567001'] + $site);
@@ -1194,7 +1195,7 @@ final class BusinessTest extends TestCase
 					$units = Business::units($kirby);
 					$document = Business::jsonLd($kirby, $kirby->site()->homePage()) ?? [];
 					[, $llms] = annai_request($kirby, 'llms.txt');
-					$GLOBALS['bizTwoNoren'] = [$units, $document, $llms];
+					$shared['bizTwoNoren'] = [$units, $document, $llms];
 				} finally {
 					annai_remove_tree($tmp);
 				}
@@ -1202,7 +1203,7 @@ final class BusinessTest extends TestCase
 
 			// The site address is location Nord's: Nord is at the business, Süd elsewhere.
 			$twoNoren(['strasse' => 'Nordweg 2', 'plz' => '12345', 'ort' => 'Musterstadt']);
-			[$units, $document, $llms] = $GLOBALS['bizTwoNoren'];
+			[$units, $document, $llms] = $shared['bizTwoNoren'];
 			expect([null, 'Südweg 3'], array_map(fn (array $u) => $u['place']['street'] ?? null, $units), 'no business page: the unit at the site address has no place, the other its own');
 			expect([true, false], array_column($units, 'primary'), 'no business page: the unit at the site address is primary');
 			expect(
@@ -1228,7 +1229,7 @@ final class BusinessTest extends TestCase
 			// both departments with their own addresses, no primary; the business node keeps the
 			// site address without hours.
 			$twoNoren(['strasse' => 'Hauptstraße 1', 'plz' => '12345', 'ort' => 'Musterstadt']);
-			[$units, $document, $llms] = $GLOBALS['bizTwoNoren'];
+			[$units, $document, $llms] = $shared['bizTwoNoren'];
 			expect(['Nordweg 2', 'Südweg 3'], array_map(fn (array $u) => $u['place']['street'] ?? null, $units), 'no business page, site address elsewhere: both units have their own place');
 			expect([false, false], array_column($units, 'primary'), 'no business page, site address elsewhere: no primary unit');
 			expect(['Hauptstraße 1', []], [$document['address']['streetAddress'] ?? null, $days($document)], 'no business page, site address elsewhere: the business node has the site address, no hours');
@@ -1238,7 +1239,7 @@ final class BusinessTest extends TestCase
 			// A draft named in `noren.locations` (Noren's $kirby->page() finds drafts)
 			// used to be published with its address, phone and hours: in llms.txt and as a department
 			// of the home page's JSON-LD, although the page itself is in no sitemap.
-			$draftLocation = function (bool $draft) use ($year): void {
+			$draftLocation = function (bool $draft) use ($year, &$shared): void {
 				$tmp = annai_site(['noren']);
 				try {
 					annai_page($tmp, '', 'site', ['title' => 'Praxis', 'marke' => 'Praxis Muster', 'telefon' => '030 34567001', 'strasse' => 'Nordweg 2', 'plz' => '12345', 'ort' => 'Musterstadt']);
@@ -1257,13 +1258,13 @@ final class BusinessTest extends TestCase
 						[, $llms] = annai_request($kirby, 'llms.txt');
 					});
 					$sued = $kirby->page('sued');
-					$GLOBALS['bizDraftLocation'] = [$units, $document, $llms, $log, $sued instanceof Page && Sayamaapps\Annai\Pages::isDraft($sued)];
+					$shared['bizDraftLocation'] = [$units, $document, $llms, $log, $sued instanceof Page && Sayamaapps\Annai\Pages::isDraft($sued)];
 				} finally {
 					annai_remove_tree($tmp);
 				}
 			};
 			$draftLocation(true);
-			[$units, $document, $llms, $log, $isDraft] = $GLOBALS['bizDraftLocation'];
+			[$units, $document, $llms, $log, $isDraft] = $shared['bizDraftLocation'];
 			expect(true, $isDraft, 'draft location: Noren finds the draft page (fixture check)');
 			expect(['nord'], array_column($units, 'location'), 'draft location: no unit of a draft location');
 			expect(['Praxis'], array_column($units, 'name'), 'draft location: one visible location keeps the bare area name, not Noren\'s label');
@@ -1275,7 +1276,7 @@ final class BusinessTest extends TestCase
 			holds(str_contains($log, 'Annai: Noren location "sued" is a draft — left out.'), 'draft location: logged once');
 			expect(1, substr_count($log, 'is a draft'), 'draft location: logged once, not per call');
 			$draftLocation(false);
-			[$units, $document, $llms, $log] = $GLOBALS['bizDraftLocation'];
+			[$units, $document, $llms, $log] = $shared['bizDraftLocation'];
 			expect(['nord', 'sued'], array_column($units, 'location'), 'published location: both units (counter-check)');
 			expect(1, count($document['department'] ?? []), 'published location: one department (counter-check)');
 			holds(str_contains($llms, 'Südweg 3'), 'published location: llms.txt has the second address (counter-check)');
@@ -1333,13 +1334,13 @@ final class BusinessTest extends TestCase
 				expect(false, $kirby->response()->cache(), 'units lazy: the home page with hours is kept out of the page cache (Noren)');
 				expect(false, $kirby->cache('pages')->exists('home.latest.html'), 'units lazy: the home page has no page cache entry');
 
-				$kirby = annai_kirby($tmp, $cached + ['annai.jsonld' => function (Page $page, array $nodes, array $facts): array {
-					$GLOBALS['bizHookUnits'] = count($facts['units']);
+				$kirby = annai_kirby($tmp, $cached + ['annai.jsonld' => function (Page $page, array $nodes, array $facts) use (&$shared): array {
+					$shared['bizHookUnits'] = count($facts['units']);
 					return $nodes;
 				}]);
 				$kirby->cache('pages')->flush();   // else the subpage is served from the cache the first request wrote
 				annai_request($kirby, 'laden');
-				expect(2, $GLOBALS['bizHookUnits'] ?? null, 'units lazy: with an annai.jsonld hook the facts carry the units on a subpage');
+				expect(2, $shared['bizHookUnits'] ?? null, 'units lazy: with an annai.jsonld hook the facts carry the units on a subpage');
 				expect(false, $kirby->response()->cache(), 'units lazy: with an annai.jsonld hook the subpage is out of the page cache (Noren)');
 
 				expect(2, count(Business::facts($kirby)['units']), 'facts(): the units by default');

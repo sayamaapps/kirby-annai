@@ -1,7 +1,8 @@
 <?php
 
-use PHPUnit\Framework\Attributes\CoversNothing;
+use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
+use Sayamaapps\Annai\Business;
 
 /** Fixture content, through the content helpers. */
 function arFixture(string $tmp, int $year): void
@@ -60,9 +61,10 @@ function arOptions(array $extra = []): array
  * Skipped (with the reason printed) when Noren is not available: the hours
  * come from Noren's schema.org arrays.
  *
- * Covers no single class: it runs the agent-ready checks end to end through Kirby.
+ * Runs the agent-ready checks end to end through Kirby; the LocalBusiness node
+ * it checks comes from Business.
  */
-#[CoversNothing]
+#[CoversClass(Business::class)]
 final class AgentReadyTest extends TestCase
 {
 	public function testSuite(): void
