@@ -66,8 +66,8 @@ final class AgentReadyTest extends TestCase
 	public function testSuite(): void
 	{
 		if (annai_sibling('noren') === null) {
-			skip('Agent-ready checks (41)', 'kirby-noren not found (ANNAI_NOREN_PATH or ../kirby-noren)');
-			return;
+			// Reported as skipped, not as passed: the whole method depends on Noren.
+			$this->markTestSkipped('Agent-ready checks (41) need kirby-noren (ANNAI_NOREN_PATH or ../kirby-noren)');
 		}
 		$year = (int)date('Y') + 1;
 		// the closures lie in the future whenever the test runs
