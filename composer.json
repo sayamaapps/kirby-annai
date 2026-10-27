@@ -74,6 +74,17 @@
         "analyze:psalm": "vendor/bin/psalm",
         "analyze:require-checker": "vendor/bin/composer-require-checker check --config-file=composer-require-checker.json composer.json",
         "analyze:unused": "vendor/bin/composer-unused",
+        "ci": [
+            "@composer validate --strict --no-check-version --no-check-all",
+            "@composer normalize:check",
+            "@composer analyze:require-checker",
+            "@composer analyze:unused",
+            "@composer check-platform-reqs",
+            "@composer analyze:psalm",
+            "@composer analyze:phpmd",
+            "@composer test"
+        ],
+        "fix:check": "kirby-cs fix --dry-run --diff",
         "normalize:check": "@composer normalize --dry-run",
         "test": "vendor/bin/phpunit"
     }

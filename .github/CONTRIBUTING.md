@@ -27,15 +27,25 @@ composer analyze:phpmd            # PHP Mess Detector (run it on PHP 8.4, see be
 composer analyze:unused           # unused Composer packages
 composer analyze:require-checker  # undeclared dependencies
 composer normalize:check          # composer.json layout
+composer check-platform-reqs      # PHP extensions the package needs
+composer ci                       # the Composer checks above, in CI order
 ```
 
 PHP Mess Detector 2.x prints deprecation notices on PHP 8.5, so run it on PHP 8.4.
+
+Duplicate code is checked with phpcpd. It conflicts with PHPUnit 11 (`sebastian/cli-parser`), so it is installed globally, like the style check below:
+
+```sh
+composer global require sebastian/phpcpd:^6.0
+phpcpd --fuzzy --exclude tests --exclude vendor .
+```
 
 Code style is checked with PHP-CS-Fixer and the Kirby rule set (`getkirby/php-cs`). The package is installed globally, because it needs PHP 8.3 or newer and this package supports PHP 8.2:
 
 ```sh
 composer global require getkirby/php-cs:0.2.1
 kirby-cs fix --dry-run --diff     # the global bin directory must be in PATH
+composer fix:check                # the same command, once kirby-cs is on PATH
 ```
 
 ## Conventions
