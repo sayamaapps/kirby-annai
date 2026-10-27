@@ -524,7 +524,7 @@ class Business
 	 * the option instead of walking $site->index()? Noren's own rule: null and
 	 * false mean "unset" (Noren\Locations::pages()).
 	 */
-	private static function norenLocationsSet(App $kirby): bool
+	private static function norenLocationsSet(): bool
 	{
 		$locations = self::norenOption('locations');
 		return $locations !== null && $locations !== false;
@@ -538,7 +538,7 @@ class Business
 	 */
 	public static function norenSearchesIndex(App $kirby): bool
 	{
-		return self::norenUsed($kirby) && !self::norenLocationsSet($kirby);
+		return self::norenUsed($kirby) && !self::norenLocationsSet();
 	}
 
 	/* ----------------------------------------------------------------------
