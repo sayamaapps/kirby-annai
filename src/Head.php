@@ -22,12 +22,6 @@ final class Head
 	 *
 	 * @return array<string, mixed>
 	 */
-	/** Head model of a page (annaiHead()), null when Annai is off. */
-	public static function forPage(App $kirby, Page $page): array|null
-	{
-		return Options::active($kirby) ? self::build(Business::head($kirby, $page)) : null;
-	}
-
 	public static function build(array $input): array
 	{
 		$title = (string)($input['title'] ?? '');
@@ -80,6 +74,12 @@ final class Head
 		];
 		$model['tags'] = self::tags($model);
 		return $model;
+	}
+
+	/** Head model of a page (annaiHead()), null when Annai is off. */
+	public static function forPage(App $kirby, Page $page): array|null
+	{
+		return Options::active($kirby) ? self::build(Business::head($kirby, $page)) : null;
 	}
 
 	private static function meta(string $attribute, string $name, string $content): string

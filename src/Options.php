@@ -48,11 +48,11 @@ final class Options
 	];
 	public const PREFIX = 'sayamaapps.';
 
-	/** @var array<string,bool> messages already logged in this process */
-	private static array $logged = [];
-
 	/** @var array<string,bool> deprecations already reported in this process, by option */
 	private static array $deprecated = [];
+
+	/** @var array<string,bool> messages already logged in this process */
+	private static array $logged = [];
 
 	/**
 	 * `annai.action` → ['type' => string, 'name' => string, 'target' => string] or null.
@@ -137,6 +137,20 @@ final class Options
 	{
 		$value = self::get($kirby, 'country', 'DE');
 		return is_string($value) && trim($value) !== '' ? trim($value) : 'DE';
+	}
+
+	/**
+	 * Reports a deprecated 2.x option name once per process. Kirby's deprecated()
+	 * reports on every call, and a page reads its options on every request.
+	 */
+	private static function deprecatedOnce(string $key, string $message): void
+	{
+		if (isset(self::$deprecated[$key])) {
+			return;
+		}
+		if (Helpers::deprecated($message, 'option-prefix')) {
+			self::$deprecated[$key] = true;
+		}
 	}
 
 	/**
@@ -673,20 +687,6 @@ final class Options
 		}
 		self::warn($kirby, 'Annai: annai.type must be a schema.org type name or false — using LocalBusiness.');
 		return 'LocalBusiness';
-	}
-
-	/**
-	 * Reports a deprecated 2.x option name once per process. Kirby's deprecated()
-	 * reports on every call, and a page reads its options on every request.
-	 */
-	private static function deprecatedOnce(string $key, string $message): void
-	{
-		if (isset(self::$deprecated[$key])) {
-			return;
-		}
-		if (Helpers::deprecated($message, 'option-prefix')) {
-			self::$deprecated[$key] = true;
-		}
 	}
 
 	/**

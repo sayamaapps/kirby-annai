@@ -117,6 +117,12 @@ final class Routes
 		return $model;
 	}
 
+	/** The llms.txt route: the response, or the next route when Annai is off. */
+	public static function llmsRoute(App $kirby, Route $route): mixed
+	{
+		return Options::active($kirby) ? self::llms($kirby) : $route->next();
+	}
+
 	/** LlmsTxt::render(llmsModel()); while Pages::hidden('/llms.txt') only the H1 (see sitemap()). */
 	public static function llmsText(App $kirby): string
 	{
@@ -125,6 +131,12 @@ final class Routes
 			return LlmsTxt::heading(self::siteName($kirby, Business::facts($kirby, false))) . "\n";
 		}
 		return LlmsTxt::render(self::llmsModel($kirby));
+	}
+
+	/** annaiLlms(): the llms.txt text, '' when Annai is off. */
+	public static function llmsTextWhenOn(App $kirby): string
+	{
+		return Options::active($kirby) ? self::llmsText($kirby) : '';
 	}
 
 	/**
@@ -205,33 +217,21 @@ final class Routes
 		];
 	}
 
-	/** annaiRobots() of the site: the robots.txt text, '' when Annai is off. */
-	public static function robotsTextWhenOn(App $kirby): string
-	{
-		return Options::active($kirby) ? self::robotsText($kirby) : '';
-	}
-
-	/** annaiLlms(): the llms.txt text, '' when Annai is off. */
-	public static function llmsTextWhenOn(App $kirby): string
-	{
-		return Options::active($kirby) ? self::llmsText($kirby) : '';
-	}
-
 	/** The robots.txt route: the response, or the next route when Annai is off. */
 	public static function robotsRoute(App $kirby, Route $route): mixed
 	{
 		return Options::active($kirby) ? self::robots($kirby) : $route->next();
 	}
 
-	/** The llms.txt route: the response, or the next route when Annai is off. */
-	public static function llmsRoute(App $kirby, Route $route): mixed
-	{
-		return Options::active($kirby) ? self::llms($kirby) : $route->next();
-	}
-
 	public static function robotsText(App $kirby): string
 	{
 		return Robots::render(self::robotsConfig($kirby));
+	}
+
+	/** annaiRobots() of the site: the robots.txt text, '' when Annai is off. */
+	public static function robotsTextWhenOn(App $kirby): string
+	{
+		return Options::active($kirby) ? self::robotsText($kirby) : '';
 	}
 
 	/**
