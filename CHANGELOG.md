@@ -8,6 +8,23 @@ All notable changes to this project are documented here. Versions follow
   the sitemap, llms.txt and the head show without configuration) is a **major**
   version: a site would publish other data after a routine update.
 
+## [Unreleased]
+
+### Changed
+
+- **Code layout, no change for sites.** The classes live in the namespace
+  `Sayamaapps\Annai\`; the `Annai\` names are aliases and keep working. The two
+  global functions `annai_option()` and `annai_active()` still exist. Options,
+  output, exception types and routes are as in 2.2.3.
+- **Noren's options are read through `noren_option()`**, the function Noren
+  publishes, with the same option names and the same values.
+- **Tests and tooling.** The suite runs with PHPUnit (`composer test`), with
+  static analysis (Psalm at error level 3, PHPMD, composer-require-checker,
+  composer-unused) and the Kirby code style in CI. Each test class names the
+  class it covers; the tests load `index.php` as Kirby does. CI runs the
+  locked dependency set as well (`composer.lock` is committed). The analysis
+  configurations and the blame ignore list moved into `.github/`.
+
 ## [2.2.3] — 2026-10-26
 
 ### Fixed
@@ -109,7 +126,7 @@ line). Everything else is additive or affects a protected preview only.
 ## [1.0.0] — 2026-10-14
 
 First release as a Composer package. Before 1.0.0 the same job lived as copies
-in each site: the plugin `site/plugins/suchmaschinen` (the three routes), the
+in each site: the predecessor plugin (the three routes), the
 snippet `site/snippets/strukturdaten.php` (JSON-LD) and the head part of
 `site/snippets/kopf.php`, with variants in other copies (`llms` snippet,
 `kanonisch.php`, `@graph` with noindex, `WebSite` and `Person`, an own llms
@@ -123,7 +140,7 @@ using the table below.
 
 | Before (the copy in a site) | Now (Annai) |
 |---|---|
-| plugin `site/plugins/suchmaschinen` (routes `robots.txt`, `sitemap.xml`, `llms.txt`) | plugin `sayamaapps/annai`, routes of the same paths, `GET\|HEAD` |
+| predecessor plugin (routes `robots.txt`, `sitemap.xml`, `llms.txt`) | plugin `sayamaapps/annai`, routes of the same paths, `GET\|HEAD` |
 | `suchmaschinen.ausgeschlossen` | `annai.exclude.templates` |
 | `suchmaschinen.gesperrt` | `annai.disallow` |
 | `strukturdaten.typ` | `annai.type` |

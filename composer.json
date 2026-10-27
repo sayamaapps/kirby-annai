@@ -1,55 +1,91 @@
 {
     "name": "sayamaapps/kirby-annai",
     "description": "Search and AI-agent discovery for Kirby 5 sites: robots.txt, sitemap, llms.txt, JSON-LD, meta tags.",
-    "type": "kirby-plugin",
     "license": "MIT",
-    "keywords": ["kirby", "kirby-plugin", "kirby-5", "seo", "sitemap", "robots-txt", "llms-txt", "json-ld", "schema-org", "open-graph", "local-business"],
-    "homepage": "https://github.com/sayamaapps/kirby-annai",
+    "type": "kirby-plugin",
+    "keywords": [
+        "kirby",
+        "kirby-plugin",
+        "kirby-5",
+        "seo",
+        "sitemap",
+        "robots-txt",
+        "llms-txt",
+        "json-ld",
+        "schema-org",
+        "open-graph",
+        "local-business"
+    ],
     "authors": [
         {
             "name": "Simon Räder",
             "homepage": "https://sayamaapps.de"
         }
     ],
+    "homepage": "https://github.com/sayamaapps/kirby-annai",
     "support": {
         "issues": "https://github.com/sayamaapps/kirby-annai/issues",
         "source": "https://github.com/sayamaapps/kirby-annai"
     },
     "require": {
         "php": "^8.2",
-        "ext-mbstring": "*",
         "ext-json": "*",
+        "ext-mbstring": "*",
         "getkirby/composer-installer": "^1.2",
         "giggsey/libphonenumber-for-php-lite": "^9.0"
     },
     "require-dev": {
-        "getkirby/cms": "^5.0"
+        "ergebnis/composer-normalize": "^2.54",
+        "getkirby/cms": "^5.0",
+        "icanhazstring/composer-unused": "^0.9.7",
+        "maglnet/composer-require-checker": "^4.0",
+        "phpmd/phpmd": "^2.15",
+        "phpunit/phpunit": "11.5.55",
+        "vimeo/psalm": "^6.20"
     },
     "suggest": {
-        "sayamaapps/kirby-noren": "Opening hours in JSON-LD and llms.txt come from Noren's schema.org arrays when it is installed and active",
         "sayamaapps/kirby-koyomi": "Events appear in sitemap.xml and llms.txt when Koyomi is installed and active",
+        "sayamaapps/kirby-noren": "Opening hours in JSON-LD and llms.txt come from Noren's schema.org arrays when it is installed and active",
         "sayamaapps/kirby-sudare": "While Sudare's preview protection is on, every page is noindex and robots.txt says Disallow: /"
     },
     "bin": [
         "bin/annai-check"
     ],
-    "scripts": {
-        "test": "sh tests/run.sh"
-    },
     "config": {
-        "optimize-autoloader": true,
         "allow-plugins": {
+            "ergebnis/composer-normalize": true,
             "getkirby/composer-installer": true
         },
+        "optimize-autoloader": true,
         "platform": {
-            "php": "8.2.0"
-        }
+            "php": "8.2.27"
+        },
+        "sort-packages": true
     },
     "extra": {
         "installer-name": "annai",
-        "kirby-cms-path": false,
         "kirby": {
             "compatible": "^5.0"
-        }
+        },
+        "kirby-cms-path": false
+    },
+    "scripts": {
+        "analyze:phpmd": "vendor/bin/phpmd src,index.php,legacy.php,autoload.php github phpmd.xml.dist",
+        "analyze:psalm": "vendor/bin/psalm",
+        "analyze:require-checker": "vendor/bin/composer-require-checker check --config-file=.github/composer-require-checker.json composer.json",
+        "analyze:unused": "vendor/bin/composer-unused --configuration=.github/composer-unused.php",
+        "ci": [
+            "@composer validate --strict --no-check-version --no-check-all",
+            "@composer normalize:check",
+            "@composer analyze:require-checker",
+            "@composer analyze:unused",
+            "@composer check-platform-reqs",
+            "@composer analyze:psalm",
+            "@composer analyze:phpmd",
+            "@composer test"
+        ],
+        "fix:check": "kirby-cs fix --dry-run --diff",
+        "normalize:check": "@composer normalize --dry-run",
+        "test": "vendor/bin/phpunit"
     }
 }

@@ -2,7 +2,7 @@
 <?php
 /**
  * Shows, per page, what search engines and AI agents see on a Kirby site
- * (SPEC.md §3.11).
+ * (docs/SPEC.md §3.11).
  *
  *   vendor/bin/annai-check [--root=DIR] [--url=https://example.test] [--page=ID ...] [--json]
  *
@@ -19,7 +19,7 @@ const ANNAI_CHECK_USAGE = "usage: vendor/bin/annai-check [--root=DIR] [--url=htt
 
 /**
  * Arguments, paths and exception messages without control characters, as
- * Annai\I18n::printable() (the plugin is not loaded yet at this point).
+ * Sayamaapps\Annai\I18n::printable() (the plugin is not loaded yet at this point).
  */
 function annai_check_printable(string $message): string
 {
@@ -84,7 +84,7 @@ if (!is_file($autoload)) {
 }
 require $autoload;
 
-// Kirby's `debug` option is forced off: with it on, Annai\Options::warn() throws
+// Kirby's `debug` option is forced off: with it on, Sayamaapps\Annai\Options::warn() throws
 // at the first broken option and the check died with "check failed" (exit 3) and
 // one message. Off, every broken option is logged and Check::site() reports it as
 // a site problem ("configuration: …"), the report is complete and the exit code 1.
@@ -110,15 +110,15 @@ try {
 }
 
 // The plugin is loaded by Kirby from site/plugins; never autoloaded here.
-if (!class_exists(\Annai\Options::class, false)) {
+if (!class_exists(\Sayamaapps\Annai\Options::class, false)) {
     annai_check_error('Annai is not installed in ' . $root . '/site/plugins (plugin sayamaapps/annai)', 2);
 }
-if (!\Annai\Options::active($kirby)) {
+if (!\Sayamaapps\Annai\Options::active($kirby)) {
     annai_check_error('Annai is off (annai.active)', 2);
 }
 
 try {
-    $report = \Annai\Check::site($kirby, $pages);
+    $report = \Sayamaapps\Annai\Check::site($kirby, $pages);
 } catch (\Throwable $error) {
     annai_check_error('check failed: ' . $error->getMessage(), 3);
 }
@@ -134,7 +134,7 @@ if ($json) {
     // json_encode escapes C0 itself; JSON_UNESCAPED_UNICODE would print C1 raw.
     echo preg_replace_callback('/[\x{80}-\x{9F}]/u', fn (array $c): string => sprintf('\u%04x', mb_ord($c[0], 'UTF-8')), $encoded), "\n";
 } else {
-    echo \Annai\Check::render($report);
+    echo \Sayamaapps\Annai\Check::render($report);
 }
 
-exit(\Annai\Check::exitCode($report));
+exit(\Sayamaapps\Annai\Check::exitCode($report));

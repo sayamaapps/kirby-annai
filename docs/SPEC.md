@@ -9,7 +9,7 @@ Package `sayamaapps/kirby-annai`, plugin id `sayamaapps/annai`, namespace
 `Annai`, option prefix `annai.`, directory: this repository.
 
 It replaces the earlier per-site copies of the same job: the plugin
-`site/plugins/suchmaschinen` (the three routes), the snippet
+the predecessor plugin (the three routes), the snippet
 `site/snippets/strukturdaten.php` (JSON-LD) and the `<head>` meta part of
 `site/snippets/kopf.php`. Opening hours come from Noren, events from Koyomi;
 both are optional (`suggest`, never `require`).
@@ -54,7 +54,7 @@ comments.
 
 ### 0.1 Earlier copies
 
-Before 1.0.0 the same job lived as copies in each site: the plugin `site/plugins/suchmaschinen`
+Before 1.0.0 the same job lived as copies in each site: the predecessor plugin
 (the three routes), the snippet `strukturdaten` (JSON-LD) and the head lines of `kopf.php`, with
 variants per site. Annai replaces them. CHANGELOG.md (1.0.0) lists the renamed options and the
 behaviour changes. The options that carry the variants are `annai.jsonld` (`@graph` sites),
@@ -73,7 +73,7 @@ kirby-annai/
 ├── .gitignore, .gitattributes
 ├── .github/workflows/ci.yml
 ├── LICENSE
-├── SPEC.md
+├── docs/SPEC.md
 ├── index.php   (complete registration, §3.10)
 ├── src/
 │   ├── I18n.php   (§3.1)
@@ -157,7 +157,7 @@ Closure falls back to `true` (excluded, fail closed).
 `Options::get($kirby, $key, $default)`, `Options::active()`, `Options::flag()`,
 `Options::language()`, `Options::applyLanguage()`, `Options::fields()`,
 `Options::warn($kirby, $message)` (logs once per process; with Kirby `debug`
-on it throws `InvalidArgumentException`), plus the typed readers listed in §4.
+on it throws Kirby's `InvalidArgumentException`), plus the typed readers listed in §4.
 Options with nested names are read as `Options::get($kirby, 'robots.ai')`
 (flat `'annai.robots.ai' => …` and nested `'annai' => ['robots' => ['ai' => …]]`
 both work through Kirby's `option()`).
@@ -1225,7 +1225,7 @@ final class Check
      *                  Check::NAME_PROBLEM (sprintf, the brand field name: 'name missing: set the brand field (marke)
      *                  or the site title') when facts()['name'] is '';
      *                  Check::PREVIEW_PROBLEM ('preview on: every page carries noindex') once while Pages::preview();
-     *                  Check::OLD_PLUGIN_PROBLEM when site/plugins/suchmaschinen still exists;
+     *                  Check::OLD_PLUGIN_PROBLEM when the predecessor plugin folder still exists;
      *                  Check::STATIC_FILE_PROBLEM (sprintf, file name) for a robots.txt, sitemap.xml or llms.txt
      *                  in root 'index': the web server serves it before Kirby runs (.htaccess !-f);
      *                  Check::NOREN_LOCATIONS_PROBLEM ('Noren runs without noren.locations: … set
@@ -1601,7 +1601,7 @@ check messages as English sentences.
   Installation (composer, repositories until Packagist), Usage (config, head snippet, content
   fields), robots.txt and AI agents (the agent table with roles and the policy), Sitemap, llms.txt
   and preview (Sudare contract), Check tool (CLI usage, problems list), Upgrading (coexistence with
-  `site/plugins/suchmaschinen`: the old plugin MUST be removed or its routes win, because Kirby
+  the predecessor plugin: the old plugin MUST be removed or its routes win, because Kirby
   registers routes in plugin load order; rename table of §4; behaviour changes as in the CHANGELOG
   1.0.0 entry), Options (§4 verbatim), Privacy, License.
 - `CHANGELOG.md`: Keep a Changelog, `## [1.0.0] — unreleased`, Added /

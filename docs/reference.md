@@ -143,7 +143,7 @@ Each unit (`$site->annaiUnits()`, also `facts['units']`):
 
 ## Rename table
 
-For sites that ran the `site/plugins/suchmaschinen` plugin, with its `strukturdaten` snippet and `kopf.php` head lines.
+For sites that ran the predecessor plugin, with its `strukturdaten` snippet and `kopf.php` head lines.
 
 | Before | Now |
 |---|---|

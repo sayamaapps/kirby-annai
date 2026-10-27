@@ -2,6 +2,8 @@
 
 Search-engine and AI-agent output for [Kirby CMS](https://getkirby.com) 5: `robots.txt`, `sitemap.xml`, `llms.txt`, JSON-LD and meta tags.
 
+**Versions:** Kirby `^5.0` · PHP 8.2 to 8.5 · package 2.x. The changes of each release are in [CHANGELOG.md](CHANGELOG.md); what is planned for the next major version is in [Planned for 3.0](#planned-for-30).
+
 Annai builds these from the site's own content, so they cannot drift from the pages. The files are served at runtime and name the current domain. The plugin has no styling and processes no visitor data.
 
 ## Features
@@ -21,11 +23,21 @@ Annai builds these from the site's own content, so they cannot drift from the pa
 
 ## Installation
 
+With Composer (recommended), from the site's root:
+
 ```sh
 composer require sayamaapps/kirby-annai
 ```
 
-Composer installs to `site/plugins/annai/`. Add that path to `.gitignore` and deploy it like `vendor/`. Without Composer, no phone numbers are published.
+Composer installs to `site/plugins/annai/`. Add that path to `.gitignore` and deploy it like `vendor/`.
+
+Without Composer, download the release ZIP from [GitHub](https://github.com/sayamaapps/kirby-annai/releases), unpack it to `site/plugins/annai/`. Or add the repository as a Git submodule:
+
+```sh
+git submodule add https://github.com/sayamaapps/kirby-annai.git site/plugins/annai
+```
+
+Without Composer's `giggsey/libphonenumber-for-php-lite`, Annai publishes no phone numbers (the check reports it). Everything else works.
 
 ## Usage
 
@@ -83,11 +95,11 @@ Pass the production `--url`; options are `--page=ID` and `--json`. Exit codes: `
 
 ## Upgrading
 
-Coming from `site/plugins/suchmaschinen`, in one deploy: remove that plugin and any static `robots.txt`, `sitemap.xml` or `llms.txt` in `public/`, and set `annai.active`. Replace `snippet('strukturdaten')` and the head lines of your layout with `snippet('annai/head')`. A live site keeps its business `@id` with `'annai.entityId' => 'betrieb'`. Renamed options: see the [rename table](docs/reference.md#rename-table).
+Coming from the predecessor plugin (its folder under `site/plugins/`), in one deploy: remove that plugin and any static `robots.txt`, `sitemap.xml` or `llms.txt` in `public/`, and set `annai.active`. Replace `snippet('strukturdaten')` and the head lines of your layout with `snippet('annai/head')`. A live site keeps its business `@id` with `'annai.entityId' => 'betrieb'`. Renamed options: see the [rename table](docs/reference.md#rename-table).
 
 ## Options
 
-Write options flat (`'annai.robots.ai'`) or nested under `'annai'`. `null` means unset. Broken values are logged and the default is used; with Kirby's `debug` option on, they throw.
+Every option is written as `annai.<key>`, for example `'annai.robots.ai'`. Write options flat (`'annai.robots.ai'`) or nested under `'annai'`. `null` means unset. Broken values are logged and the default is used; with Kirby's `debug` option on, they throw.
 
 | Option | Default | Meaning |
 |---|---|---|
@@ -132,6 +144,20 @@ Write options flat (`'annai.robots.ai'`) or nested under `'annai'`. `null` means
 | `llms.extra` | `null` | `Closure(array $model, array $facts): array` |
 | `timezone` | `'Europe/Berlin'` | Time zone of `<lastmod>` offsets |
 
+Annai keeps its own string table (`translations/`) instead of Kirby's translations: `annai.labels` overrides texts per request, `{name}` placeholders are filled in, and the language follows `annai.language`, not the Panel language. A missing Kirby translation cannot turn a German llms.txt English.
+
+## Planned for 3.0
+
+Not in 2.x: each item changes what a site sees, how it is configured or what it catches. Until 3.0 the 2.x names and behaviour stay as they are.
+
+| Planned for 3.0 | In 2.x | Note |
+|---|---|---|
+| Options under the plugin's own name, `sayamaapps.annai.<key>`, with `annai.<key>` as fallback | `annai.<key>` only | Options written under the new name are not read in 2.x |
+| Option errors in debug mode throw Kirby's `Kirby\Exception\InvalidArgumentException` | `\InvalidArgumentException` | A `catch (\InvalidArgumentException)` stops catching them |
+| Deprecation reports (Kirby's `deprecated()`) for `annai.<key>`, `annai_option()` and `annai_active()` | Silent | In debug mode Kirby turns each report into an exception |
+
+The classes live in the namespace `Sayamaapps\Annai\`. The names `Annai\Text`, `Annai\Pages` and so on are aliases in `legacy.php` and stay until 3.0.
+
 ## Privacy
 
 Annai sets no cookies, uses no browser storage and makes no request to third parties. robots.txt, sitemap.xml and llms.txt are public: put nothing into `disallow`, `robots.extra` or `sitemap.extra` that you would not publish.
@@ -140,4 +166,4 @@ Tests: `composer test`. Issues and pull requests are welcome, without a support 
 
 ## License
 
-MIT, see [LICENSE](LICENSE).
+MIT, see [LICENSE](LICENSE.md).

@@ -1,5 +1,6 @@
 /vendor/
 /kirby/
-/composer.lock
 .DS_Store
 /NOTES-*.md
+/.phpunit.cache
+/.php-cs-fixer.cache

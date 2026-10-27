@@ -1,0 +1,41 @@
+<?xml version="1.0"?>
+<psalm
+    errorLevel="3"
+    phpVersion="8.2"
+    resolveFromConfigFile="true"
+    findUnusedBaselineEntry="false"
+    findUnusedCode="false"
+>
+    <projectFiles>
+        <directory name="src" />
+        <file name="index.php" />
+        <file name="legacy.php" />
+        <ignoreFiles>
+            <directory name="vendor" />
+            <directory name="tests" />
+            <!-- config/ returns closures that Kirby binds to the page or site at runtime -->
+            <directory name="config" />
+        </ignoreFiles>
+    </projectFiles>
+    <issueHandlers>
+        <!-- Koyomi is an optional sibling plugin: its classes and functions exist only when it is
+             installed, and Pages checks koyomiOn() first (the event rules of the sitemap and llms.txt). -->
+        <UndefinedClass>
+            <errorLevel type="suppress">
+                <file name="src/Pages.php" />
+            </errorLevel>
+        </UndefinedClass>
+        <UndefinedFunction>
+            <errorLevel type="suppress">
+                <file name="src/Pages.php" />
+                <!-- noren_option() exists only when Noren is installed; Business::norenUsed() checks function_exists() first. -->
+                <file name="src/Business.php" />
+            </errorLevel>
+        </UndefinedFunction>
+        <TypeDoesNotContainType>
+            <errorLevel type="suppress">
+                <file name="src/Pages.php" />
+            </errorLevel>
+        </TypeDoesNotContainType>
+    </issueHandlers>
+</psalm>
