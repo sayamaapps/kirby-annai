@@ -21,12 +21,14 @@
         "Kirby\\Filesystem\\F",
         "Kirby\\Http\\Response",
         "Kirby\\Http\\Route",
+        "Kirby\\Toolkit\\A",
         "Koyomi\\Format",
         "Koyomi\\Models\\EventPage",
         "Koyomi\\Repository",
         "koyomi_active",
         "koyomi_i18n",
         "koyomi_now",
+        "noren_option",
         "Sudare\\Sudare"
     ]
 }
