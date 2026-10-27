@@ -157,7 +157,7 @@ Closure falls back to `true` (excluded, fail closed).
 `Options::get($kirby, $key, $default)`, `Options::active()`, `Options::flag()`,
 `Options::language()`, `Options::applyLanguage()`, `Options::fields()`,
 `Options::warn($kirby, $message)` (logs once per process; with Kirby `debug`
-on it throws `InvalidArgumentException`), plus the typed readers listed in §4.
+on it throws Kirby's `InvalidArgumentException`), plus the typed readers listed in §4.
 Options with nested names are read as `Options::get($kirby, 'robots.ai')`
 (flat `'sayamaapps.annai.robots.ai' => …` and nested `'annai' => ['robots' => ['ai' => …]]`
 both work through Kirby's `option()`).
