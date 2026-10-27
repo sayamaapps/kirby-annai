@@ -18,8 +18,8 @@ use Kirby\Filesystem\F;
  * in an 'options' block (Kirby would file them under sayamaapps.annai.*
  * otherwise).
  *
- * site/plugins/suchmaschinen (the plugin this package replaces) must NOT stay
- * installed next to it: both register the same route patterns, and Kirby
+ * The predecessor plugin (a site/plugins/ folder, see Check::OLD_PLUGIN_PROBLEM)
+ * must NOT stay installed next to this one: both register the same route patterns, and Kirby
  * takes the first match in plugin load order (README, "Upgrading"). Nothing
  * here can detect that at load time without recursing into plugins(); the
  * check tool reports it instead (Check::site(), 'problems').

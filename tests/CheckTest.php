@@ -242,7 +242,7 @@ final class CheckTest extends TestCase
 			mkdir($tmp . '/site/plugins/suchmaschinen', 0700, true);
 			$kirby = annai_kirby($tmp, $base);
 			$report = Check::site($kirby);
-			expect([Check::OLD_PLUGIN_PROBLEM], $report['problems'], 'old suchmaschinen plugin is reported');
+			expect([Check::OLD_PLUGIN_PROBLEM], $report['problems'], 'old predecessor plugin is reported');
 			rmdir($tmp . '/site/plugins/suchmaschinen');
 
 			// A static robots.txt, sitemap.xml or llms.txt in the web root is served by

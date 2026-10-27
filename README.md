@@ -95,7 +95,7 @@ Pass the production `--url`; options are `--page=ID` and `--json`. Exit codes: `
 
 ## Upgrading
 
-Coming from `site/plugins/suchmaschinen`, in one deploy: remove that plugin and any static `robots.txt`, `sitemap.xml` or `llms.txt` in `public/`, and set `sayamaapps.annai.active`. Replace `snippet('strukturdaten')` and the head lines of your layout with `snippet('annai/head')`. A live site keeps its business `@id` with `'sayamaapps.annai.entityId' => 'betrieb'`. Renamed options: see the [rename table](docs/reference.md#rename-table).
+Coming from the predecessor plugin (its folder under `site/plugins/`), in one deploy: remove that plugin and any static `robots.txt`, `sitemap.xml` or `llms.txt` in `public/`, and set `sayamaapps.annai.active`. Replace `snippet('strukturdaten')` and the head lines of your layout with `snippet('annai/head')`. A live site keeps its business `@id` with `'sayamaapps.annai.entityId' => 'betrieb'`. Renamed options: see the [rename table](docs/reference.md#rename-table).
 
 ## Options
 

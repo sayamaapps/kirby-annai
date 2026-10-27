@@ -109,7 +109,7 @@ line). Everything else is additive or affects a protected preview only.
 ## [1.0.0] — 2026-10-14
 
 First release as a Composer package. Before 1.0.0 the same job lived as copies
-in each site: the plugin `site/plugins/suchmaschinen` (the three routes), the
+in each site: the predecessor plugin (the three routes), the
 snippet `site/snippets/strukturdaten.php` (JSON-LD) and the head part of
 `site/snippets/kopf.php`, with variants in other copies (`llms` snippet,
 `kanonisch.php`, `@graph` with noindex, `WebSite` and `Person`, an own llms
@@ -123,7 +123,7 @@ using the table below.
 
 | Before (the copy in a site) | Now (Annai) |
 |---|---|
-| plugin `site/plugins/suchmaschinen` (routes `robots.txt`, `sitemap.xml`, `llms.txt`) | plugin `sayamaapps/annai`, routes of the same paths, `GET\|HEAD` |
+| predecessor plugin (routes `robots.txt`, `sitemap.xml`, `llms.txt`) | plugin `sayamaapps/annai`, routes of the same paths, `GET\|HEAD` |
 | `suchmaschinen.ausgeschlossen` | `annai.exclude.templates` |
 | `suchmaschinen.gesperrt` | `annai.disallow` |
 | `strukturdaten.typ` | `annai.type` |
