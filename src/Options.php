@@ -497,6 +497,18 @@ class Options
 	}
 
 	/**
+	 * The nested spelling `'sayamaapps' => ['annai' => […]]`. Kirby's dot lookup
+	 * finds the plugin's own `sayamaapps.<plugin>` block first, which holds the
+	 * null defaults, and never reaches the nested user array. So it is looked
+	 * up in that array here.
+	 */
+	private static function nested(App $kirby, string $path): mixed
+	{
+		$nested = $kirby->option('sayamaapps');
+		return is_array($nested) ? A::get($nested, $path) : null;
+	}
+
+	/**
 	 * Country calling code (digits only, no leading zeros) for national phone
 	 * numbers, default '49'. "+43", "0043" and " 43 " all mean 43: the international
 	 * prefix is no part of the code: `'0043'` is read as 43.
@@ -529,18 +541,6 @@ class Options
 			);
 		}
 		return $legacy;
-	}
-
-	/**
-	 * The nested spelling `'sayamaapps' => ['annai' => […]]`. Kirby's dot lookup
-	 * finds the plugin's own `sayamaapps.<plugin>` block first, which holds the
-	 * null defaults, and never reaches the nested user array. So it is looked
-	 * up in that array here.
-	 */
-	private static function nested(App $kirby, string $path): mixed
-	{
-		$nested = $kirby->option('sayamaapps');
-		return is_array($nested) ? A::get($nested, $path) : null;
 	}
 
 	/**

@@ -69,17 +69,6 @@ final class OptionsPrefixTest extends TestCase
 		}
 	}
 
-	public function testTheNewNameWins(): void
-	{
-		$tmp = annai_site();
-		try {
-			$kirby = annai_kirby($tmp, ['sayamaapps.annai.type' => 'Bakery', 'annai.type' => 'Winery']);
-			expect('Bakery', Options::get($kirby, 'type'), 'both names set: the new one is read');
-		} finally {
-			annai_remove_tree($tmp);
-		}
-	}
-
 	public function testTheNestedSpellingIsRead(): void
 	{
 		$tmp = annai_site();
@@ -88,6 +77,17 @@ final class OptionsPrefixTest extends TestCase
 			expect('Bakery', Options::get($kirby, 'type'), 'nested under sayamaapps: the value is read');
 			expect('block', Options::get($kirby, 'robots.ai'), 'nested under sayamaapps with a dotted key: the value is read');
 			expect('LocalBusiness', Options::get($kirby, 'locationTemplate', 'LocalBusiness'), 'nested: an unset key gives the default');
+		} finally {
+			annai_remove_tree($tmp);
+		}
+	}
+
+	public function testTheNewNameWins(): void
+	{
+		$tmp = annai_site();
+		try {
+			$kirby = annai_kirby($tmp, ['sayamaapps.annai.type' => 'Bakery', 'annai.type' => 'Winery']);
+			expect('Bakery', Options::get($kirby, 'type'), 'both names set: the new one is read');
 		} finally {
 			annai_remove_tree($tmp);
 		}

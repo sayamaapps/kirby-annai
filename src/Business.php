@@ -531,6 +531,16 @@ class Business
 	}
 
 	/**
+	 * A Noren option through Noren's own function, so the option name is Noren's
+	 * to decide. Null when Noren is not installed.
+	 */
+	private static function norenOption(string $key): mixed
+	{
+		/** @psalm-suppress UndefinedFunction noren_option() exists only when Noren is installed */
+		return function_exists('noren_option') ? noren_option($key) : null;
+	}
+
+	/**
 	 * The Noren part of searchesIndex(): Noren in use and `noren.locations`
 	 * unset, so Noren walks $site->index() for its location pages, whatever
 	 * `annai.location` says. The check reports it with its own text
@@ -550,16 +560,6 @@ class Business
 	{
 		return self::norenOption('active') === true &&
 			Options::flag($kirby, 'noren', true);
-	}
-
-	/**
-	 * A Noren option through Noren's own function, so the option name is Noren's
-	 * to decide. Null when Noren is not installed.
-	 */
-	private static function norenOption(string $key): mixed
-	{
-		/** @psalm-suppress UndefinedFunction noren_option() exists only when Noren is installed */
-		return function_exists('noren_option') ? noren_option($key) : null;
 	}
 
 	/**
