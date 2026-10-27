@@ -12,12 +12,13 @@ All notable changes to this project are documented here. Versions follow
 
 ### Changed
 
-- **Debug mode: option errors throw Kirby's `InvalidArgumentException`.** `Options::warn()` now throws `Kirby\Exception\InvalidArgumentException`, which no longer extends `\InvalidArgumentException`. A `catch (\InvalidArgumentException)` does not catch them any more. Without Kirby's `debug` option nothing changes.
-- **Debug mode: Noren options come from Noren.** Annai reads `noren.active` and `noren.locations` through `noren_option()` and no longer reports them as deprecated. Noren decides its option names.
-
-### Fixed
-
-- **The nested spelling `'sayamaapps' => ['annai' => […]]` was ignored** for every option. It is read now, flat and nested.
+- **Code layout, no change for sites.** The classes live in the namespace
+  `Sayamaapps\Annai\`; the `Annai\` names are aliases and keep working. The two
+  global functions `annai_option()` and `annai_active()` still exist. Options,
+  output, exception types and routes are as in 2.2.3.
+- **Tests and tooling.** The suite runs with PHPUnit (`composer test`), with
+  static analysis (Psalm, PHPMD, composer-require-checker, composer-unused) and
+  the Kirby code style in CI.
 
 ## [2.2.3] — 2026-10-26
 

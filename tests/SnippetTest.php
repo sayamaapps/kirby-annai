@@ -115,7 +115,7 @@ final class SnippetTest extends TestCase
 				'ort'          => 'Musterstadt',
 				'telefon'      => '030 / 34567000',
 			]);
-			$kirby = annai_kirby($tmp, ['sayamaapps.annai.active' => true]);
+			$kirby = annai_kirby($tmp, ['annai.active' => true]);
 			[$code, $body] = annai_request($kirby, '/');
 			expect(200, $code, 'page: home page renders');
 			holds(str_contains($body, '<head><title>Testhof</title>' . "\n" . '<meta name="description" content="Bio-Hofladen mit Café">'), 'page: title and description tags from $page->annaiHead()');
@@ -136,7 +136,7 @@ final class SnippetTest extends TestCase
 		try {
 			file_put_contents($tmp . '/site/templates/home.php', '<html><head><title>Site title</title><?php snippet("annai/head", ["title" => false]) ?></head><body>Fixture</body></html>');
 			annai_page($tmp, '', 'site', ['title' => 'Testhof', 'marke' => 'Testhof']);
-			$kirby = annai_kirby($tmp, ['sayamaapps.annai.active' => true]);
+			$kirby = annai_kirby($tmp, ['annai.active' => true]);
 			[, $body] = annai_request($kirby, '/');
 			expect(1, substr_count($body, '<title>'), 'title false in a template: only the site title is printed');
 			holds(str_contains($body, '<title>Site title</title>'), 'title false in a template: the site title stays');

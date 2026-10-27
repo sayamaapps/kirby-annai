@@ -4,27 +4,23 @@ namespace Sayamaapps\Annai;
 
 use Closure;
 use DateTimeZone;
+use InvalidArgumentException;
 use Kirby\Cms\App;
-use Kirby\Cms\Helpers;
-use Kirby\Exception\InvalidArgumentException;
-use Kirby\Toolkit\A;
 
 /**
- * Reads `sayamaapps.annai.*` options, with the 2.x `annai.*` names as fallback
- * (docs/SPEC.md §3.1, §4).
+ * Reads `annai.*` options (docs/SPEC.md §3.1, §4).
  *
  * `null` counts as "not set", like Kirby's own option(), so `'annai.type' => null`
- * falls back to the default. Each option works flat (`'sayamaapps.annai.robots.ai' => …`)
- * and nested (`'sayamaapps' => ['annai' => ['robots' => ['ai' => …]]]`); the 2.x
- * names work flat and nested under `annai`.
+ * falls back to the default. Both spellings work, flat (`'annai.robots.ai' => …`)
+ * and nested (`'annai' => ['robots' => ['ai' => …]]`), because Kirby's option()
+ * resolves dotted keys in both forms.
  *
  * A broken value is logged once per process and the default is used, except
  * with Kirby's `debug` option on: then it throws, so a developer sees it on
  * the page instead of in the log.
  *
- * The plugin's `options` block (config/options.php) declares every key with
- * null; the defaults stay at the call sites, so a null there falls through to
- * the 2.x key (Options::read()).
+ * Defaults are given here and at the call sites, never in an `options` block
+ * of the plugin (Kirby would file them under sayamaapps.annai.*).
  *
  * @package   Kirby Annai
  * @author    Simon Räder
@@ -53,10 +49,7 @@ class Options
 		'email'       => 'email',
 		'profiles'    => ['instagram', 'facebook'],
 	];
-	public const PREFIX = 'sayamaapps.';
-
-	/** @var array<string,bool> deprecations already reported in this process, by option */
-	private static array $deprecated = [];
+	public const PREFIX = 'annai.';
 
 	/** @var array<string,bool> messages already logged in this process */
 	private static array $logged = [];
@@ -144,20 +137,6 @@ class Options
 	{
 		$value = self::get($kirby, 'country', 'DE');
 		return is_string($value) && trim($value) !== '' ? trim($value) : 'DE';
-	}
-
-	/**
-	 * Reports a deprecated 2.x option name once per process. Kirby's deprecated()
-	 * reports on every call, and a page reads its options on every request.
-	 */
-	private static function deprecatedOnce(string $key, string $message): void
-	{
-		if (isset(self::$deprecated[$key])) {
-			return;
-		}
-		if (Helpers::deprecated($message, 'option-prefix')) {
-			self::$deprecated[$key] = true;
-		}
 	}
 
 	/**
@@ -314,9 +293,12 @@ class Options
 		return null;
 	}
 
+	/**
+	 * Reads `annai.<key>`; $default when the option is unset (null).
+	 */
 	public static function get(App $kirby, string $key, mixed $default = null): mixed
 	{
-		return self::read($kirby, 'annai', $key) ?? $default;
+		return $kirby->option(self::PREFIX . $key) ?? $default;
 	}
 
 	/**
@@ -497,18 +479,6 @@ class Options
 	}
 
 	/**
-	 * The nested spelling `'sayamaapps' => ['annai' => […]]`. Kirby's dot lookup
-	 * finds the plugin's own `sayamaapps.<plugin>` block first, which holds the
-	 * null defaults, and never reaches the nested user array. So it is looked
-	 * up in that array here.
-	 */
-	private static function nested(App $kirby, string $path): mixed
-	{
-		$nested = $kirby->option('sayamaapps');
-		return is_array($nested) ? A::get($nested, $path) : null;
-	}
-
-	/**
 	 * Country calling code (digits only, no leading zeros) for national phone
 	 * numbers, default '49'. "+43", "0043" and " 43 " all mean 43: the international
 	 * prefix is no part of the code: `'0043'` is read as 43.
@@ -518,29 +488,6 @@ class Options
 		$value = self::get($kirby, 'phoneCountry', '49');
 		$digits = ltrim((string)preg_replace('/\D+/', '', (string)$value), '0');
 		return $digits !== '' ? $digits : '49';
-	}
-
-	/**
-	 * Reads `sayamaapps.<plugin>.<key>` (OPT-1). A value still under the 2.x name
-	 * `<plugin>.<key>` is returned as well and reported as deprecated (Kirby's
-	 * `debug` option turns the report on). Null when neither is set.
-	 *
-	 * Used for Annai's own options (plugin `annai`).
-	 */
-	public static function read(App $kirby, string $plugin, string $key): mixed
-	{
-		$value = $kirby->option(self::PREFIX . $plugin . '.' . $key) ?? self::nested($kirby, $plugin . '.' . $key);
-		if ($value !== null) {
-			return $value;
-		}
-		$legacy = $kirby->option($plugin . '.' . $key);
-		if ($legacy !== null) {
-			self::deprecatedOnce(
-				$plugin . '.' . $key,
-				$plugin . '.' . $key . ' is deprecated, use ' . self::PREFIX . $plugin . '.' . $key
-			);
-		}
-		return $legacy;
 	}
 
 	/**
@@ -716,7 +663,7 @@ class Options
 	public static function warn(App $kirby, string $message): void
 	{
 		if ($kirby->option('debug') === true) {
-			throw new InvalidArgumentException(message: $message);
+			throw new InvalidArgumentException($message);
 		}
 		if (isset(self::$logged[$message])) {
 			return;

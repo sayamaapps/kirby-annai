@@ -229,6 +229,7 @@ class Routes
 		return Options::active($kirby) ? self::robots($kirby) : $route->next();
 	}
 
+	/** The robots.txt text for the current options. It does not check the master switch (robotsTextWhenOn() does). */
 	public static function robotsText(App $kirby): string
 	{
 		return Robots::render(self::robotsConfig($kirby));

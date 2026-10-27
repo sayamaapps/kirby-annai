@@ -19,7 +19,7 @@ final class CheckTest extends TestCase
 		$intro = 'Gemüse vom eigenen Feld, Eier vom Hof und Brot aus der Region – jeden Samstag frisch im Hofladen.';
 		// The fixture keeps its address in site.txt and has no business page: `fn () => null` says so,
 		// else the check reports the index search (Check::LOCATION_PROBLEM, tested below).
-		$base = ['sayamaapps.annai.active' => true, 'sayamaapps.annai.type' => 'GroceryStore', 'sayamaapps.annai.location' => fn () => null];
+		$base = ['annai.active' => true, 'annai.type' => 'GroceryStore', 'annai.location' => fn () => null];
 		$goodSite = [
 			'marke'       => 'Testhof',
 			'zusatz'      => 'Bio-Hofladen',
@@ -101,7 +101,7 @@ final class CheckTest extends TestCase
 			// With a length of 200 the check used to report the 192 characters it had asked for as
 			// "longer than 160".
 			$writeSite($tmp, array_merge($goodSite, ['beschreibung' => str_repeat('Gemüse vom Hof. ', 12)]));
-			$kirby = annai_kirby($tmp, array_merge($base, ['sayamaapps.annai.descriptionLength' => 200]));
+			$kirby = annai_kirby($tmp, array_merge($base, ['annai.descriptionLength' => 200]));
 			$long = Check::page($kirby, $kirby->page('home'));
 			expect(191, $long['description']['length'], 'descriptionLength 200: the description has 191 characters (fixture check)');
 			expect([], $long['problems'], 'descriptionLength 200: 192 characters are no problem');
@@ -111,25 +111,25 @@ final class CheckTest extends TestCase
 
 			// Canonical from a hook that points elsewhere.
 			$writeSite($tmp, $goodSite);
-			$kirby = annai_kirby($tmp, array_merge($base, ['sayamaapps.annai.canonical' => fn ($page) => 'https://other.example/']));
+			$kirby = annai_kirby($tmp, array_merge($base, ['annai.canonical' => fn ($page) => 'https://other.example/']));
 			expect(['canonical differs from the page URL'], Check::page($kirby, $kirby->page('home'))['problems'], 'canonical differs from the page URL');
 
 			// Share image over plain http.
-			$kirby = annai_kirby($tmp, array_merge($base, ['sayamaapps.annai.image' => 'http://example.invalid/teilen.jpg']));
+			$kirby = annai_kirby($tmp, array_merge($base, ['annai.image' => 'http://example.invalid/teilen.jpg']));
 			expect(['og:image is not an absolute https URL'], Check::page($kirby, $kirby->page('home'))['problems'], 'og:image over http is a problem');
 
 			// A JSON-LD node that cannot be encoded (NAN; invalid UTF-8 is substituted, not an error).
-			$kirby = annai_kirby($tmp, array_merge($base, ['sayamaapps.annai.jsonld' => fn ($page, $nodes, $facts) => array_merge($nodes, [['@type' => 'Thing', 'value' => NAN]])]));
+			$kirby = annai_kirby($tmp, array_merge($base, ['annai.jsonld' => fn ($page, $nodes, $facts) => array_merge($nodes, [['@type' => 'Thing', 'value' => NAN]])]));
 			$broken = Check::page($kirby, $kirby->page('home'));
 			expect(['JSON-LD is not valid JSON'], $broken['problems'], 'NAN in JSON-LD is a problem');
 			expect(false, $broken['jsonld']['valid'], 'invalid JSON-LD: valid false');
-			$kirby = annai_kirby($tmp, array_merge($base, ['sayamaapps.annai.jsonld' => fn ($page, $nodes, $facts) => array_merge($nodes, [['@type' => 'Thing', 'name' => "bad \xB1 byte"]])]));
+			$kirby = annai_kirby($tmp, array_merge($base, ['annai.jsonld' => fn ($page, $nodes, $facts) => array_merge($nodes, [['@type' => 'Thing', 'name' => "bad \xB1 byte"]])]));
 			expect(true, Check::page($kirby, $kirby->page('home'))['jsonld']['valid'], 'invalid UTF-8 in JSON-LD is substituted: valid');
 
 			// The preview (every page noindex, robots.txt closed) is one site problem,
 			// not one per page, and the robots warnings are those of the configuration
 			// that applies once the preview ends.
-			$kirby = annai_kirby($tmp, array_merge($base, ['sayamaapps.annai.noindex' => true, 'sayamaapps.annai.robots.agents' => ['Claude-User' => false]]));
+			$kirby = annai_kirby($tmp, array_merge($base, ['annai.noindex' => true, 'annai.robots.agents' => ['Claude-User' => false]]));
 			expect([], Check::page($kirby, $kirby->page('home'))['problems'], 'preview: no per-page noindex problem');
 			expect('noindex, nofollow, noarchive', Check::page($kirby, $kirby->page('home'))['robots'], 'preview: the page report still shows the robots meta');
 			$report = Check::site($kirby);
@@ -215,7 +215,7 @@ final class CheckTest extends TestCase
 			$writeSite($tmp, $goodSite);
 
 			// Robots warning for a blocked user agent.
-			$kirby = annai_kirby($tmp, array_merge($base, ['sayamaapps.annai.robots.agents' => ['Claude-User' => false]]));
+			$kirby = annai_kirby($tmp, array_merge($base, ['annai.robots.agents' => ['Claude-User' => false]]));
 			$report = Check::site($kirby);
 			expect(1, count($report['robots']['warnings']), 'blocked Claude-User gives one robots warning');
 			holds(str_contains((string)($report['robots']['warnings'][0] ?? ''), 'Claude-User'), 'the warning names Claude-User');
@@ -270,7 +270,7 @@ final class CheckTest extends TestCase
 			expect(1, Check::exitCode($report), 'no site name: exit code 1');
 			[, $md] = annai_request($kirby, 'llms.txt');
 			holds(str_starts_with($md, "# example.invalid\n"), 'no site name: the llms.txt H1 falls back to the host');
-			$kirby = annai_kirby($tmp, array_merge($base, ['sayamaapps.annai.fields' => ['brand' => 'firma']]));
+			$kirby = annai_kirby($tmp, array_merge($base, ['annai.fields' => ['brand' => 'firma']]));
 			expect([sprintf(Check::NAME_PROBLEM, 'firma')], Check::site($kirby)['problems'], 'no site name: the problem names the configured brand field');
 			[, $md] = annai_request(annai_kirby($tmp, array_merge($base, ['url' => '/'])), 'llms.txt');
 			holds(str_starts_with($md, "# \n"), 'no site name and no host (the CLI without --url): the H1 stays empty, the check names both');
@@ -282,7 +282,7 @@ final class CheckTest extends TestCase
 
 			// A broken option is a site problem of the check, not a crash. The
 			// messages Options::warn() logs during the run are collected.
-			$report = Check::site(annai_kirby($tmp, array_merge($base, ['sayamaapps.annai.timezone' => 'Mars/Olympus', 'sayamaapps.annai.twitterCard' => 'summary'])));
+			$report = Check::site(annai_kirby($tmp, array_merge($base, ['annai.timezone' => 'Mars/Olympus', 'annai.twitterCard' => 'summary'])));
 			expect([sprintf(Check::CONFIGURATION_PROBLEM, "unknown annai.timezone 'Mars/Olympus' — using Europe/Berlin.")], $report['problems'], 'a broken option is one site problem naming the option');
 			expect(1, Check::exitCode($report), 'a broken option gives exit code 1');
 			holds(str_contains(Check::render($report), '  ! configuration: unknown annai.timezone'), 'a broken option is rendered as a site problem');
@@ -290,14 +290,14 @@ final class CheckTest extends TestCase
 
 			// The texts for an invalid Disallow entry used to name every rule but UTF-8,
 			// so for a Latin-1 path none of the named reasons was true.
-			$report = Check::site(annai_kirby($tmp, array_merge($base, ['sayamaapps.annai.disallow' => ["/b\xE4ckerei"]])));
+			$report = Check::site(annai_kirby($tmp, array_merge($base, ['annai.disallow' => ["/b\xE4ckerei"]])));
 			expect([sprintf(Check::CONFIGURATION_PROBLEM, 'annai.disallow entry "/b' . "\u{FFFD}" . 'ckerei" is not a path (starts with /, no space, # or control character, and is UTF-8) — left out of robots.txt.')], $report['problems'], 'a Latin-1 disallow entry: the configuration problem names the UTF-8 rule');
 			expect(['Disallow: "/b' . "\u{FFFD}" . 'ckerei" left out: a path starts with / and holds no space, # or control character, and is UTF-8'], $report['robots']['warnings'], 'a Latin-1 disallow entry: the robots warning names the UTF-8 rule');
 
 			// No annai.location and no business page in the top two levels: every
 			// request searches the whole index (Business::searchesIndex()).
 			$unset = $base;
-			unset($unset['sayamaapps.annai.location']);
+			unset($unset['annai.location']);
 			$report = Check::site(annai_kirby($tmp, $unset));
 			expect([Check::LOCATION_PROBLEM], $report['problems'], 'no business page and no annai.location: the index search is reported');
 			expect(1, Check::exitCode($report), 'the index search gives exit code 1');
@@ -325,14 +325,14 @@ final class CheckTest extends TestCase
 					annai_page($norenTmp, '1_kontakt', 'betrieb', ['title' => 'Kontakt', 'strasse' => 'Musterweg 1', 'plz' => '12345', 'ort' => 'Musterstadt',
 						'bereiche' => [['schluessel' => 'laden', 'name' => 'Hofladen']],
 						'zeiten' => [['bereich' => 'laden', 'tag' => 'Montag', 'von1' => '08:00', 'bis1' => '12:00']]]);
-					$noren = ['sayamaapps.annai.active' => true, 'sayamaapps.annai.type' => 'GroceryStore', 'noren.active' => true, 'noren.language' => 'de'];
+					$noren = ['annai.active' => true, 'annai.type' => 'GroceryStore', 'noren.active' => true, 'noren.language' => 'de'];
 					expect([Check::NOREN_LOCATIONS_PROBLEM], Check::site(annai_kirby($norenTmp, $noren))['problems'], 'Noren without noren.locations: the index search is reported, although the business page is on the top level');
 					expect([], Check::site(annai_kirby($norenTmp, $noren + ['noren.locations' => ['kontakt']]))['problems'], 'Noren with noren.locations: no index search, no problem');
 					// annai.location spares Annai's lookup, not Noren's walk for the
 					// hours (home page, llms.txt, an annai.jsonld hook) — still reported.
-					expect([Check::NOREN_LOCATIONS_PROBLEM], Check::site(annai_kirby($norenTmp, $noren + ['sayamaapps.annai.location' => 'kontakt']))['problems'], 'Noren with annai.location but without noren.locations: the index search is still reported');
-					expect(true, Sayamaapps\Annai\Business::searchesIndex(annai_kirby($norenTmp, $noren + ['sayamaapps.annai.location' => 'kontakt'])), 'searchesIndex(): true for Noren without noren.locations, whatever annai.location says');
-					expect([], Check::site(annai_kirby($norenTmp, $noren + ['sayamaapps.annai.location' => 'kontakt', 'noren.locations' => ['kontakt']]))['problems'], 'Noren with annai.location and noren.locations: no problem');
+					expect([Check::NOREN_LOCATIONS_PROBLEM], Check::site(annai_kirby($norenTmp, $noren + ['annai.location' => 'kontakt']))['problems'], 'Noren with annai.location but without noren.locations: the index search is still reported');
+					expect(true, Sayamaapps\Annai\Business::searchesIndex(annai_kirby($norenTmp, $noren + ['annai.location' => 'kontakt'])), 'searchesIndex(): true for Noren without noren.locations, whatever annai.location says');
+					expect([], Check::site(annai_kirby($norenTmp, $noren + ['annai.location' => 'kontakt', 'noren.locations' => ['kontakt']]))['problems'], 'Noren with annai.location and noren.locations: no problem');
 				} finally {
 					annai_remove_tree($norenTmp);
 				}
@@ -355,7 +355,7 @@ final class CheckTest extends TestCase
 							['bereich' => 'labor', 'tag' => 'Mittwoch', 'von1' => '07:00', 'bis1' => '10:00']]]);
 					annai_page($twoTmp, '3_c', 'betrieb', ['title' => 'Standort C', 'strasse' => 'Seeweg 3', 'ort' => 'Musterdorf', 'telefon' => "folgt\nab Mai",
 						'zeiten' => [['tag' => 'Freitag', 'von1' => '09:00', 'bis1' => '12:00']]]);
-					$report = Check::site(annai_kirby($twoTmp, ['sayamaapps.annai.active' => true, 'noren.active' => true, 'noren.language' => 'de', 'noren.locations' => ['a', 'b', 'c']]));
+					$report = Check::site(annai_kirby($twoTmp, ['annai.active' => true, 'noren.active' => true, 'noren.language' => 'de', 'noren.locations' => ['a', 'b', 'c']]));
 					expect([
 						['field' => 'phone', 'raw' => '030 34567001', 'e164' => '+493034567001', 'problem' => null],
 						['field' => 'phone', 'page' => 'b', 'raw' => '030 34567030', 'e164' => '+493034567030', 'problem' => null],
@@ -424,10 +424,10 @@ final class CheckTest extends TestCase
 				annai_page($multilang, 'home', 'home', ['title' => 'Start'], 'en');
 				annai_page($multilang, 'laden', 'default', ['title' => 'Hofladen', 'einleitung' => $intro], 'de');
 				annai_page($multilang, 'laden', 'default', ['title' => 'Farm shop', 'einleitung' => $intro], 'en');
-				$options = array_merge($base, ['languages' => true, 'sayamaapps.annai.hreflang' => true, 'sayamaapps.annai.sitemap.chunk' => 3]);
+				$options = array_merge($base, ['languages' => true, 'annai.hreflang' => true, 'annai.sitemap.chunk' => 3]);
 				$public = Check::site(annai_kirby($multilang, $options));
 				expect([4, 2], [$public['sitemap']['count'], $public['sitemap']['chunks']], 'hreflang: the public sitemap counts one URL per language (home 2, laden 2) in two files of three');
-				$preview = Check::site(annai_kirby($multilang, $options + ['sayamaapps.annai.noindex' => true]));
+				$preview = Check::site(annai_kirby($multilang, $options + ['annai.noindex' => true]));
 				expect(true, $preview['preview'], 'hreflang + preview: the preview is on (fixture check)');
 				expect([4, 2], [$preview['sitemap']['count'], $preview['sitemap']['chunks']], 'hreflang + preview: the check counts the sitemap per language, as served after the go-live');
 				expect(0, $preview['pages'][1]['alternates'] ?? null, 'hreflang + preview: the page report still counts the head alternates of the preview (none: every page is noindex)');
@@ -520,12 +520,12 @@ final class CheckTest extends TestCase
 			// A site with the package's vendor directory and an Annai config.
 			symlink(dirname(__DIR__) . '/vendor', $tmp . '/vendor');
 			annai_page($tmp, '', 'site', $goodSite);
-			file_put_contents($tmp . '/site/config/config.php', "<?php\nreturn ['sayamaapps.annai.active' => false];\n");
+			file_put_contents($tmp . '/site/config/config.php', "<?php\nreturn ['annai.active' => false];\n");
 			[$code, , $err] = $runCheck(['--root=' . $tmp, '--url=http://example.invalid']);
 			expect(2, $code, 'Annai off: exit 2');
 			holds(str_contains($err, 'Annai is off (annai.active)'), 'Annai off: message');
 
-			file_put_contents($tmp . '/site/config/config.php', "<?php\nreturn ['sayamaapps.annai.active' => true, 'sayamaapps.annai.type' => 'GroceryStore', 'sayamaapps.annai.location' => fn () => null];\n");
+			file_put_contents($tmp . '/site/config/config.php', "<?php\nreturn ['annai.active' => true, 'annai.type' => 'GroceryStore', 'annai.location' => fn () => null];\n");
 			[$code, $out] = $runCheck(['--root=' . $tmp, '--url=http://example.invalid']);
 			expect(0, $code, 'good site through the CLI: exit 0');
 			holds(str_contains($out, 'pages'), 'CLI text report names the pages');
@@ -551,9 +551,9 @@ final class CheckTest extends TestCase
 			// A llms.txt heading "## 案内" or a robots.extra line with "Å" used to be
 			// cut inside the character by the `\R` line split (0x85 is NEL in byte mode):
 			// the report held broken UTF-8 and --json ended with exit 3.
-			file_put_contents($tmp . '/site/config/config.php', "<?php\nreturn ['sayamaapps.annai.active' => true, 'sayamaapps.annai.type' => 'GroceryStore', 'sayamaapps.annai.location' => fn () => null,\n"
-				. "    'sayamaapps.annai.robots.extra' => ['# Filialen: Åland'],\n"
-				. "    'sayamaapps.annai.llms.extra' => function (array \$model): array { \$model['sections'][] = ['title' => '案内', 'lines' => ['- Wegbeschreibung']]; return \$model; }];\n");
+			file_put_contents($tmp . '/site/config/config.php', "<?php\nreturn ['annai.active' => true, 'annai.type' => 'GroceryStore', 'annai.location' => fn () => null,\n"
+				. "    'annai.robots.extra' => ['# Filialen: Åland'],\n"
+				. "    'annai.llms.extra' => function (array \$model): array { \$model['sections'][] = ['title' => '案内', 'lines' => ['- Wegbeschreibung']]; return \$model; }];\n");
 			[$code, $out, $err] = $runCheck(['--root=' . $tmp, '--url=http://example.invalid', '--json']);
 			expect(0, $code, '--json with a 案内 section and an Åland comment: exit 0, not 3 (' . trim($err) . ')');
 			$decoded = json_decode($out, true);
@@ -564,7 +564,7 @@ final class CheckTest extends TestCase
 			[$code, $out, $err] = $runCheck(['--root=' . $tmp, '--url=http://example.invalid', '--json', "--page=caf\xE9"]);
 			expect(1, $code, '--json with a Latin-1 --page id: exit 1 (unknown page), not 3 (' . trim($err) . ')');
 			expect("no indexable page with id: caf\u{FFFD}", json_decode($out, true)['problems'][0] ?? null, '--json: the Latin-1 byte is written as U+FFFD');
-			file_put_contents($tmp . '/site/config/config.php', "<?php\nreturn ['sayamaapps.annai.active' => true, 'sayamaapps.annai.type' => 'GroceryStore', 'sayamaapps.annai.location' => fn () => null];\n");
+			file_put_contents($tmp . '/site/config/config.php', "<?php\nreturn ['annai.active' => true, 'annai.type' => 'GroceryStore', 'annai.location' => fn () => null];\n");
 
 			// Without --url Kirby has no host on the CLI: the report shows paths and says so
 			// once, printed as a note, not counted.
@@ -618,7 +618,7 @@ final class CheckTest extends TestCase
 				proc_close($process);
 			}
 			expect(
-				'Kirby\\Exception\\InvalidArgumentException: Annai: phone numbers need giggsey/libphonenumber-for-php-lite, which is not installed — nothing is published as E.164; install Annai with Composer (README, Installation).',
+				'InvalidArgumentException: Annai: phone numbers need giggsey/libphonenumber-for-php-lite, which is not installed — nothing is published as E.164; install Annai with Composer (README, Installation).',
 				$rendered,
 				'without libphonenumber, debug on: the page throws the library message'
 			);
@@ -646,7 +646,7 @@ final class CheckTest extends TestCase
 			[, $out] = $runCheck(['--root=' . $tmp, '--url=http://example.invalid']);
 			holds(str_contains($out, "preview: off\n"), 'CLI behind Sudare without configuration: preview off');
 			// A blocked user agent must stay visible while the preview is on: it is what applies after the go-live.
-			file_put_contents($tmp . '/site/config/config.php', "<?php\nreturn ['sayamaapps.annai.active' => true, 'sayamaapps.annai.type' => 'GroceryStore', 'sayamaapps.annai.location' => fn () => null, 'sayamaapps.annai.robots.agents' => ['Claude-User' => false]];\n");
+			file_put_contents($tmp . '/site/config/config.php', "<?php\nreturn ['annai.active' => true, 'annai.type' => 'GroceryStore', 'annai.location' => fn () => null, 'annai.robots.agents' => ['Claude-User' => false]];\n");
 			file_put_contents($tmp . '/site/config/sudare.php', "<?php\nreturn [];\n");
 			[$code, $out] = $runCheck(['--root=' . $tmp, '--url=http://example.invalid']);
 			holds(str_contains($out, "preview: on (noindex, files as live)\n"), 'CLI behind Sudare: protects() true → preview on, files as live (not hidden)');
@@ -659,7 +659,7 @@ final class CheckTest extends TestCase
 			holds(str_contains($out, "1 pages, 2 problems\n"), 'CLI behind Sudare: summary counts the preview and the robots warning');
 			expect(1, $code, 'CLI behind Sudare: exit 1 (preview on, Claude-User blocked)');
 			unlink($tmp . '/site/config/sudare.php');
-			file_put_contents($tmp . '/site/config/config.php', "<?php\nreturn ['sayamaapps.annai.active' => true, 'sayamaapps.annai.type' => 'GroceryStore', 'sayamaapps.annai.location' => fn () => null];\n");
+			file_put_contents($tmp . '/site/config/config.php', "<?php\nreturn ['annai.active' => true, 'annai.type' => 'GroceryStore', 'annai.location' => fn () => null];\n");
 			unlink($tmp . '/site/plugins/sudare/index.php');
 			rmdir($tmp . '/site/plugins/sudare');
 
@@ -667,7 +667,7 @@ final class CheckTest extends TestCase
 			// at the first broken option ("check failed", exit 3, one message). The check
 			// boots with debug off, so every broken option is logged and reported as a site
 			// problem, the report is complete and the exit code is 1.
-			file_put_contents($tmp . '/site/config/config.php', "<?php\nreturn ['debug' => true, 'sayamaapps.annai.active' => true, 'sayamaapps.annai.type' => 'GroceryStore', 'sayamaapps.annai.location' => fn () => null, 'sayamaapps.annai.disallow' => ['panel'], 'sayamaapps.annai.timezone' => 'Mars/Olympus', 'sayamaapps.annai.robots.agents' => ['Claude-User' => false]];\n");
+			file_put_contents($tmp . '/site/config/config.php', "<?php\nreturn ['debug' => true, 'annai.active' => true, 'annai.type' => 'GroceryStore', 'annai.location' => fn () => null, 'annai.disallow' => ['panel'], 'annai.timezone' => 'Mars/Olympus', 'annai.robots.agents' => ['Claude-User' => false]];\n");
 			[$code, $out, $err] = $runCheck(['--root=' . $tmp, '--url=http://example.invalid']);
 			expect(1, $code, 'debug on + broken options: exit 1, not 3');
 			holds(!str_contains($err, 'check failed'), 'debug on + broken options: no "check failed"');
@@ -675,7 +675,7 @@ final class CheckTest extends TestCase
 			holds(str_contains($out, "  ! configuration: unknown annai.timezone 'Mars/Olympus'"), 'debug on + broken options: the timezone is a site problem too (the report did not stop at the first)');
 			holds(str_contains($out, '  ! Disallow: "panel" left out') && str_contains($out, '  ! Blocks Claude-User (user)'), 'debug on + broken options: the robots warnings are still there');
 			holds(preg_match('/^1 pages, (\d+) problems$/m', $out, $summary) === 1 && (int)$summary[1] >= 4, 'debug on + broken options: the report is complete, the summary counts the configuration problems (' . ($summary[1] ?? '?') . ')');
-			file_put_contents($tmp . '/site/config/config.php', "<?php\nreturn ['sayamaapps.annai.active' => true, 'sayamaapps.annai.type' => 'GroceryStore', 'sayamaapps.annai.location' => fn () => null];\n");
+			file_put_contents($tmp . '/site/config/config.php', "<?php\nreturn ['annai.active' => true, 'annai.type' => 'GroceryStore', 'annai.location' => fn () => null];\n");
 
 			[$code, , $err] = $runCheck(["--bogus\e]0;x\x07"]);
 			expect(2, $code, 'unknown argument with escape sequence: exit 2');

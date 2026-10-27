@@ -57,10 +57,10 @@ comments.
 Before 1.0.0 the same job lived as copies in each site: the predecessor plugin
 (the three routes), the snippet `strukturdaten` (JSON-LD) and the head lines of `kopf.php`, with
 variants per site. Annai replaces them. CHANGELOG.md (1.0.0) lists the renamed options and the
-behaviour changes. The options that carry the variants are `sayamaapps.annai.jsonld` (`@graph` sites),
-`sayamaapps.annai.geo`, `sayamaapps.annai.action`, `sayamaapps.annai.title`, `sayamaapps.annai.description`, `sayamaapps.annai.llms.extra`,
-`sayamaapps.annai.llms.optional`, `sayamaapps.annai.image`, `sayamaapps.annai.twitterCard`, `sayamaapps.annai.noindexExcluded` and
-`sayamaapps.annai.fields.profiles` (§3–§4). Languages on their own domains are not supported (README,
+behaviour changes. The options that carry the variants are `annai.jsonld` (`@graph` sites),
+`annai.geo`, `annai.action`, `annai.title`, `annai.description`, `annai.llms.extra`,
+`annai.llms.optional`, `annai.image`, `annai.twitterCard`, `annai.noindexExcluded` and
+`annai.fields.profiles` (§3–§4). Languages on their own domains are not supported (README,
 Requirements).
 
 ---
@@ -126,7 +126,7 @@ Two layers, as in Noren:
 - **Kirby side** (`Business`, `Pages`, `Routes`, `Check`): reads pages,
   options, Noren and Koyomi, builds the plain arrays, hands them to layer one.
 
-Off by default: without `'sayamaapps.annai.active' => true` every route falls through to
+Off by default: without `'annai.active' => true` every route falls through to
 Kirby (`$this->next()`, so a site's own route or a real file still works),
 every site and page method returns `null`/`[]`/`''`, and the snippet prints
 nothing. `Options::active()` is the only switch; every public Kirby-side
@@ -142,7 +142,7 @@ yet, the tests keep it working).
 
 `Options::hook($kirby, $key): ?Closure` reads a Closure-only option (`title`,
 `description`, `canonical`, `jsonld`, `llms.extra`): the Closure, or null when
-unset; a set value that is no Closure is Options::warn()ed once (`sayamaapps.annai.title
+unset; a set value that is no Closure is Options::warn()ed once (`annai.title
 must be a Closure, not 'Eigener Titel' — ignored.`; a scalar is shown, else
 its type) and counts as unset (it
 used to be ignored in silence). `Options::location()` warns the same way for
@@ -159,7 +159,7 @@ Closure falls back to `true` (excluded, fail closed).
 `Options::warn($kirby, $message)` (logs once per process; with Kirby `debug`
 on it throws Kirby's `InvalidArgumentException`), plus the typed readers listed in §4.
 Options with nested names are read as `Options::get($kirby, 'robots.ai')`
-(flat `'sayamaapps.annai.robots.ai' => …` and nested `'annai' => ['robots' => ['ai' => …]]`
+(flat `'annai.robots.ai' => …` and nested `'annai' => ['robots' => ['ai' => …]]`
 both work through Kirby's `option()`).
 
 ### 3.2 `Annai\Text` — Kirby-free helpers
@@ -291,7 +291,7 @@ break, a tab, another dash (`–`) or another space, not `+` inside the number
 
 **Reading.** A field within the gate goes to libphonenumber:
 `PhoneNumberUtil::parse($field, $region)`, `isValidNumber()`,
-`format(E164)`. `$region` is the region of `sayamaapps.annai.phoneCountry` (a calling
+`format(E164)`. `$region` is the region of `annai.phoneCountry` (a calling
 code, default `49`): `getRegionCodeForCountryCode()` gives `DE` for 49, `AT`
 for 43, `IT` for 39, `US` for 1; a code without a region (`ZZ`) reads only
 numbers with `+`. A number with `+` is read for its own country whatever
@@ -733,27 +733,27 @@ final class Head
 
 - Title: home page → brand (+ `' · ' . tagline` when tagline non-empty);
   other page → `title . ' · ' . brand`; brand empty → site title. Hook
-  `sayamaapps.annai.title` (Closure) replaces the whole rule.
+  `annai.title` (Closure) replaces the whole rule.
 - Description: page `intro` field (`einleitung`), else site `description`
   field (`beschreibung`), rendered with `$field->kirbytext()` (no raw Markdown or Kirbytags in the
   result), then
-  `Text::excerpt(…, descriptionLength)`. With `sayamaapps.annai.descriptionFallback` on, an
+  `Text::excerpt(…, descriptionLength)`. With `annai.descriptionFallback` on, an
   chain is intro, then the page's description field (the same name as the site's
-  `description`, `sayamaapps.annai.fields`), then the site description. Each step gives way to
+  `description`, `annai.fields`), then the site description. Each step gives way to
   the next only while its plain text is shorter than `Check::DESCRIPTION_MIN` (50)
   and the next one is longer (the check's minimum, one constant). Without the option
   the page's description field is not read.
-  Hook `sayamaapps.annai.description` replaces the rule: its result is plain text, passed through `Text::esc()` before
+  Hook `annai.description` replaces the rule: its result is plain text, passed through `Text::esc()` before
   `Text::excerpt()` (which strips tags and decodes entities for HTML input), so
   it is excerpted, not rendered — `Kinder <6 Jahre` keeps its text and an
   `&amp;` stays as written (`strip_tags()` used to eat everything
   from a literal `<` on).
-- Canonical: `$page->url()` (never query parameters); hook `sayamaapps.annai.canonical`.
+- Canonical: `$page->url()` (never query parameters); hook `annai.canonical`.
   On a multi-language site a page without content in the current language
   (`Pages::hasContentIn()` false; Kirby renders it with the default language's
   content) points to `Pages::contentUrl()`: the default language's URL when it
   has content, else the first listed language's with content — the x-default
-  of `languageAlternates()`, with or without `sayamaapps.annai.hreflang` (it
+  of `languageAlternates()`, with or without `annai.hreflang` (it
   used to point to itself, a duplicate in every untranslated language). The
   hook keeps its precedence; a hook returning `null` leaves the rule in place.
 
@@ -777,9 +777,9 @@ snippet produces no classes (it is head markup); a site overrides it with
 final class Business
 {
     /**
-     * The location page: option `sayamaapps.annai.location` (page id string, or Closure(): ?Page),
+     * The location page: option `annai.location` (page id string, or Closure(): ?Page),
      * else $site->norenLocation() when Noren is installed (function_exists('noren_option')) and
-     * `noren.active` is true and `sayamaapps.annai.noren` is true, else the first page whose intendedTemplate
+     * `noren.active` is true and `annai.noren` is true, else the first page whose intendedTemplate
      * is in Options::locationTemplates() ('betrieb' by default): the top-level pages first, then
      * their children, and only when neither level holds one the rest of $site->index() (building
      * the index reads every page folder: seven to ten times the time of a page view with 2,000 posts).
@@ -793,14 +793,14 @@ final class Business
      * levels, so it searched the whole $site->index(): Check reports Check::LOCATION_PROBLEM.
      * Also true with Noren in use and `noren.locations` unset (null or false, Noren's rule):
      * then $site->norenLocation() walks $site->index() itself on every request.
-     * That case is tested first, before `sayamaapps.annai.location`: an `sayamaapps.annai.location` spares Annai's
+     * That case is tested first, before `annai.location`: an `annai.location` spares Annai's
      * lookup, not Noren's walk for the hours (units()).
      */
     public static function searchesIndex(App $kirby): bool;
 
     /**
      * The Noren case of searchesIndex(): Noren used and `noren.locations` unset, whatever
-     * `sayamaapps.annai.location` says. Check reports Check::NOREN_LOCATIONS_PROBLEM for it.
+     * `annai.location` says. Check reports Check::NOREN_LOCATIONS_PROBLEM for it.
      */
     public static function norenSearchesIndex(App $kirby): bool;
 
@@ -827,7 +827,7 @@ final class Business
      *                     nothing is published as E.164; write only the number: digits, spaces, a leading +, "/", "-"
      *                     and parentheses. Notes go into another field."), 'invalid' ("field telefon holds no valid
      *                     phone number (…) — nothing is published as E.164; write the whole number with its area code
-     *                     (a national number counts for +49, sayamaapps.annai.phoneCountry) or with its country code (+…)."),
+     *                     (a national number counts for +49, annai.phoneCountry) or with its country code (+…)."),
      *                     'library' ("phone numbers need giggsey/libphonenumber-for-php-lite, which is not installed —
      *                     nothing is published as E.164; install Annai with Composer (README, Installation)."),
      *    'fax'         => …, 'faxE164' => …, 'email' => …,
@@ -845,26 +845,26 @@ final class Business
      *    'units'       => units($kirby), or [] with $withUnits false]
      * [] when Annai is off.
      * $withUnits false leaves Noren alone: head() and jsonLd() ask for the units only
-     * where they are shown (showsUnits(): the home page, or an `sayamaapps.annai.jsonld` hook, which gets the
+     * where they are shown (showsUnits(): the home page, or an `annai.jsonld` hook, which gets the
      * facts on every page), and the preview llms.txt (name only) never. Every norenSchema() call
      * switches Kirby's page cache off for the response, so with Noren installed every page used
      * to lose its cache entry. Routes::llmsModel(), annaiFacts() and annaiUnits() read them always.
      */
     public static function facts(App $kirby, bool $withUnits = true): array;
 
-    /** $page->isHomePage() || `sayamaapps.annai.jsonld` is a Closure: the head of this page shows the units. */
+    /** $page->isHomePage() || `annai.jsonld` is a Closure: the head of this page shows the units. */
     private static function showsUnits(App $kirby, Page $page): bool;
 
     /**
      * Opening hours from Noren, as plain arrays. [] when Noren is not installed, not active,
-     * `sayamaapps.annai.noren` is false, or there are no maintained plans. One entry per $site->norenUnits()
+     * `annai.noren` is false, or there are no maintained plans. One entry per $site->norenUnits()
      * item, in Noren's order, minus the units of a draft location page (Pages::isDraft(), warned
      * once: Noren's $kirby->page() finds drafts); the primary unit first:
      *   primary = among the units at the business location (place null) the one whose area equals
-     *   `sayamaapps.annai.area`, else the first of them; none when no unit is there. Its hours go into the
+     *   `annai.area`, else the first of them; none when no unit is there. Its hours go into the
      *   business node next to the business address, so a unit at another location is never primary:
-     *   an `sayamaapps.annai.area` naming only such a unit is warned and the unit stays a department; an
-     *   `sayamaapps.annai.area` matching no unit at all is warned too (it used to fall back in silence).
+     *   an `annai.area` naming only such a unit is warned and the unit stays a department; an
+     *   `annai.area` matching no unit at all is warned too (it used to fall back in silence).
      *   ['area'     => 'laden' | null, 'location' => page id of the unit's Noren location | null,
      *    'place'    => null, or for a unit at another location page than location():
      *                  that page's own street, postalCode, city, phone, phoneE164 (no site fallback).
@@ -874,7 +874,7 @@ final class Business
      *                  used to count as at the business then, and a second location became a department
      *                  with the main address),
      *    'atBusiness' => bool: place null and (the unit's page is location(), Noren has no page, or the page
-     *                  carries no address of its own — the hours on one page, the address on `sayamaapps.annai.location`,
+     *                  carries no address of its own — the hours on one page, the address on `annai.location`,
      *                  in site.txt, or none at all with `fn () => null`). Its department @id is the bare area
      *                  key (§3.6). A page with an address of its own, even the business's, is false, so two
      *                  pages with the same area key keep distinct @ids,
@@ -894,7 +894,7 @@ final class Business
      * Mixing areas into one plan is wrong (laden + cafe hours would merge into one day), so a unit
      * is never built from norenSchedule(null) when areas exist — norenUnits() already separates them.
      * Noren switches the page cache off itself when it computes time-dependent data, so units() is
-     * called only where hours are shown: facts($kirby, true) — the home page head, an `sayamaapps.annai.jsonld`
+     * called only where hours are shown: facts($kirby, true) — the home page head, an `annai.jsonld`
      * hook, llms.txt, annaiFacts(), annaiUnits() (see facts()).
      */
     public static function units(App $kirby): array;
@@ -903,7 +903,7 @@ final class Business
      * The JSON-LD document for a page, or null:
      *   nodes = []
      *   if $page->isHomePage() and type !== false: nodes[] = JsonLd::localBusiness(facts)   (skipped when [])
-     *   hook `sayamaapps.annai.jsonld` (Closure(Page $page, array $nodes, array $facts): array) may add, replace or remove nodes
+     *   hook `annai.jsonld` (Closure(Page $page, array $nodes, array $facts): array) may add, replace or remove nodes
      *   return JsonLd::document(nodes)
      * null when Annai is off.
      */
@@ -917,13 +917,13 @@ final class Business
      *   alternates = Pages::alternates($kirby, $page), jsonld = jsonLd($kirby, $page) — or null, Options::warn()ed,
      *   when JsonLd::encode() throws on it (NAN/INF from a hook, depth): the page renders without JSON-LD.
      * facts($kirby, showsUnits($kirby, $page)): the title and description hooks see `units` [] on a page
-     * other than the home page when no `sayamaapps.annai.jsonld` hook is set.
+     * other than the home page when no `annai.jsonld` hook is set.
      * [] when Annai is off.
      */
     public static function head(App $kirby, Page $page): array;
 
     /**
-     * `sayamaapps.annai.image`: null → null; string → absolute URL (http(s) kept, else Kirby url()); array
+     * `annai.image`: null → null; string → absolute URL (http(s) kept, else Kirby url()); array
      * ['url' => …, 'width' => …, 'height' => …, 'alt' => …] → same with url resolved; Closure(Page): string|array|null.
      * Returns ['url' => string, 'width' => ?int, 'height' => ?int, 'alt' => string] or null.
      * url and alt go through Text::line() (the alt from $page->image()->alt() used to reach og:image:alt
@@ -946,9 +946,9 @@ final class Pages
     public static function base(App $kirby): string;
 
     /**
-     * Excluded = isDraft(), or intendedTemplate in `sayamaapps.annai.exclude.templates` (default ['error']),
-     * or id in `sayamaapps.annai.exclude.pages` (list of ids) or below one of them (id . '/' prefix, whole
-     * segments), or `sayamaapps.annai.exclude.pages` is a Closure(Page): bool returning a truthy value
+     * Excluded = isDraft(), or intendedTemplate in `annai.exclude.templates` (default ['error']),
+     * or id in `annai.exclude.pages` (list of ids) or below one of them (id . '/' prefix, whole
+     * segments), or `annai.exclude.pages` is a Closure(Page): bool returning a truthy value
      * ((bool) cast). The error page is excluded by template.
      */
     public static function excluded(App $kirby, Page $page): bool;
@@ -964,7 +964,7 @@ final class Pages
     public static function all(App $kirby): array;
 
     /**
-     * Preview protection active? `sayamaapps.annai.noindex` true → true; false → false; any other
+     * Preview protection active? `annai.noindex` true → true; false → false; any other
      * non-null value → Options::warn() and treated as null; null →
      * class_exists('Sudare\\Sudare') && (\Sudare\Sudare::active() === true
      *   || (PHP_SAPI === 'cli' && \Sudare\Sudare::protects($base) === true)),
@@ -982,14 +982,14 @@ final class Pages
     /**
      * The robots meta value for a page, or null:
      *   preview() → 'noindex, nofollow, noarchive'
-     *   else isDraft() (a draft or a page below one) → 'noindex, nofollow' (regardless of `sayamaapps.annai.noindexExcluded`)
-     *   else excluded() && `sayamaapps.annai.noindexExcluded` (default true) → 'noindex, follow'
+     *   else isDraft() (a draft or a page below one) → 'noindex, nofollow' (regardless of `annai.noindexExcluded`)
+     *   else excluded() && `annai.noindexExcluded` (default true) → 'noindex, follow'
      *   else null
      */
     public static function robots(App $kirby, Page $page): ?string;
 
     /**
-     * hreflang map for a page: [] unless $kirby->multilang() and `sayamaapps.annai.hreflang` is true, and []
+     * hreflang map for a page: [] unless $kirby->multilang() and `annai.hreflang` is true, and []
      * when robots($kirby, $page) is not null (a noindex page offers no language versions).
      * entries() reads the private languageAlternates() instead — the same map without the robots()
      * rule — so the sitemap data behind a preview counts one entry per language, as served after
@@ -1007,7 +1007,7 @@ final class Pages
      * The URL the canonical of a page points to when the page has no content in the current
      * language: the default language's URL when the page has content in it, else the
      * first listed language's with content (the x-default of languageAlternates(), whatever
-     * `sayamaapps.annai.hreflang` says). null on a single-language site, when the page has content in the
+     * `annai.hreflang` says). null on a single-language site, when the page has content in the
      * current language, or in no language. Business::canonical() and Check::page() read it, and
      * every list that names a page by its URL follows the same rule (`contentUrl() ?? $page->url()`):
      * entries() without hreflang, llmsModel() (home, menu, optional) and events() (they
@@ -1040,9 +1040,9 @@ final class Pages
      * Sitemap lastmod for a page: Sitemap::lastmod($page->modified(null, null, $language), Options::timezone()) — the
      * INTEGER modified(), never modified('c'); $language null = the current language, a code = that
      * language's content file (the hreflang entries). Koyomi rule: when Koyomi is installed
-     * (function_exists('koyomi_active')) and active and `sayamaapps.annai.koyomi` is true and $page is a
+     * (function_exists('koyomi_active')) and active and `annai.koyomi` is true and $page is a
      * Koyomi\Models\EventPage whose koyomi() event isPast(koyomi_now()), lastmod = the later of
-     * modified and the event's end. null when `sayamaapps.annai.sitemap.lastmod` is false.
+     * modified and the event's end. null when `annai.sitemap.lastmod` is false.
      */
     public static function lastmod(App $kirby, Page $page, ?string $language = null): ?string;
 
@@ -1054,7 +1054,7 @@ final class Pages
      *   with hreflang on a multilang site: one entry per language the page exists in (loc = that language URL,
      *   lastmod = lastmod($kirby, $page, $code) of that language's content file, same alternates), also while
      *   the preview is on (Check::site() and $site->annaiSitemap() count what is served after the go-live)
-     *   plus `sayamaapps.annai.sitemap.extra` (list, or Closure(): list) entries ['loc' => …, 'lastmod' => ?string, 'alternates' => []] with 'page' => null;
+     *   plus `annai.sitemap.extra` (list, or Closure(): list) entries ['loc' => …, 'lastmod' => ?string, 'alternates' => []] with 'page' => null;
      *   extra entries whose loc fails Sitemap::validLoc() are skipped and Options::warn()ed; a lastmod
      *   that fails Sitemap::validLastmod() is dropped (entry kept) and warned.
      * @return list<array{loc: string, lastmod: ?string, alternates: array<string,string>, page: ?Page}>
@@ -1064,11 +1064,11 @@ final class Pages
     /** Listed top-level pages ($site->children()->listed()) minus the home page (llmsModel() writes it first) minus excluded() — the "Pages" list of llms.txt. @return list<Page> */
     public static function menu(App $kirby): array;
 
-    /** Pages (any status but draft) whose template is in `sayamaapps.annai.llms.optional`, minus excluded(), minus menu(). @return list<Page> */
+    /** Pages (any status but draft) whose template is in `annai.llms.optional`, minus excluded(), minus menu(). @return list<Page> */
     public static function optional(App $kirby): array;
 
     /**
-     * Upcoming Koyomi events for llms.txt, [] unless Koyomi is installed, active and `sayamaapps.annai.koyomi` true:
+     * Upcoming Koyomi events for llms.txt, [] unless Koyomi is installed, active and `annai.koyomi` true:
      *   $calendar = Koyomi\Repository::calendar($kirby); Koyomi\Repository::upcoming($calendar)
      *   koyomi_i18n() once, then per event:
      *   ['title' => titleIn($page, contentLanguage()) of its event page ?? $event->title — the title of the language
@@ -1090,7 +1090,7 @@ final class Routes
 
     /** Robots::render(robotsConfig()). */
     public static function robotsText(App $kirby): string;
-    // sitemap() and llmsText(): while Pages::hidden($kirby, path) (explicit sayamaapps.annai.noindex => true, or the
+    // sitemap() and llmsText(): while Pages::hidden($kirby, path) (explicit annai.noindex => true, or the
     // route exempt from the protection) an empty <urlset> and "# <name>\n"; a closed chunk
     // sitemap-<n>.xml is null → 404 (nothing to split). A protected preview serves the normal files.
     // robots(), sitemap() and llms(): while Pages::preview() is true, the Response
@@ -1105,7 +1105,7 @@ final class Routes
      * entries are Pages::base() . '/sitemap-' . $n . '.xml' (n from 1), lastmod = the newest lastmod of that chunk
      * (compared as instants; "2000" counts as 2000-01-01, "2000-05" as 2000-05-01 — PHP reads a bare year as a time today).
      * $chunk n: the n-th chunk (1-based), or null (→ 404 via $this->next()) when out of range or when only one file exists.
-     * Chunk size: `sayamaapps.annai.sitemap.chunk` (default and cap Sitemap::MAX_URLS, an int from 1 — small values are for tests;
+     * Chunk size: `annai.sitemap.chunk` (default and cap Sitemap::MAX_URLS, an int from 1 — small values are for tests;
      * anything else is warned and gives the default, it used to be 1 URL per file); every file also stays within Sitemap::MAX_BYTES.
      * Response application/xml.
      */
@@ -1124,7 +1124,7 @@ final class Routes
      *           ['title' => Pages::titleIn($page, $code), 'url' => Pages::contentUrl($page) ?? $page->url(), 'note' => Text::excerpt((string) intro field of Pages::contentIn($page, $code)->kirbytext(), 160)]
      *           (every url the page's canonical; title and note from the same language version, $code = contentLanguage())
      *   optional = Pages::optional() as the same shape with note ''
-     *   then hook `sayamaapps.annai.llms.extra` (Closure(array $model, array $facts): array) may change anything.
+     *   then hook `annai.llms.extra` (Closure(array $model, array $facts): array) may change anything.
      * Options::applyLanguage() is called first (texts follow the site language).
      */
     public static function llmsModel(App $kirby): array;
@@ -1229,10 +1229,10 @@ final class Check
      *                  Check::STATIC_FILE_PROBLEM (sprintf, file name) for a robots.txt, sitemap.xml or llms.txt
      *                  in root 'index': the web server serves it before Kirby runs (.htaccess !-f);
      *                  Check::NOREN_LOCATIONS_PROBLEM ('Noren runs without noren.locations: … set
-     *                  noren.locations (sayamaapps.annai.location does not stop it)') when Business::norenSearchesIndex(),
-     *                  also with sayamaapps.annai.location set; else Check::LOCATION_PROBLEM ('no business
-     *                  page in the top two page levels: … set sayamaapps.annai.location …') when Business::searchesIndex()
-     *                  (no sayamaapps.annai.location, no business page in the top two levels: every request walks the
+     *                  noren.locations (annai.location does not stop it)') when Business::norenSearchesIndex(),
+     *                  also with annai.location set; else Check::LOCATION_PROBLEM ('no business
+     *                  page in the top two page levels: … set annai.location …') when Business::searchesIndex()
+     *                  (no annai.location, no business page in the top two levels: every request walks the
      *                  whole index);
      *                  Check::CONFIGURATION_PROBLEM (sprintf, 'configuration: <message>') for every message
      *                  Options::warn() logged while the report was built (Options::logged() before/after;
@@ -1273,7 +1273,7 @@ vendor/bin/annai-check [--root=DIR] [--url=https://example.test] [--page=ID ...]
 - `--json` prints `json_encode(report, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)`.
 - Exit code: `Check::exitCode()`; 2 for usage errors; 3 when Kirby cannot boot or the check itself throws
   (a broken Annai option is exit 1, see above); when Annai is off it
-  prints "Annai is off (sayamaapps.annai.active)" and exits 2.
+  prints "Annai is off (annai.active)" and exits 2.
 - `--help` / `-h` prints the usage line and exits 0. `--url` must be an absolute http(s) URL, else usage error (exit 2).
 - Usage errors, boot errors and "Annai is off" messages go to STDERR; the report goes to STDOUT.
 - `jsonld.valid` is false only when `JsonLd::encode()` throws; a page without JSON-LD is valid with no types.
@@ -1331,13 +1331,13 @@ wherever one exists.
 | `timezone` | `'Europe/Berlin'` | `timezone()` | Zone of `<lastmod>` offsets; invalid → warned, default |
 
 Rename table from the earlier keys (README "Upgrading"): `suchmaschinen.ausgeschlossen` →
-`sayamaapps.annai.exclude.templates`; `suchmaschinen.gesperrt` → `sayamaapps.annai.disallow`;
-`strukturdaten.typ` → `sayamaapps.annai.type`; `strukturdaten.bereich` → `sayamaapps.annai.area`;
-`strukturdaten.sameAs` → `sayamaapps.annai.sameAs`; `strukturdaten.geo` → `sayamaapps.annai.geo`;
-`strukturdaten.aktion` → `sayamaapps.annai.action` (`typ`/`ziel` → `type`/`target`);
-`teilbild` → `sayamaapps.annai.image` (no fallback: `teilbild` is a site option the head
+`annai.exclude.templates`; `suchmaschinen.gesperrt` → `annai.disallow`;
+`strukturdaten.typ` → `annai.type`; `strukturdaten.bereich` → `annai.area`;
+`strukturdaten.sameAs` → `annai.sameAs`; `strukturdaten.geo` → `annai.geo`;
+`strukturdaten.aktion` → `annai.action` (`typ`/`ziel` → `type`/`target`);
+`teilbild` → `annai.image` (no fallback: `teilbild` is a site option the head
 snippet may still read for other purposes); `praxis.nichtIndexieren` →
-`sayamaapps.annai.exclude.templates`; `kopf.sticky`, `themenfarbe`, `favicon`, `schriften`
+`annai.exclude.templates`; `kopf.sticky`, `themenfarbe`, `favicon`, `schriften`
 stay with the site.
 
 ---
@@ -1389,10 +1389,10 @@ German names of the earlier copies, so no content changes.
 | `email` | `email` | location page, else site | email |
 | `profiles` | `['instagram', 'facebook']` | location page, else site | appended to sameAs (list of field names) |
 
-Location page: `sayamaapps.annai.location`, else Noren's location, else the first page
-with template `betrieb` (`sayamaapps.annai.locationTemplate`), searched on the top level,
+Location page: `annai.location`, else Noren's location, else the first page
+with template `betrieb` (`annai.locationTemplate`), searched on the top level,
 then on the second level, and only then in the whole index (§3.8). With Noren,
-`noren.locations` should be set, also next to `sayamaapps.annai.location`: without it Noren
+`noren.locations` should be set, also next to `annai.location`: without it Noren
 walks the whole index for its location pages on every request that shows hours,
 and the check reports it (`Check::NOREN_LOCATIONS_PROBLEM`). Opening hours are Noren's
 contract (`bereiche`, `zeiten`, `schliessungen`), never read by Annai directly.
@@ -1412,7 +1412,7 @@ built from Kirby's base URL (`Pages::base()`, no language prefix).
   the normal files (`Cache-Control: no-store`): Sudare answers a request without
   credentials with 401 before Kirby renders, so those requests are authenticated.
   Closed (robots.txt `Disallow: /` without a sitemap line, sitemap.xml an empty
-  urlset, llms.txt its H1 only, chunk files 404) when `sayamaapps.annai.noindex => true`
+  urlset, llms.txt its H1 only, chunk files 404) when `annai.noindex => true`
   (`Pages::hidden()`), or when the request is exempt: `active()` is the state of
   the configuration, not the outcome for the path (Sudare 1.0.0, `src/Sudare.php`:
   `handle()` stores `self::$config` before `Guard::handle()` decides), so
@@ -1424,18 +1424,18 @@ built from Kirby's base URL (`Pages::base()`, no language prefix).
   site problem. While the preview is on, the response is kept out of Kirby's page cache.
 - **Noren**: detected by `function_exists('noren_option')`; used only when
   `noren.active` is true (`$site->norenUnits()` returns `[]` otherwise) and
-  `sayamaapps.annai.noren` is true. Annai never builds hours itself. Noren is asked only
-  where hours are shown (the home page head, an `sayamaapps.annai.jsonld` hook, llms.txt,
+  `annai.noren` is true. Annai never builds hours itself. Noren is asked only
+  where hours are shown (the home page head, an `annai.jsonld` hook, llms.txt,
   the site methods), because every Noren schema call takes the response out of
   Kirby's page cache; the other pages stay cacheable. Without
   `noren.locations` Noren resolves its location pages by walking
   `$site->index()` on every request that asks for the business page or the
-  hours — with `sayamaapps.annai.location` too, which spares Annai's lookup but not
+  hours — with `annai.location` too, which spares Annai's lookup but not
   `units()`; `Business::norenSearchesIndex()` is then true and the
   check reports `Check::NOREN_LOCATIONS_PROBLEM` — README and SPEC recommend
   `noren.locations`.
 - **Koyomi**: detected by `function_exists('koyomi_active')`; used only when
-  `koyomi_active()` and `sayamaapps.annai.koyomi`. Event pages are ordinary pages and are
+  `koyomi_active()` and `annai.koyomi`. Event pages are ordinary pages and are
   in the sitemap anyway; Annai adds the lastmod rule and the llms.txt list.
   Koyomi prints its own event JSON-LD in its layout; Annai does not duplicate
   it.
@@ -1444,21 +1444,21 @@ built from Kirby's base URL (`Pages::base()`, no language prefix).
 
 ## 8. Design choices
 
-- **AI crawler rules:** `sayamaapps.annai.robots.ai` defaults to `null`: no AI groups, the same robots.txt as without the option. Presets `blockTraining` and `allowAll`; `sayamaapps.annai.robots.agents` per bot. The list in `Robots::AI_AGENTS` was compiled from the vendors' pages on 2026-10-11 and must be checked against them before a release. Blocking a `user` or `search` agent is allowed but warned by the check tool.
-- **noindex in preview:** `sayamaapps.annai.noindex` defaults to `null` = automatic, via `Sudare\Sudare::active()`. That contract is shared with the Sudare package; if the two ever differ, one side changes. While the preview is active, the robots meta says noindex on every page; robots.txt, sitemap.xml and llms.txt stay the normal files behind the protection. Only an explicit `sayamaapps.annai.noindex => true` closes them (`Disallow: /`, empty urlset, H1 only).
-- **hreflang:** `sayamaapps.annai.hreflang` defaults to `false`, because no site printed hreflang before. Recommended `true` for any multilang site.
+- **AI crawler rules:** `annai.robots.ai` defaults to `null`: no AI groups, the same robots.txt as without the option. Presets `blockTraining` and `allowAll`; `annai.robots.agents` per bot. The list in `Robots::AI_AGENTS` was compiled from the vendors' pages on 2026-10-11 and must be checked against them before a release. Blocking a `user` or `search` agent is allowed but warned by the check tool.
+- **noindex in preview:** `annai.noindex` defaults to `null` = automatic, via `Sudare\Sudare::active()`. That contract is shared with the Sudare package; if the two ever differ, one side changes. While the preview is active, the robots meta says noindex on every page; robots.txt, sitemap.xml and llms.txt stay the normal files behind the protection. Only an explicit `annai.noindex => true` closes them (`Disallow: /`, empty urlset, H1 only).
+- **hreflang:** `annai.hreflang` defaults to `false`, because no site printed hreflang before. Recommended `true` for any multilang site.
 - **Check tool:** CLI only (`bin/annai-check`), no Panel area (a Panel area needs a Vue bundle; the family has none).
-- **`@id` fragment** is `#business` (English) instead of `#betrieb`; option `sayamaapps.annai.entityId`. A live site that wants to keep the old identifier sets `'sayamaapps.annai.entityId' => 'betrieb'` (a changed `@id` is a new entity for Google).
-- **Texts of llms.txt** follow `sayamaapps.annai.language` like Noren: a German site without Kirby `locale` must set `'sayamaapps.annai.language' => 'de'`, otherwise "## Contact" appears. Same rule as in Noren ("en first").
+- **`@id` fragment** is `#business` (English) instead of `#betrieb`; option `annai.entityId`. A live site that wants to keep the old identifier sets `'annai.entityId' => 'betrieb'` (a changed `@id` is a new entity for Google).
+- **Texts of llms.txt** follow `annai.language` like Noren: a German site without Kirby `locale` must set `'annai.language' => 'de'`, otherwise "## Contact" appears. Same rule as in Noren ("en first").
 - **`og:site_name` and `og:locale`** are printed whenever known; earlier copies printed them only sometimes. `og:locale` comes from the language or Kirby's `locale`; without either it is omitted.
-- **Excluded templates** get `noindex, follow` (`sayamaapps.annai.noindexExcluded`, default true). Earlier output printed nothing for them.
-- **`teilbild` is not read:** the share image is `sayamaapps.annai.image`. Sites move one line of config.
+- **Excluded templates** get `noindex, follow` (`annai.noindexExcluded`, default true). Earlier output printed nothing for them.
+- **`teilbild` is not read:** the share image is `annai.image`. Sites move one line of config.
 - **Koyomi lastmod:** for a past event, lastmod = max(page modified, event end), so the sitemap says "changed" when an event turned past, but a later edit still wins. Upcoming events only in llms.txt (past ones are noise for an agent).
-- **No Koyomi event JSON-LD from Annai:** Koyomi's own layout prints it; doing it here too would duplicate the node on sites using Koyomi's templates. A site with its own layout adds `Koyomi\JsonLd::event()` through `sayamaapps.annai.jsonld`.
+- **No Koyomi event JSON-LD from Annai:** Koyomi's own layout prints it; doing it here too would duplicate the node on sites using Koyomi's templates. A site with its own layout adds `Koyomi\JsonLd::event()` through `annai.jsonld`.
 - **llms.txt stays `text/plain`** (one earlier copy used `text/markdown`). llmstxt.org examples are served as plain text.
-- **Legacy German config keys** (`breite`/`laenge`, `typ`/`ziel`) are accepted inside `sayamaapps.annai.geo` / `sayamaapps.annai.action`, so a site's existing values move by renaming the option only. They are never emitted.
-- **`Allow: /` stays** in the `*` group (RFC 9309 does not need it; sites that test their robots.txt expect it). Exception: with `/` in `sayamaapps.annai.disallow` the group is `Disallow: /` alone, because next to `Allow: /` the Allow wins the tie (RFC 9309 §2.2.2) and nothing is blocked.
-- **Sitemap in multilang without hreflang:** one entry per page in the current language. With `sayamaapps.annai.hreflang`, one entry per language with alternates (sitemaps.org "localized versions").
+- **Legacy German config keys** (`breite`/`laenge`, `typ`/`ziel`) are accepted inside `annai.geo` / `annai.action`, so a site's existing values move by renaming the option only. They are never emitted.
+- **`Allow: /` stays** in the `*` group (RFC 9309 does not need it; sites that test their robots.txt expect it). Exception: with `/` in `annai.disallow` the group is `Disallow: /` alone, because next to `Allow: /` the Allow wins the tie (RFC 9309 §2.2.2) and nothing is blocked.
+- **Sitemap in multilang without hreflang:** one entry per page in the current language. With `annai.hreflang`, one entry per language with alternates (sitemaps.org "localized versions").
 - **Phone country** is an option (`phoneCountry`, default 49); without it, Germany is assumed.
 - **Phone fields: input contract** (§3.2): the field holds only the number. A character gate, then libphonenumber (`giggsey/libphonenumber-for-php-lite`, Composer). It replaces an earlier free-text parser.
 
@@ -1487,7 +1487,7 @@ files use `annai_site()` / `annai_kirby()`.
 - `agents('blockTraining')` has `GPTBot => false`, `ChatGPT-User` absent; `agents('blockTraining', ['GPTBot' => true])` → true; `agents('allowAll')` has every known agent true; `agents(null, ['FooBot' => false])` keeps FooBot
 - render with agents: blocked group `"User-agent: GPTBot\nDisallow: /"`, allowed group repeats `Disallow: /panel`, blocked before allowed, sorted
 - `extra` block placement; `blockAll` exact output; `disallow` with `/` → `*` group `Disallow: /` alone, an allowed agent keeps `Allow: /` and the other paths
-- `validPath`: `/a b`, `/my path` rejected (RFC 9309 excludes the space), `/a%20b` accepted; `"/caf\xE9"`, `"/\xFF"` rejected (not UTF-8), `/café` accepted, `render()` with such a path stays UTF-8; Kirby (RoutesTest): a Latin-1 byte in `sayamaapps.annai.disallow` is logged and left out, in `sayamaapps.annai.robots.extra` written as U+FFFD, robots.txt passes `mb_check_encoding()`; `render(['extra' => ['# 案内', 'Disallow: /Åland/']])` is UTF-8 and holds the rule as one line, `parse()` reads `/Åland` whole while CR and CRLF still split; Kirby (RoutesTest): `sayamaapps.annai.robots.extra` with `Å`, `案内` and `Ņ` → `robotsExtra()` three lines, robots.txt UTF-8, no junk line, `parse()` path `/Åland/`
+- `validPath`: `/a b`, `/my path` rejected (RFC 9309 excludes the space), `/a%20b` accepted; `"/caf\xE9"`, `"/\xFF"` rejected (not UTF-8), `/café` accepted, `render()` with such a path stays UTF-8; Kirby (RoutesTest): a Latin-1 byte in `annai.disallow` is logged and left out, in `annai.robots.extra` written as U+FFFD, robots.txt passes `mb_check_encoding()`; `render(['extra' => ['# 案内', 'Disallow: /Åland/']])` is UTF-8 and holds the rule as one line, `parse()` reads `/Åland` whole while CR and CRLF still split; Kirby (RoutesTest): `annai.robots.extra` with `Å`, `案内` and `Ņ` → `robotsExtra()` three lines, robots.txt UTF-8, no junk line, `parse()` path `/Åland/`
 - `warnings`: blocking `Claude-User` → one warning naming it and `user`; blocking `GPTBot` → none; blockAll → "Disallow: / for everyone"; a disallow entry `"x\u{9B}31m"` is named as `"x\u009b31m"` (`Text::shown()`)
 - `parse` round trip of a rendered file: groups, rules, sitemaps; comments ignored; case-insensitive field names
 - RFC shape: no two consecutive blank lines, ends with exactly one `"\n"`
@@ -1544,26 +1544,26 @@ lines, `### Hofladen` only with two units, `- Montag: 8:00–12:00, 14:00–18:0
 Fixture: site.txt with `Marke`, `Zusatz`, `Beschreibung`, `Instagram`; page
 `1_kontakt` template `betrieb` with address/phone (the fixture text of the 41-check run), pages `home`, `2_laden`.
 - off → `facts()` `[]`, `jsonLd()` null, `head()` `[]`
-- `location()` finds `kontakt` by template; `sayamaapps.annai.location` id wins; Closure wins; draft never
+- `location()` finds `kontakt` by template; `annai.location` id wins; Closure wins; draft never
 - `location()` next to 50 nested pages: `head()` of the deepest page leaves the `index` property of `$site->children()` null (Reflection); a second-level betrieb page is found without the index, a third-level one through it (`searchesIndex()` true); the top level wins over the second; the search runs once per site object; `head()` calls `facts()` once (a counting `sameAs` Closure)
 - `field('street')` from the page; `field('email')` falls back to site; both empty → `''`
 - `facts()`: name from `marke`, fallback to title when `marke` empty; `description` is the rendered field as plain text (`**Bio**`, `(link: …)` and tags gone, not shortened); `phoneE164`; `sameAs` merges option + `instagram` field; `geo` legacy keys; `action` legacy keys; `type` default; `units` `[]` without Noren
-- With Noren (symlinked when `ANNAI_NOREN_PATH` exists, else print `SKIP` lines and `holds(true)`): `noren.active`, two areas → two units, primary = `sayamaapps.annai.area` else first, `days[0]['blocks']` `[[480,720],[840,1080]]`, `note`, `closures` with `hours`, `schema` keys present
-- With Noren: the address page as `sayamaapps.annai.location` (or `fn () => null`, or a page without an address) and two areas on a Noren page without an address of its own → both units `atBusiness`, the department `@id` is `#cafe`; two Noren pages with the same address and area key → `#cafe` and `#b-cafe`
-- With Noren, `sayamaapps.annai.location => fn () => null` and two Noren pages with addresses of their own: with the site address equal to the first page's, that unit is primary (`place` null) and the second a department with its OWN address and phone, its llms.txt block with address lines; with a site address of neither, both are departments with their own addresses, no primary, the business node keeps the site address without hours. Two locations with the same area name → names `Praxis Nord · Praxis` / `Praxis Süd · Praxis` (headings, department name), no bare `### Praxis`. `sayamaapps.annai.area` without a match is logged; a matching one logs nothing
-- With Noren and the page cache on: a subpage keeps `response()->cache()` true and its cache entry (`laden.latest.html`); the home page keeps its hours and stays out of the cache; with an `sayamaapps.annai.jsonld` hook the facts carry the units on the subpage; `facts($kirby, false)['units']` is `[]`
+- With Noren (symlinked when `ANNAI_NOREN_PATH` exists, else print `SKIP` lines and `holds(true)`): `noren.active`, two areas → two units, primary = `annai.area` else first, `days[0]['blocks']` `[[480,720],[840,1080]]`, `note`, `closures` with `hours`, `schema` keys present
+- With Noren: the address page as `annai.location` (or `fn () => null`, or a page without an address) and two areas on a Noren page without an address of its own → both units `atBusiness`, the department `@id` is `#cafe`; two Noren pages with the same address and area key → `#cafe` and `#b-cafe`
+- With Noren, `annai.location => fn () => null` and two Noren pages with addresses of their own: with the site address equal to the first page's, that unit is primary (`place` null) and the second a department with its OWN address and phone, its llms.txt block with address lines; with a site address of neither, both are departments with their own addresses, no primary, the business node keeps the site address without hours. Two locations with the same area name → names `Praxis Nord · Praxis` / `Praxis Süd · Praxis` (headings, department name), no bare `### Praxis`. `annai.area` without a match is logged; a matching one logs nothing
+- With Noren and the page cache on: a subpage keeps `response()->cache()` true and its cache entry (`laden.latest.html`); the home page keeps its hours and stays out of the cache; with an `annai.jsonld` hook the facts carry the units on the subpage; `facts($kirby, false)['units']` is `[]`
 - `jsonLd()`: home → one node; `/laden` → null; hook adds a node → `@graph`; hook returning `[]` → null; `type => false` + hook → the hook's node alone
-- `head()`: title rules (home with/without tagline, subpage, empty brand), description from `einleitung` else `beschreibung`, excerpt length, closures `sayamaapps.annai.title`/`sayamaapps.annai.description`/`sayamaapps.annai.canonical`, `image` string → absolute URL, array form, Closure form, `locale` from Kirby `locale` option `de_DE.utf8` → `de_DE`, `twitterCard` invalid → null; ESC and U+009B in the hook's `alt`, `url` and canonical are removed (`og:image:alt` printed clean, no control character in the page), a profile field URL with U+009B, ESC or a space is logged (`holds a space or a control character`) and left out of `sameAs`; the U+009B is logged as `\u009b` (`Text::shown()`), no raw C1 in the log
+- `head()`: title rules (home with/without tagline, subpage, empty brand), description from `einleitung` else `beschreibung`, excerpt length, closures `annai.title`/`annai.description`/`annai.canonical`, `image` string → absolute URL, array form, Closure form, `locale` from Kirby `locale` option `de_DE.utf8` → `de_DE`, `twitterCard` invalid → null; ESC and U+009B in the hook's `alt`, `url` and canonical are removed (`og:image:alt` printed clean, no control character in the page), a profile field URL with U+009B, ESC or a space is logged (`holds a space or a control character`) and left out of `sameAs`; the U+009B is logged as `\u009b` (`Text::shown()`), no raw C1 in the log
 
 ### 9.9 tests/RoutesTest.php (Kirby)
 - off: `annai_request($kirby, 'robots.txt')` is not a 200 from Annai (Kirby 404 or error page); same for sitemap.xml and llms.txt
 - HEAD and GET 200 on all three; `sitemap-1.xml` 404 when one file
-- robots: content type `text/plain`, default `Disallow: /panel`, absolute `Sitemap:` from `Pages::base()` (multilang fixture without language `url` keys: `/sitemap.xml`, index locs answer 200, one business `@id` in every language), `sayamaapps.annai.disallow`, `robots.ai => 'blockTraining'` adds GPTBot group, `robots.agents` (a name `"x\nDisallow: /"`, `Fo#o` or with a space is logged and left out; every `Robots::AI_AGENTS` name is a token; a name `"Bot\u{9B}31m"` and an `sayamaapps.annai.disallow` entry `"x\u{9B}31m"` are logged with `\u009b`, no raw C1 in the log), `robots.extra`; `sayamaapps.annai.noindex => true` → `Disallow: /` only
+- robots: content type `text/plain`, default `Disallow: /panel`, absolute `Sitemap:` from `Pages::base()` (multilang fixture without language `url` keys: `/sitemap.xml`, index locs answer 200, one business `@id` in every language), `annai.disallow`, `robots.ai => 'blockTraining'` adds GPTBot group, `robots.agents` (a name `"x\nDisallow: /"`, `Fo#o` or with a space is logged and left out; every `Robots::AI_AGENTS` name is a token; a name `"Bot\u{9B}31m"` and an `annai.disallow` entry `"x\u{9B}31m"` are logged with `\u009b`, no raw C1 in the log), `robots.extra`; `annai.noindex => true` → `Disallow: /` only
 - sitemap: `application/xml`, home + pages, excluded template and `exclude.pages` id/Closure missing, draft missing, `lastmod` present and W3C-shaped, `sitemap.lastmod => false` → none; `sitemap.extra` list and Closure; `sitemap.chunk => 2` with 3 pages → `sitemap.xml` is a sitemapindex with 2 files, `sitemap-1.xml` has 2 urls, `sitemap-2.xml` 1, `sitemap-3.xml` 404; index lastmod with extra lastmods `2000` and `2001-01-01` in one chunk → `2001-01-01`; `sitemap.chunk` `false`, `'abc'`, `0`, `'100'`, `100000` → one `<urlset>`, logged
 - `Pages::robots`: excluded → `noindex, follow`; `noindexExcluded => false` → null; `noindex => true` → `noindex, nofollow, noarchive`; a fake `Sudare\Sudare` class declared in the test with `active()` returning true → preview; returning false → null
-- multilang fixture (`languages => true`, `site/languages/de.php`, `en.php`): `hreflang` false → `[]`; true → `de`, `en`, `x-default` in order, sitemap has `xhtml:link`, one `<url>` per language; a page with only `default.en.txt` → `en` and `x-default` to the English URL, no German sitemap entry; with hreflang on and off: `/en/kontakt` (German content only) → canonical and `og:url` `http://example.invalid/kontakt`, `/en/laden` and `/en` keep their URL, `/english` in German → canonical `/en/english`; `Pages::contentUrl()` the German URL for kontakt after an `/en` request, null for laden and on a single-language site; an `sayamaapps.annai.canonical` hook wins, one returning `null` leaves the rule; with hreflang off (fresh app): the sitemap lists `/en/english` (not `/english`) with the lastmod of `default.en.txt`, `llms.txt` links `/en/english` and an English-only optional page under `/en/…`, `$site->annaiLlms()` in English links the German-only kontakt as `/kontakt`, a home page with English content only is linked as `/en`, Koyomi events in English link a German-only event under its German URL; `contentLanguage()` `en`/null; `llms.txt` has `- [English only](http://example.invalid/en/english): An English intro for this page.` (title and note of the linked English version), the optional page as `- [Questions](…/en/fragen)`, Hofladen keeps its German title and note
+- multilang fixture (`languages => true`, `site/languages/de.php`, `en.php`): `hreflang` false → `[]`; true → `de`, `en`, `x-default` in order, sitemap has `xhtml:link`, one `<url>` per language; a page with only `default.en.txt` → `en` and `x-default` to the English URL, no German sitemap entry; with hreflang on and off: `/en/kontakt` (German content only) → canonical and `og:url` `http://example.invalid/kontakt`, `/en/laden` and `/en` keep their URL, `/english` in German → canonical `/en/english`; `Pages::contentUrl()` the German URL for kontakt after an `/en` request, null for laden and on a single-language site; an `annai.canonical` hook wins, one returning `null` leaves the rule; with hreflang off (fresh app): the sitemap lists `/en/english` (not `/english`) with the lastmod of `default.en.txt`, `llms.txt` links `/en/english` and an English-only optional page under `/en/…`, `$site->annaiLlms()` in English links the German-only kontakt as `/kontakt`, a home page with English content only is linked as `/en`, Koyomi events in English link a German-only event under its German URL; `contentLanguage()` `en`/null; `llms.txt` has `- [English only](http://example.invalid/en/english): An English intro for this page.` (title and note of the linked English version), the optional page as `- [Questions](…/en/fragen)`, Hofladen keeps its German title and note
 - llms: `text/plain`, H1 first line, `## Seiten` with home first, excluded template missing, `llms.optional => ['rechtstext']` adds `## Optional`, `llms.extra` hook changes the summary, language `de` vs default en headings
-- hook options without a Closure: `sayamaapps.annai.title`/`description`/`canonical` as strings, `sayamaapps.annai.jsonld` and `sayamaapps.annai.llms.extra` as arrays, `sayamaapps.annai.location => 42` → the page, the home JSON-LD and llms.txt use Annai's rules, the business page is found by template, each option logged once with its value or type (`must be a Closure, not 'Eigener Titel'`, `not array`; `sayamaapps.annai.location must be a page id or a Closure, not 42`), `Check::site()` reports them as `configuration: …`; `null` logs nothing
+- hook options without a Closure: `annai.title`/`description`/`canonical` as strings, `annai.jsonld` and `annai.llms.extra` as arrays, `annai.location => 42` → the page, the home JSON-LD and llms.txt use Annai's rules, the business page is found by template, each option logged once with its value or type (`must be a Closure, not 'Eigener Titel'`, `not array`; `annai.location must be a page id or a Closure, not 42`), `Check::site()` reports them as `configuration: …`; `null` logs nothing
 - Koyomi (symlinked when `ANNAI_KOYOMI_PATH` exists, else SKIP): a calendar with one past and one upcoming event; past event page lastmod ≥ its end; llms `## Termine` lists only the upcoming one with its venue label; multilang (in the multilang bullet above): an event with German content only is linked under its German URL in English; multilang: llms.txt in English names that event with the title of the German version it links, also for a page model without Kirby's language fallback (`RtEventWithoutFallback`: Koyomi's own English title is `''`, precondition checked); an event whose German title is empty is named `breathing` (the slug of the linked version) in English and in German, each language in an App of its own (Koyomi caches its events per App with the URLs of the first language), and llms.txt has `- [breathing](http://example.invalid/events/breathing)` and no `[](`
 
 ### 9.10 tests/AgentReadyTest.php (Kirby) — the 41 checks
@@ -1571,10 +1571,10 @@ The 41 checks of the agent-ready run, one to one with these
 substitutions: fixture through `annai_site()`/`annai_page()`, requests through
 `annai_request()` (no `php -S`), templates print
 `<html><head><?php snippet('annai/head') ?></head><body>Fixture</body></html>`,
-config `'sayamaapps.annai.active' => true, 'sayamaapps.annai.language' => 'de', 'noren.active' =>
-true, 'noren.language' => 'de', 'sayamaapps.annai.exclude.templates' => ['error',
-'weiter'], 'sayamaapps.annai.type' => 'GroceryStore', 'sayamaapps.annai.sameAs' => [...],
-'sayamaapps.annai.action' => ['type' => 'OrderAction', 'name' => 'Online bestellen',
+config `'annai.active' => true, 'annai.language' => 'de', 'noren.active' =>
+true, 'noren.language' => 'de', 'annai.exclude.templates' => ['error',
+'weiter'], 'annai.type' => 'GroceryStore', 'annai.sameAs' => [...],
+'annai.action' => ['type' => 'OrderAction', 'name' => 'Online bestellen',
 'target' => 'https://shop.example/testhof']`; `@id` expectation becomes
 `$basis/#business`; `substr_count($html, '</script>') === 1` stays (the head
 snippet prints exactly one script); "description complete" expects the rendered
@@ -1585,13 +1585,13 @@ booting a new `annai_kirby()` with other options. The whole file is SKIP
 check messages as English sentences.
 
 ### 9.11 tests/CheckTest.php (Kirby)
-- `page()` on a good page → no problems, `jsonld.types` `['GroceryStore']` on home (with `sayamaapps.annai.type`), `[]` on a subpage
+- `page()` on a good page → no problems, `jsonld.types` `['GroceryStore']` on home (with `annai.type`), `[]` on a subpage
 - problems: title > 60, description missing/short/long, `canonical` hook returning another URL, image `http://` → absolute-https problem; `noindex => true` is the one site problem `Check::PREVIEW_PROBLEM`, never a page problem; multilang fixture (de default, en; a page with only `default.en.txt`) checked in German → canonical `/en/english`, no problem, `notes` `['no content in de: canonical points to http://example.invalid/en/english']`, rendered as `  ~ `, summary `2 pages, 0 problems`, exit 0; a translated page has no note
 - `notes`: Kirby `url` `/` (the CLI without `--url`) → `[Check::NO_HOST_NOTE]`, exit code unchanged, rendered as `  ~ `; with a host `[]`
 - `phones` (§3.2, the input contract): the fixture's `telefon` `030 / 34567000` → `[['field' => 'phone', 'raw' => '030 / 34567000', 'e164' => '+493034567000', 'problem' => null]]`, rendered `  ~ phone: "030 / 34567000" → +493034567000` right after `preview: off`; `telefon` `"(0049) 30\u{A0}34567000"` → `+493034567000` and `fax` `"Fax\x1b folgt"` → `null`, `'characters'`, rendered `  ~ fax: "Fax\u001b folgt" → (none: more than the number)` without ESC (a CSI as `\u009b` in the line and in the problem), one `configuration: field fax holds more than the number …` problem, exit 1, `1 problems`, the `~` lines themselves not counted; `telefon` `34567000` → `'invalid'`, `(none: no valid number)`; an empty `telefon` → `[]`, no line; with Noren (three location pages, B with two areas and `030 34567030`, C with `"folgt\nab Mai"`): `phones` lists the business phone, then `page` `b` with `+493034567030` once and `page` `c` with `raw` `"folgt\nab Mai"` (the stored field, not the one-line display value) and `'characters'`, rendered `  ~ phone (b): "030 34567030" → +493034567030`, `  ~ phone (c): "folgt\nab Mai" → (none: more than the number)`, C a configuration problem; CLI: the phone line in the text report, `phones` in `--json`; a site whose `vendor/autoload.php` leaves out libphonenumber → `(none: libphonenumber is not installed)`, the configuration problem `phone numbers need giggsey/libphonenumber-for-php-lite …`, exit 1, `problem` `library` in `--json`; the same site rendered with Kirby's `debug` on (child process) throws `InvalidArgumentException` with the `library` message (README "Installation")
-- `site()` → `robots.warnings` with `robots.agents => ['Claude-User' => false]`; duplicate title detection; `sitemap.count`; `llms.headings`; `Check::LOCATION_PROBLEM` without `sayamaapps.annai.location` and without a business page in the top two levels (the fixture keeps its address in site.txt and sets `sayamaapps.annai.location => fn () => null`); with Noren (sibling fixture, else SKIP) and without `noren.locations` the problem is reported although the business page is on the top level, with `noren.locations => ['kontakt']` it is not; that is `Check::NOREN_LOCATIONS_PROBLEM` (`LOCATION_PROBLEM` names no Noren), also with `sayamaapps.annai.location => 'kontakt'` (`searchesIndex()` true), none with both options
+- `site()` → `robots.warnings` with `robots.agents => ['Claude-User' => false]`; duplicate title detection; `sitemap.count`; `llms.headings`; `Check::LOCATION_PROBLEM` without `annai.location` and without a business page in the top two levels (the fixture keeps its address in site.txt and sets `annai.location => fn () => null`); with Noren (sibling fixture, else SKIP) and without `noren.locations` the problem is reported although the business page is on the top level, with `noren.locations => ['kontakt']` it is not; that is `Check::NOREN_LOCATIONS_PROBLEM` (`LOCATION_PROBLEM` names no Noren), also with `annai.location => 'kontakt'` (`searchesIndex()` true), none with both options
 - `render()` contains the summary line and `  ! ` prefixes; `exitCode()` 0/1
-- `bin/annai-check`: `proc_open` the script with `--root=$tmp --url=http://example.invalid` on an `annai_site()` directory (write `site/config/config.php` with `sayamaapps.annai.active`): exit 0 and output contains `pages`; `--json` parses; without `sayamaapps.annai.active` exit 2; `--json` with an `sayamaapps.annai.llms.extra` section `案内` and `sayamaapps.annai.robots.extra` `# Filialen: Åland` → exit 0, `llms.headings` holds `案内` whole, `robots.text` the line whole; `--page=caf\xE9` → exit 1 and the problem text with U+FFFD, not exit 3
+- `bin/annai-check`: `proc_open` the script with `--root=$tmp --url=http://example.invalid` on an `annai_site()` directory (write `site/config/config.php` with `annai.active`): exit 0 and output contains `pages`; `--json` parses; without `annai.active` exit 2; `--json` with an `annai.llms.extra` section `案内` and `annai.robots.extra` `# Filialen: Åland` → exit 0, `llms.headings` holds `案内` whole, `robots.text` the line whole; `--page=caf\xE9` → exit 1 and the problem text with U+FFFD, not exit 3
 
 ---
 

@@ -5,65 +5,43 @@ use PHPUnit\Framework\TestCase;
 use Sayamaapps\Annai\Options;
 
 /**
- * OPT-1: the options are read as sayamaapps.<plugin>.<key>. A value under the
- * 2.x name <plugin>.<key> still counts, and Kirby's debug mode reports it as
- * deprecated. A null under the new name falls through to the old one.
+ * The options are read as annai.<key>, flat or nested under annai. A name the
+ * 2.x line never read (sayamaapps.annai.<key>) is not read either: that rename
+ * is planned for 2.0 (README, "Planned for 2.0").
  */
 #[CoversClass(Options::class)]
 final class OptionsPrefixTest extends TestCase
 {
-	/**
-	 * Runs $fn, collects the E_USER_DEPRECATED messages in $reported and returns the result of $fn.
-	 *
-	 * @param list<string> $reported
-	 */
-	private function captureDeprecations(array &$reported, callable $fn): mixed
-	{
-		set_error_handler(static function (int $number, string $message) use (&$reported): bool {
-			if ($number !== E_USER_DEPRECATED) {
-				return false;
-			}
-			$reported[] = $message;
-			return true;
-		}, E_USER_DEPRECATED);
-		try {
-			return $fn();
-		} finally {
-			restore_error_handler();
-		}
-	}
-
-	public function testANullUnderTheNewNameFallsThrough(): void
+	public function testANullFallsBackToTheDefault(): void
 	{
 		$tmp = annai_site();
 		try {
-			$kirby = annai_kirby($tmp, ['sayamaapps.annai.type' => null, 'annai.type' => 'Winery']);
-			expect('Winery', Options::get($kirby, 'type'), 'null under the new name: the old value is used');
+			$kirby = annai_kirby($tmp, ['annai.type' => null]);
+			expect('LocalBusiness', Options::get($kirby, 'type', 'LocalBusiness'), 'null: the default at the call site');
 		} finally {
 			annai_remove_tree($tmp);
 		}
 	}
 
-	public function testTheDefaultWhenNeitherNameIsSet(): void
+	public function testTheDefaultWhenTheOptionIsNotSet(): void
 	{
 		$tmp = annai_site();
 		try {
 			$kirby = annai_kirby($tmp, []);
-			expect('LocalBusiness', Options::get($kirby, 'type', 'LocalBusiness'), 'neither name set: the default at the call site');
+			expect('LocalBusiness', Options::get($kirby, 'type', 'LocalBusiness'), 'not set: the default at the call site');
 		} finally {
 			annai_remove_tree($tmp);
 		}
 	}
 
-	public function testTheGlobalFunctionsStillWorkAndAreReported(): void
+	public function testTheGlobalFunctionsReadTheSameOptions(): void
 	{
 		$tmp = annai_site();
 		try {
-			annai_kirby($tmp, ['debug' => true, 'sayamaapps.annai.active' => true]);
-			$reported = [];
-			expect(true, $this->captureDeprecations($reported, fn () => annai_active()), 'annai_active(): reads the new name');
-			expect('Winery', $this->captureDeprecations($reported, fn () => annai_option('type', 'Winery')), 'annai_option(): the default is used when unset');
-			expect(['annai_active() is deprecated, use Sayamaapps\Annai\Options::active()', 'annai_option() is deprecated, use Sayamaapps\Annai\Options::get()'], $reported, 'the two functions name their replacements');
+			annai_kirby($tmp, ['annai.active' => true, 'annai.type' => 'Winery']);
+			expect(true, annai_active(), 'annai_active(): reads annai.active');
+			expect('Winery', annai_option('type', 'LocalBusiness'), 'annai_option(): reads annai.type');
+			expect('LocalBusiness', annai_option('timezone', 'LocalBusiness'), 'annai_option(): the default when unset');
 		} finally {
 			annai_remove_tree($tmp);
 		}
@@ -73,34 +51,38 @@ final class OptionsPrefixTest extends TestCase
 	{
 		$tmp = annai_site();
 		try {
-			$kirby = annai_kirby($tmp, ['sayamaapps' => ['annai' => ['type' => 'Bakery', 'robots' => ['ai' => 'block']]]]);
-			expect('Bakery', Options::get($kirby, 'type'), 'nested under sayamaapps: the value is read');
-			expect('block', Options::get($kirby, 'robots.ai'), 'nested under sayamaapps with a dotted key: the value is read');
+			$kirby = annai_kirby($tmp, ['annai' => ['type' => 'Bakery', 'robots' => ['ai' => 'block']]]);
+			expect('Bakery', Options::get($kirby, 'type'), 'nested under annai: the value is read');
+			expect('block', Options::get($kirby, 'robots.ai'), 'nested under annai with a dotted key: the value is read');
 			expect('LocalBusiness', Options::get($kirby, 'locationTemplate', 'LocalBusiness'), 'nested: an unset key gives the default');
 		} finally {
 			annai_remove_tree($tmp);
 		}
 	}
 
-	public function testTheNewNameWins(): void
+	public function testTheOptionIsReadUnderTheAnnaiName(): void
 	{
 		$tmp = annai_site();
 		try {
-			$kirby = annai_kirby($tmp, ['sayamaapps.annai.type' => 'Bakery', 'annai.type' => 'Winery']);
-			expect('Bakery', Options::get($kirby, 'type'), 'both names set: the new one is read');
+			$kirby = annai_kirby($tmp, ['annai.type' => 'Winery']);
+			expect('Winery', Options::get($kirby, 'type'), 'annai.type: the value is read');
+			expect('Winery', Options::get($kirby, 'type', 'LocalBusiness'), 'annai.type: the value wins over the default');
 		} finally {
 			annai_remove_tree($tmp);
 		}
 	}
 
-	public function testTheOldNameStillWorksAndIsReported(): void
+	public function testThePrefixConstantKeepsTheTwoXValue(): void
+	{
+		expect('annai.', Options::PREFIX, 'PREFIX keeps its 2.x value');
+	}
+
+	public function testTheSayamaappsNameIsNotRead(): void
 	{
 		$tmp = annai_site();
 		try {
-			$kirby = annai_kirby($tmp, ['debug' => true, 'annai.type' => 'Winery']);
-			$reported = [];
-			expect('Winery', $this->captureDeprecations($reported, fn () => Options::get($kirby, 'type')), 'only the old name: its value is read');
-			expect(['annai.type is deprecated, use sayamaapps.annai.type'], $reported, 'only the old name: one deprecation names the new key');
+			$kirby = annai_kirby($tmp, ['sayamaapps.annai.type' => 'Bakery', 'annai.type' => 'Winery']);
+			expect('Winery', Options::get($kirby, 'type'), 'both names set: only annai.type is read in the 2.x line');
 		} finally {
 			annai_remove_tree($tmp);
 		}

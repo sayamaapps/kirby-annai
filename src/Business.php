@@ -524,20 +524,10 @@ class Business
 	 * the option instead of walking $site->index()? Noren's own rule: null and
 	 * false mean "unset" (Noren\Locations::pages()).
 	 */
-	private static function norenLocationsSet(): bool
+	private static function norenLocationsSet(App $kirby): bool
 	{
-		$locations = self::norenOption('locations');
+		$locations = $kirby->option('noren.locations');
 		return $locations !== null && $locations !== false;
-	}
-
-	/**
-	 * A Noren option through Noren's own function, so the option name is Noren's
-	 * to decide. Null when Noren is not installed.
-	 */
-	private static function norenOption(string $key): mixed
-	{
-		/** @psalm-suppress UndefinedFunction noren_option() exists only when Noren is installed */
-		return function_exists('noren_option') ? noren_option($key) : null;
 	}
 
 	/**
@@ -548,17 +538,18 @@ class Business
 	 */
 	public static function norenSearchesIndex(App $kirby): bool
 	{
-		return self::norenUsed($kirby) && !self::norenLocationsSet();
+		return self::norenUsed($kirby) && !self::norenLocationsSet($kirby);
 	}
 
 	/* ----------------------------------------------------------------------
 	 * Helpers
 	 * -------------------------------------------------------------------- */
 
-	/** Noren's hours are used: Noren active, and `annai.noren` not false. */
+	/** Noren's hours are used: Noren installed and active, and `annai.noren` not false. */
 	private static function norenUsed(App $kirby): bool
 	{
-		return self::norenOption('active') === true &&
+		return function_exists('noren_option') &&
+			$kirby->option('noren.active') === true &&
 			Options::flag($kirby, 'noren', true);
 	}
 

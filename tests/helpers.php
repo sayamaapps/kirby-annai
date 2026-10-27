@@ -189,14 +189,14 @@ function annai_with_error_log(string $tmp, callable $fn): string
 	return is_file($file) ? (string)file_get_contents($file) : '';
 }
 
+/**
+ * Deletes a throwaway site directory. A symlink is never followed (the package
+ * is linked into the site). Kirby's Dir::remove unlinks the links inside it without following them.
+ */
 function annai_remove_tree(string $path): void
 {
 	if (!is_dir($path) || is_link($path)) {
 		return;
 	}
-	$it = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($path, FilesystemIterator::SKIP_DOTS), RecursiveIteratorIterator::CHILD_FIRST);
-	foreach ($it as $file) {
-		$file->isDir() && !$file->isLink() ? rmdir($file->getPathname()) : unlink($file->getPathname());
-	}
-	rmdir($path);
+	\Kirby\Filesystem\Dir::remove($path);
 }

@@ -54,6 +54,7 @@ class I18n
 		return self::t('day.' . ((($weekday % 7) + 7) % 7 + 1));
 	}
 
+	/** The language of the texts for this request: 'en' or 'de', as set by setLanguage(). */
 	public static function language(): string
 	{
 		return self::$language;
@@ -82,6 +83,7 @@ class I18n
 		self::$labels = $labels;
 	}
 
+	/** Sets the language of the texts; a value that is no entry of LANGUAGES gives 'en'. */
 	public static function setLanguage(string $language): void
 	{
 		self::$language = in_array($language, self::LANGUAGES, true) ? $language : 'en';
