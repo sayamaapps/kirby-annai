@@ -7,7 +7,7 @@
  *   vendor/bin/annai-check [--root=DIR] [--url=https://example.test] [--page=ID ...] [--json]
  *
  * Exit codes: 0 no problems, 1 problems or robots warnings, 2 usage error
- * or Annai off (annai.active), 3 the site could not be booted or checked.
+ * or Annai off (sayamaapps.annai.active), 3 the site could not be booted or checked.
  * Messages go to STDERR; the report goes to STDOUT.
  */
 if (PHP_SAPI !== 'cli') {
@@ -114,7 +114,7 @@ if (!class_exists(\Sayamaapps\Annai\Options::class, false)) {
     annai_check_error('Annai is not installed in ' . $root . '/site/plugins (plugin sayamaapps/annai)', 2);
 }
 if (!\Sayamaapps\Annai\Options::active($kirby)) {
-    annai_check_error('Annai is off (annai.active)', 2);
+    annai_check_error('Annai is off (' . \Sayamaapps\Annai\Options::setKey($kirby, 'active') . ')', 2);
 }
 
 try {

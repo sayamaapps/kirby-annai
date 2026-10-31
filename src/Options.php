@@ -8,19 +8,25 @@ use InvalidArgumentException;
 use Kirby\Cms\App;
 
 /**
- * Reads `annai.*` options (docs/SPEC.md §3.1, §4).
+ * Reads Annai's options (docs/SPEC.md §3.1, §4): `sayamaapps.annai.<key>`, falling
+ * back to the 2.x name `annai.<key>`, which is read without a warning until 3.0.
+ * If both are set, the new one wins.
  *
- * `null` counts as "not set", like Kirby's own option(), so `'annai.type' => null`
- * falls back to the default. Both spellings work, flat (`'annai.robots.ai' => …`)
- * and nested (`'annai' => ['robots' => ['ai' => …]]`), because Kirby's option()
- * resolves dotted keys in both forms.
+ * The flat form (`'sayamaapps.annai.robots.ai' => …`) is the one to use. The
+ * nested form (`'annai' => ['robots' => ['ai' => …]]`) works for the 2.x name
+ * only: Kirby resolves `sayamaapps.annai.*` through the plugin's own options
+ * block first, which shadows a nested `sayamaapps` array.
+ *
+ * `null` counts as "not set", like Kirby's own option(), so
+ * `'sayamaapps.annai.type' => null` falls back to the default.
  *
  * A broken value is logged once per process and the default is used, except
  * with Kirby's `debug` option on: then it throws, so a developer sees it on
  * the page instead of in the log.
  *
  * Defaults are given here and at the call sites, never in an `options` block
- * of the plugin (Kirby would file them under sayamaapps.annai.*).
+ * of the plugin: config/options.php lists the keys with null only, because a
+ * default there would hide the 2.x spelling.
  *
  * @package   Kirby Annai
  * @author    Simon Räder
@@ -35,7 +41,7 @@ class Options
 	public const DESCRIPTION_LENGTH_MAX = 320;
 	public const DESCRIPTION_LENGTH_MIN = 20;
 
-	/** Content field names (docs/SPEC.md §6). Each key can be overridden in `annai.fields`. */
+	/** Content field names (docs/SPEC.md §6). Each key can be overridden in `sayamaapps.annai.fields`. */
 	public const FIELDS = [
 		'brand'       => 'marke',
 		'tagline'     => 'zusatz',
@@ -49,13 +55,22 @@ class Options
 		'email'       => 'email',
 		'profiles'    => ['instagram', 'facebook'],
 	];
+
+	/** Option prefix since 2.4. */
+	public const OPTION_PREFIX = 'sayamaapps.annai.';
+
+	/**
+	 * Option prefix of 2.x (`annai.<key>`). Still read as a fallback until 3.0.
+	 *
+	 * @deprecated 2.4 use OPTION_PREFIX; removal planned for 3.0
+	 */
 	public const PREFIX = 'annai.';
 
 	/** @var array<string,bool> messages already logged in this process */
 	private static array $logged = [];
 
 	/**
-	 * `annai.action` → ['type' => string, 'name' => string, 'target' => string] or null.
+	 * `sayamaapps.annai.action` → ['type' => string, 'name' => string, 'target' => string] or null.
 	 * Legacy keys `typ` and `ziel` are accepted. Without a non-empty target → null.
 	 * Type defaults to 'Action', name to ''.
 	 *
@@ -70,7 +85,7 @@ class Options
 			try {
 				$value = $value();
 			} catch (\Throwable $error) {
-				self::warn($kirby, 'Annai: annai.action threw ' . $error::class . ': ' . $error->getMessage() . ' — no action.');
+				self::warn($kirby, 'Annai: ' . self::setKey($kirby, 'action') . ' threw ' . $error::class . ': ' . $error->getMessage() . ' — no action.');
 				return null;
 			}
 		}
@@ -127,7 +142,7 @@ class Options
 		try {
 			return $hook(...$arguments);
 		} catch (\Throwable $error) {
-			self::warn($kirby, 'Annai: annai.' . $key . ' threw ' . $error::class . ': ' . $error->getMessage() . ' — ' . $instead . '.');
+			self::warn($kirby, 'Annai: ' . self::setKey($kirby, $key) . ' threw ' . $error::class . ': ' . $error->getMessage() . ' — ' . $instead . '.');
 			return $fallback;
 		}
 	}
@@ -140,7 +155,7 @@ class Options
 	}
 
 	/**
-	 * `annai.descriptionFallback`: when the page's intro is shorter than the
+	 * `sayamaapps.annai.descriptionFallback`: when the page's intro is shorter than the
 	 * check's minimum (Check::DESCRIPTION_MIN), the meta description is taken from
 	 * the site description instead, if that is longer. Off by default.
 	 */
@@ -159,13 +174,13 @@ class Options
 	{
 		$value = self::get($kirby, 'descriptionLength', self::DESCRIPTION_LENGTH);
 		if (!is_int($value)) {
-			self::warn($kirby, 'Annai: annai.descriptionLength must be a whole number from ' . self::DESCRIPTION_LENGTH_MIN . ' to ' . self::DESCRIPTION_LENGTH_MAX . ', not '
+			self::warn($kirby, 'Annai: ' . self::setKey($kirby, 'descriptionLength') . ' must be a whole number from ' . self::DESCRIPTION_LENGTH_MIN . ' to ' . self::DESCRIPTION_LENGTH_MAX . ', not '
 				. (is_scalar($value) ? var_export($value, true) : get_debug_type($value)) . ' — using ' . self::DESCRIPTION_LENGTH . '.');
 			return self::DESCRIPTION_LENGTH;
 		}
 		if ($value < self::DESCRIPTION_LENGTH_MIN || $value > self::DESCRIPTION_LENGTH_MAX) {
 			$clamped = max(self::DESCRIPTION_LENGTH_MIN, min(self::DESCRIPTION_LENGTH_MAX, $value));
-			self::warn($kirby, 'Annai: annai.descriptionLength ' . $value . ' is outside ' . self::DESCRIPTION_LENGTH_MIN
+			self::warn($kirby, 'Annai: ' . self::setKey($kirby, 'descriptionLength') . ' ' . $value . ' is outside ' . self::DESCRIPTION_LENGTH_MIN
 				. '…' . self::DESCRIPTION_LENGTH_MAX . ' — using ' . $clamped . '.');
 			return $clamped;
 		}
@@ -188,7 +203,7 @@ class Options
 		$paths = self::stringList(is_array($option) ? $option : [$option]);
 		foreach ($paths as $path) {
 			if (!Robots::validPath($path)) {
-				self::warn($kirby, 'Annai: annai.disallow entry ' . Text::shown($path)
+				self::warn($kirby, 'Annai: ' . self::setKey($kirby, 'disallow') . ' entry ' . Text::shown($path)
 					. ' is not a path (starts with /, no space, # or control character, and is UTF-8) — left out of robots.txt.');
 			}
 		}
@@ -202,7 +217,7 @@ class Options
 		return is_string($value) && trim($value) !== '' ? trim($value) : 'business';
 	}
 
-	/** `annai.exclude.pages`: a list of page ids, or a Closure(Page): bool. @return list<string>|Closure */
+	/** `sayamaapps.annai.exclude.pages`: a list of page ids, or a Closure(Page): bool. @return list<string>|Closure */
 	public static function excludePages(App $kirby): array|Closure
 	{
 		$option = self::get($kirby, 'exclude.pages', []);
@@ -220,7 +235,7 @@ class Options
 	}
 
 	/**
-	 * Field names, `annai.fields` merged over the defaults. Unknown keys are
+	 * Field names, `sayamaapps.annai.fields` merged over the defaults. Unknown keys are
 	 * ignored; empty or wrongly typed values keep the default. `profiles` is a
 	 * list of field names (a string is wrapped into a list).
 	 *
@@ -265,12 +280,12 @@ class Options
 		if (is_bool($value)) {
 			return $value;
 		}
-		self::warn($kirby, 'Annai: annai.' . $key . ' must be true or false — using ' . var_export($default, true) . '.');
+		self::warn($kirby, 'Annai: ' . self::setKey($kirby, $key) . ' must be true or false — using ' . var_export($default, true) . '.');
 		return $default;
 	}
 
 	/**
-	 * `annai.geo` → ['lat' => float, 'lng' => float] or null. Accepts
+	 * `sayamaapps.annai.geo` → ['lat' => float, 'lng' => float] or null. Accepts
 	 * ['lat' => …, 'lng' => …], the legacy ['breite' => …, 'laenge' => …] and
 	 * the list form [lat, lng]. Anything else is warned and gives null.
 	 *
@@ -290,23 +305,30 @@ class Options
 		if (is_numeric($lat) && is_numeric($lng)) {
 			return ['lat' => (float)$lat, 'lng' => (float)$lng];
 		}
-		self::warn($kirby, "Annai: annai.geo must be ['lat' => …, 'lng' => …] — ignored.");
+		self::warn($kirby, 'Annai: ' . self::setKey($kirby, 'geo') . " must be ['lat' => …, 'lng' => …] — ignored.");
 		return null;
 	}
 
 	/**
-	 * Reads `annai.<key>`; $default when the option is unset (null).
+	 * Reads an option under the sayamaapps.annai.* spelling, then under the
+	 * 2.x annai.* spelling, which is read silently (README, Deprecations).
+	 * Returns $default when neither is set.
 	 */
 	public static function get(App $kirby, string $key, mixed $default = null): mixed
 	{
+		$value = $kirby->option(self::OPTION_PREFIX . $key);
+		if ($value !== null) {
+			return $value;
+		}
+
 		return $kirby->option(self::PREFIX . $key) ?? $default;
 	}
 
 	/**
-	 * A hook option (`annai.title`, `annai.canonical`, `annai.jsonld`, …): the
+	 * A hook option (`sayamaapps.annai.title`, `sayamaapps.annai.canonical`, `sayamaapps.annai.jsonld`, …): the
 	 * Closure when one is set, null when the option is unset. A set value that
-	 * is no Closure (`'annai.title' => 'Eigener Titel'`, an array of nodes as
-	 * `annai.jsonld`) is reported once per process and counts as unset.
+	 * is no Closure (`'sayamaapps.annai.title' => 'Eigener Titel'`, an array of nodes as
+	 * `sayamaapps.annai.jsonld`) is reported once per process and counts as unset.
 	 */
 	public static function hook(App $kirby, string $key): Closure|null
 	{
@@ -317,13 +339,13 @@ class Options
 		if ($value instanceof Closure) {
 			return $value;
 		}
-		self::warn($kirby, 'Annai: annai.' . $key . ' must be a Closure, not '
+		self::warn($kirby, 'Annai: ' . self::setKey($kirby, $key) . ' must be a Closure, not '
 			. (is_scalar($value) ? var_export($value, true) : get_debug_type($value)) . ' — ignored.');
 		return null;
 	}
 
 	/**
-	 * Heading and label overrides (`annai.labels`), e.g. `['llms.hours' => 'Sprechzeiten']`.
+	 * Heading and label overrides (`sayamaapps.annai.labels`), e.g. `['llms.hours' => 'Sprechzeiten']`.
 	 * Only keys of the plugin's own tables, and only texts that keep the placeholders
 	 * of the English text (`{hours}`); anything else is logged and left out. The keys
 	 * are those of translations/en.php.
@@ -334,7 +356,7 @@ class Options
 	{
 		$value = self::get($kirby, 'labels', []);
 		if (!is_array($value)) {
-			self::warn($kirby, 'Annai: annai.labels must be an array of key => text, not '
+			self::warn($kirby, 'Annai: ' . self::setKey($kirby, 'labels') . ' must be an array of key => text, not '
 				. get_debug_type($value) . ' — ignored.');
 			return [];
 		}
@@ -350,7 +372,7 @@ class Options
 			$text = is_string($text) ? trim(preg_replace('/\s+/u', ' ', I18n::printable($text)) ?? '') : '';
 			if (!is_string($key) || !isset($known[$key]) || $text === '' ||
 				$placeholders($text) !== $placeholders($known[$key])) {
-				self::warn($kirby, 'Annai: annai.labels entry ' . var_export($key, true)
+				self::warn($kirby, 'Annai: ' . self::setKey($kirby, 'labels') . ' entry ' . var_export($key, true)
 					. ' is no known key with a text of the same placeholders — ignored.');
 				continue;
 			}
@@ -360,7 +382,7 @@ class Options
 	}
 
 	/**
-	 * Language of the plugin's text: `annai.language`, otherwise the current
+	 * Language of the plugin's text: `sayamaapps.annai.language`, otherwise the current
 	 * language of a multi-language site, otherwise its default language,
 	 * otherwise the first two letters of Kirby's `locale` option, otherwise
 	 * English. Only languages Annai ships (I18n::LANGUAGES) are returned.
@@ -433,7 +455,7 @@ class Options
 	}
 
 	/**
-	 * `annai.location`: a page id string or a Closure returning ?Page; null when
+	 * `sayamaapps.annai.location`: a page id string or a Closure returning ?Page; null when
 	 * unset. Any other value (an integer, an array, a Page object) is reported
 	 * once and counts as unset.
 	 */
@@ -449,14 +471,14 @@ class Options
 		if (is_string($value) && trim($value) !== '') {
 			return trim($value);
 		}
-		self::warn($kirby, 'Annai: annai.location must be a page id or a Closure, not '
+		self::warn($kirby, 'Annai: ' . self::setKey($kirby, 'location') . ' must be a page id or a Closure, not '
 			. (is_scalar($value) ? var_export($value, true) : get_debug_type($value)) . ' — ignored.');
 		return null;
 	}
 
 	/**
-	 * Templates whose first page is the business page when `annai.location` is
-	 * unset and Noren is not active: `annai.locationTemplate`, string or list.
+	 * Templates whose first page is the business page when `sayamaapps.annai.location` is
+	 * unset and Noren is not active: `sayamaapps.annai.locationTemplate`, string or list.
 	 *
 	 * @return list<string>
 	 */
@@ -492,7 +514,7 @@ class Options
 	}
 
 	/**
-	 * `annai.robots.agents`: agent name → bool. Non-bool values are dropped. A
+	 * `sayamaapps.annai.robots.agents`: agent name → bool. Non-bool values are dropped. A
 	 * name is a product token (RFC 9309 §2.2.1: letters, digits, "_", "-", and
 	 * "." as in the names of Robots::AI_AGENTS); anything else is reported and
 	 * dropped: "x\nDisallow: /" would write a line of its own into robots.txt.
@@ -507,14 +529,14 @@ class Options
 			foreach ($option as $name => $allowed) {
 				if (is_string($name) && trim($name) === '*') {
 					// A second "User-agent: *" group merges with the first (RFC 9309), and Allow wins.
-					self::warn($kirby, "Annai: annai.robots.agents cannot hold '*' — use annai.disallow for rules for everyone. Ignored.");
+					self::warn($kirby, 'Annai: ' . self::setKey($kirby, 'robots.agents') . " cannot hold '*' — use " . self::setKey($kirby, 'disallow') . ' for rules for everyone. Ignored.');
 					continue;
 				}
 				if (!is_string($name) || trim($name) === '' || !is_bool($allowed)) {
 					continue;
 				}
 				if (preg_match('/^[A-Za-z0-9_.-]+$/D', trim($name)) !== 1) {
-					self::warn($kirby, 'Annai: annai.robots.agents name ' . Text::shown($name)
+					self::warn($kirby, 'Annai: ' . self::setKey($kirby, 'robots.agents') . ' name ' . Text::shown($name)
 						. ' is not a user agent token (letters, digits, "_", "-", ".") — ignored.');
 					continue;
 				}
@@ -524,7 +546,7 @@ class Options
 		return $agents;
 	}
 
-	/** `annai.robots.ai`: null, 'blockTraining' or 'allowAll'; anything else is warned and null. */
+	/** `sayamaapps.annai.robots.ai`: null, 'blockTraining' or 'allowAll'; anything else is warned and null. */
 	public static function robotsAi(App $kirby): string|null
 	{
 		$value = self::get($kirby, 'robots.ai');
@@ -534,7 +556,7 @@ class Options
 		if (in_array($value, ['blockTraining', 'allowAll'], true)) {
 			return $value;
 		}
-		self::warn($kirby, "Annai: annai.robots.ai must be null, 'blockTraining' or 'allowAll' — ignored.");
+		self::warn($kirby, 'Annai: ' . self::setKey($kirby, 'robots.ai') . " must be null, 'blockTraining' or 'allowAll' — ignored.");
 		return null;
 	}
 
@@ -568,7 +590,7 @@ class Options
 	}
 
 	/**
-	 * `annai.sameAs`: list of URLs or a Closure returning one. '' and non-strings
+	 * `sayamaapps.annai.sameAs`: list of URLs or a Closure returning one. '' and non-strings
 	 * are dropped, duplicates removed, order kept.
 	 *
 	 * @return list<string>
@@ -586,6 +608,18 @@ class Options
 	}
 
 	/**
+	 * The option name as the site spelled it, for messages: the 2.x annai.*
+	 * name only when the site sets no sayamaapps.annai.* value for it.
+	 */
+	public static function setKey(App $kirby, string $key): string
+	{
+		if ($kirby->option(self::OPTION_PREFIX . $key) === null && $kirby->option(self::PREFIX . $key) !== null) {
+			return self::PREFIX . $key;
+		}
+		return self::OPTION_PREFIX . $key;
+	}
+
+	/**
 	 * URLs per sitemap file: a whole number from 1, default and at most
 	 * Sitemap::MAX_URLS (50000, the sitemaps.org limit per file). Anything else
 	 * (false, 'abc', 0, '100') would become 1 URL per file: it is reported and
@@ -595,12 +629,12 @@ class Options
 	{
 		$value = self::get($kirby, 'sitemap.chunk', Sitemap::MAX_URLS);
 		if (!is_int($value) || $value < 1) {
-			self::warn($kirby, 'Annai: annai.sitemap.chunk must be a whole number from 1 to ' . Sitemap::MAX_URLS . ', not '
+			self::warn($kirby, 'Annai: ' . self::setKey($kirby, 'sitemap.chunk') . ' must be a whole number from 1 to ' . Sitemap::MAX_URLS . ', not '
 				. (is_scalar($value) ? var_export($value, true) : get_debug_type($value)) . ' — using ' . Sitemap::MAX_URLS . '.');
 			return Sitemap::MAX_URLS;
 		}
 		if ($value > Sitemap::MAX_URLS) {
-			self::warn($kirby, 'Annai: annai.sitemap.chunk ' . $value . ' is above the sitemaps.org limit of ' . Sitemap::MAX_URLS
+			self::warn($kirby, 'Annai: ' . self::setKey($kirby, 'sitemap.chunk') . ' ' . $value . ' is above the sitemaps.org limit of ' . Sitemap::MAX_URLS
 				. ' URLs per file — using ' . Sitemap::MAX_URLS . '.');
 			return Sitemap::MAX_URLS;
 		}
@@ -623,7 +657,7 @@ class Options
 		return $list;
 	}
 
-	/** `annai.timezone` for <lastmod> offsets, default Europe/Berlin; invalid → warned, default. */
+	/** `sayamaapps.annai.timezone` for <lastmod> offsets, default Europe/Berlin; invalid → warned, default. */
 	public static function timezone(App $kirby): string
 	{
 		$zone = self::get($kirby, 'timezone', self::DEFAULT_TIMEZONE);
@@ -635,18 +669,18 @@ class Options
 				// Reported below.
 			}
 		}
-		self::warn($kirby, 'Annai: unknown annai.timezone ' . var_export($zone, true) . ' — using ' . self::DEFAULT_TIMEZONE . '.');
+		self::warn($kirby, 'Annai: unknown ' . self::setKey($kirby, 'timezone') . ' ' . var_export($zone, true) . ' — using ' . self::DEFAULT_TIMEZONE . '.');
 		return self::DEFAULT_TIMEZONE;
 	}
 
-	/** `annai.twitterCard`: 'summary' or 'summary_large_image', else null. */
+	/** `sayamaapps.annai.twitterCard`: 'summary' or 'summary_large_image', else null. */
 	public static function twitterCard(App $kirby): string|null
 	{
 		$value = self::get($kirby, 'twitterCard');
 		return in_array($value, ['summary', 'summary_large_image'], true) ? $value : null;
 	}
 
-	/** `annai.type`: schema.org type (string), or false for no business node. Default 'LocalBusiness'. */
+	/** `sayamaapps.annai.type`: schema.org type (string), or false for no business node. Default 'LocalBusiness'. */
 	public static function type(App $kirby): string|false
 	{
 		$value = self::get($kirby, 'type', 'LocalBusiness');
@@ -656,7 +690,7 @@ class Options
 		if (is_string($value) && trim($value) !== '') {
 			return trim($value);
 		}
-		self::warn($kirby, 'Annai: annai.type must be a schema.org type name or false — using LocalBusiness.');
+		self::warn($kirby, 'Annai: ' . self::setKey($kirby, 'type') . ' must be a schema.org type name or false — using LocalBusiness.');
 		return 'LocalBusiness';
 	}
 

@@ -23,7 +23,7 @@ class_alias(\Sayamaapps\Annai\Text::class, 'Annai\\Text');
 
 if (Kirby\Cms\Helpers::hasOverride('annai_option') === false) {
 	/**
-	 * Reads `annai.<key>`. Same as Sayamaapps\Annai\Options::get(App::instance(), …).
+	 * Reads `sayamaapps.annai.<key>`, then `annai.<key>`. Same as Sayamaapps\Annai\Options::get(App::instance(), …).
 	 *
 	 * @deprecated 2.x name, use Sayamaapps\Annai\Options::get()
 	 */
@@ -35,7 +35,7 @@ if (Kirby\Cms\Helpers::hasOverride('annai_option') === false) {
 
 if (Kirby\Cms\Helpers::hasOverride('annai_active') === false) {
 	/**
-	 * Is Annai switched on? `annai.active` is a real true.
+	 * Is Annai switched on? `sayamaapps.annai.active` (or `annai.active`) is a real true.
 	 *
 	 * @deprecated 2.x name, use Sayamaapps\Annai\Options::active()
 	 */
