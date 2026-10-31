@@ -8,6 +8,13 @@ All notable changes to this project are documented here. Versions follow
   the sitemap, llms.txt and the head show without configuration) is a **major**
   version: a site would publish other data after a routine update.
 
+## [2.4.0] — 2026-10-31
+
+### Changed
+
+- Options are read as `sayamaapps.annai.<name>`. The 2.x names `annai.<name>` keep working and are read without a warning. If both are set, the new one wins.
+- `Options::OPTION_PREFIX` is new. `Options::PREFIX` keeps its 2.x value (`annai.`).
+
 ## [2.3.0] — 2026-10-27
 
 ### Changed

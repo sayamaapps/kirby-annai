@@ -9,14 +9,14 @@ use Kirby\Filesystem\F;
  * JSON-LD for the business, meta description, canonical, Open Graph, noindex
  * and hreflang in one head snippet.
  *
- * Off by default: without `'annai.active' => true` every route falls through
+ * Off by default: without `'sayamaapps.annai.active' => true` every route falls through
  * to Kirby, every method returns null/[]/'' and the snippet prints nothing.
  *
  * Registration only: all logic lives in src/ (docs/SPEC.md §3.10).
  *
- * Defaults are passed as fallback values directly at each option call, NOT
- * in an 'options' block (Kirby would file them under sayamaapps.annai.*
- * otherwise).
+ * Defaults are passed as fallback values directly at each option call. The
+ * 'options' block (config/options.php) lists the keys with null only: a default
+ * there would hide the 2.x spelling 'annai.<key>', which is still read.
  *
  * The predecessor plugin (a site/plugins/ folder, see Check::OLD_PLUGIN_PROBLEM)
  * must NOT stay installed next to this one: both register the same route patterns, and Kirby
@@ -35,6 +35,7 @@ Kirby::plugin(
 		'routes'       => require __DIR__ . '/config/routes.php',
 		'siteMethods'  => require __DIR__ . '/config/site-methods.php',
 		'pageMethods'  => require __DIR__ . '/config/page-methods.php',
+		'options'      => require __DIR__ . '/config/options.php',
 	],
 	root: __DIR__
 );

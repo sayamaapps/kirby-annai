@@ -278,6 +278,12 @@ final class RoutesTest extends TestCase
 			holds(str_contains($body, "Disallow: /panel\nDisallow: /anruf\n"), 'robots.txt: annai.disallow lists every path');
 		}, 'rtFixture');
 
+		// The 2.4 spelling switches the switch and the rules on; the 2.x name is only the fallback.
+		rtRun(['sayamaapps.annai.active' => true, 'sayamaapps.annai.disallow' => ['/anruf']], function (App $kirby): void {
+			[, $body] = annai_request($kirby, 'robots.txt');
+			holds(str_contains($body, "Disallow: /anruf\n") && !str_contains($body, '/panel'), 'sayamaapps.annai.*: robots.txt reads the new spelling');
+		}, 'rtFixture');
+
 		rtRun(rtOn(['annai.robots.ai' => 'blockTraining']), function (App $kirby): void {
 			[, $body] = annai_request($kirby, 'robots.txt');
 			holds(str_contains($body, "User-agent: GPTBot\nDisallow: /\n"), 'robots.txt: blockTraining blocks GPTBot');
