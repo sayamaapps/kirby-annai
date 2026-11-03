@@ -16,7 +16,7 @@ All notable changes to this project are documented here. Versions follow
 
 ### Changed
 
-- **Department `@id` of a unit at another Noren location, once, for sites with several locations.** It is `#loc:<page id>` and, with an area, `#loc:<page id>:<area>` (was `#<page id>` and `#<page id>-<area>`). The page id keeps its `/`; both parts are percent-encoded, so `:` only separates them. Search engines see these departments under a new `@id` once.
+- **Department `@id` of a unit at another Noren location, once.** It is `#loc:<page id>` and, with an area, `#loc:<page id>:<area>` (was `#<page id>` and `#<page id>-<area>`). The page id keeps its `/`; both parts are percent-encoded, so `:` only separates them. Search engines see these departments under a new `@id` once. A unit is at another location when its Noren page is not the business page and has a street or a city of its own, even when that is the address in `site.txt`: each further location, and also the only Noren page of a site whose `sayamaapps.annai.location` names another page or is `fn () => null` (a page `kontakt` with the areas `laden` and `cafe`: `#kontakt-cafe` became `#loc:kontakt:cafe`). A unit without an area of a further Noren page changes too. An area of the business page, or of a Noren page without an address of its own, keeps `#<area>`.
 - An area of the business keeps `#<area>`, except when its key equals `sayamaapps.annai.entityId` or holds a `:`: it is `#area:<area>` then. The business node's `@id` is unchanged. See [Department `@id`](docs/reference.md#department-id).
 
 ## [2.4.0] — 2026-10-31

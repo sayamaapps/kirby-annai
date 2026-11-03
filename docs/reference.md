@@ -68,7 +68,14 @@ Every node of the document has its own `@id`: the business node `<url>/#<entityI
 
 The page id keeps its `/`. The page id and the key are percent-encoded, so a `:` in either one becomes `%3A` and `:` only separates the parts. A key at the business is not encoded. The forms cannot meet: a bare key has no `:`, `area:` and `loc:` differ, and the number of `:` tells a location with an area from one without. Do not set `sayamaapps.annai.entityId` to a value that starts with `loc:` or `area:`.
 
-**One-time change in 2.5.0, sites with several Noren locations:** a department at another location was `#<page id with / as ->` and, with an area, `#<page id>-<area>` (`#sued-cafe`). Two locations or areas could give the same text (`a/b` and `a-b`, or `a` with `b-c` and `a-b` with `c`), and so could a location's area and an area of the business (`#annex-cafe`). It is now `#loc:sued:cafe`. Search engines see these departments under a new `@id` once; a reference to the old `@id` in your own markup needs the new one. A single-location site is not affected.
+**One-time change in 2.5.0:** a department at another location was `#<page id with / as ->` and, with an area, `#<page id>-<area>` (`#sued-cafe`). Two locations or areas could give the same text (`a/b` and `a-b`, or `a` with `b-c` and `a-b` with `c`), and so could a location's area and an area of the business (`#annex-cafe`). It is now `#loc:sued:cafe`. Search engines see these departments under a new `@id` once; a reference to the old `@id` in your own markup needs the new one.
+
+A department is at another location when its Noren page is not the business page (`sayamaapps.annai.location`, Noren's location, else the first `betrieb` page) and has a street or a city of its own, even when that is the address in `site.txt`. The change reaches:
+
+- every unit of such a page: each further location, and also the only Noren page of a site when `sayamaapps.annai.location` names another page or returns `null` (a page `kontakt` with the areas `laden` and `cafe`, and `sayamaapps.annai.location` set to `fn () => null`: `#kontakt-cafe` became `#loc:kontakt:cafe`);
+- a unit without an area (one plan for the whole page) of a further Noren page, also when that page has no address of its own: `#<page id>` became `#loc:<page id>`.
+
+It does not reach an area of the business page, nor an area of a Noren page without an address of its own (the hours on one page, the address in `site.txt` or on the business page): they keep `#<area>`. A site with one Noren page that is the business page (the default) is not affected. The `area:` form for a key equal to the `entityId` or holding `:` applies to every site.
 
 ## Check problems
 
