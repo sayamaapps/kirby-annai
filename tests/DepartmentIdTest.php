@@ -23,6 +23,15 @@ function depLocation(string $title, string $street, array $areas): array
 }
 
 /**
+ * A Noren page with hours and no address of its own: the address lives on
+ * another page or in site.txt, so its units are at the business.
+ */
+function depHours(string $title, array $areas): array
+{
+	return array_diff_key(depLocation($title, '', $areas), array_flip(['strasse', 'plz', 'ort', 'telefon']));
+}
+
+/**
  * Renders the home page of a throwaway site with Noren and returns its
  * JSON-LD block, as a crawler reads it from the annai/head snippet.
  * $pages: content folder => [template, fields]. The first betrieb page is the business.
@@ -178,6 +187,81 @@ final class DepartmentIdTest extends TestCase
 				['loc:kontakt:cafe'],
 				'business',
 				$address,
+			],
+			// Two Noren pages without an address of their own are both "at the business",
+			// so each used to claim the bare key. Only the business page keeps it.
+			'two pages without an address, area cafe on both' => [
+				$business(['laden']) + [
+					'2_a' => ['betrieb', depHours('A', ['cafe'])],
+					'3_b' => ['betrieb', depHours('B', ['cafe'])],
+				],
+				[],
+				['loc:a:cafe', 'loc:b:cafe'],
+				'business',
+			],
+			// The same with the pages in the other order: the ids follow the page, not the position.
+			'two pages without an address, area cafe on both, order swapped' => [
+				$business(['laden']) + [
+					'2_b' => ['betrieb', depHours('B', ['cafe'])],
+					'3_a' => ['betrieb', depHours('A', ['cafe'])],
+				],
+				[],
+				['loc:a:cafe', 'loc:b:cafe'],
+				'business',
+			],
+			// The business page has the area too: it keeps #cafe, the other page does not.
+			'business area cafe and a page without an address with area cafe' => [
+				$business(['laden', 'cafe']) + [
+					'2_a' => ['betrieb', depHours('A', ['cafe'])],
+				],
+				[],
+				['cafe', 'loc:a:cafe'],
+				'business',
+			],
+			// The other page comes first in Noren's order; the business page is named by option.
+			'business area cafe and a page without an address with area cafe, order swapped' => [
+				['1_a' => ['betrieb', depHours('A', ['cafe'])], '2_kontakt' => ['betrieb', depLocation('Kontakt', 'Musterweg 1', ['laden', 'cafe'])]],
+				['annai.location' => 'kontakt', 'annai.area' => 'laden'],
+				['cafe', 'loc:a:cafe'],
+				'business',
+			],
+			// Another area on the page without an address does not collide: it keeps its bare key.
+			'business area laden and a page without an address with areas laden and cafe' => [
+				$business(['laden']) + [
+					'2_a' => ['betrieb', depHours('A', ['laden', 'cafe'])],
+				],
+				[],
+				['loc:a:laden', 'cafe'],
+				'business',
+			],
+			// Nobody keeps the key when no unit is on the business page (no business page at all).
+			'no business page, two pages without an address, area cafe on both' => [
+				[
+					'1_a' => ['betrieb', depHours('A', ['laden', 'cafe'])],
+					'2_b' => ['betrieb', depHours('B', ['cafe'])],
+				],
+				['annai.location' => fn () => null],
+				['loc:a:cafe', 'loc:b:cafe'],
+				'business',
+				$address,
+			],
+			// Controls: one page without an address, no second claim. It keeps #<area>.
+			'one hours page without an address, address on annai.location' => [
+				[
+					'1_kontakt' => ['default', ['title' => 'Kontakt'] + $address],
+					'2_zeiten' => ['betrieb', depHours('Zeiten', ['laden', 'cafe'])],
+				],
+				['annai.location' => 'kontakt'],
+				['cafe'],
+				'business',
+			],
+			'one hours page without an address next to the business page' => [
+				$business(['laden']) + [
+					'2_a' => ['betrieb', depHours('A', ['cafe'])],
+				],
+				[],
+				['cafe'],
+				'business',
 			],
 		];
 	}

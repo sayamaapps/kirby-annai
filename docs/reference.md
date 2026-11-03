@@ -75,7 +75,9 @@ A department is at another location when its Noren page is not the business page
 - every unit of such a page: each further location, and also the only Noren page of a site when `sayamaapps.annai.location` names another page or returns `null` (a page `kontakt` with the areas `laden` and `cafe`, and `sayamaapps.annai.location` set to `fn () => null`: `#kontakt-cafe` became `#loc:kontakt:cafe`);
 - a unit without an area (one plan for the whole page) of a further Noren page, also when that page has no address of its own: `#<page id>` became `#loc:<page id>`.
 
-It does not reach an area of the business page, nor an area of a Noren page without an address of its own (the hours on one page, the address in `site.txt` or on the business page): they keep `#<area>`. A site with one Noren page that is the business page (the default) is not affected. The `area:` form for a key equal to the `entityId` or holding `:` applies to every site.
+It does not reach an area of the business page, nor an area of a Noren page without an address of its own (the hours on one page, the address in `site.txt` or on the business page): they keep `#<area>`, unless another page claims the same key (next paragraph). A site with one Noren page that is the business page (the default) is not affected. The `area:` form for a key equal to the `entityId` or holding `:` applies to every site.
+
+**One key, one department (2.5.1):** a bare key names one department. When units of more than one Noren page would take the same bare key (the business page and a page without an address of its own, or several such pages, each with the area `cafe`), only the business page keeps `#cafe`. The units of the other pages take the page-bound form: `#loc:<page id>:<area>`. When the business page has no unit with that key (or there is no business page, `sayamaapps.annai.location` returning `null`), none of the pages keeps it and all of them take the page-bound form. The Noren page order does not matter, and the address of each department does not change. A page without an address whose key no other page claims keeps `#<area>`, as before. Before 2.5.1 such units shared one `@id` and crawlers merged them.
 
 ## Check problems
 
@@ -154,7 +156,7 @@ Each unit (`$site->annaiUnits()`, also `facts['units']`):
 [
     'area' => 'kueche' | null, 'location' => 'kontakt' | null,   // page id of the unit's Noren location
     'place' => null | ['street' => …, 'postalCode' => …, 'city' => …, 'phone' => …, 'phoneE164' => …],
-    'atBusiness' => bool,   // true: the unit has no address of its own
+    'atBusiness' => bool,   // true: the department keeps the bare area key as @id (no address of its own, and no unit of another page claims the same key)
     'name' => 'Küche', 'primary' => true,
     'days' => [0 => ['blocks' => [[480, 720], [840, 1080]], 'note' => 'nur Verkauf' | null], …],   // 0 = Monday, minutes from midnight
     'holidays' => false,

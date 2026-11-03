@@ -1092,6 +1092,86 @@ final class BusinessTest extends TestCase
 				annai_remove_tree($tmp);
 			}
 
+			// Pages without an address of their own that share an area key: only the
+			// business page's unit keeps `atBusiness` (so the bare area key as @id),
+			// whichever order Noren lists the pages in. Their address output stays as it was: no place.
+			$areaCafe = [
+				'bereiche' => [['schluessel' => 'cafe', 'name' => 'Café']],
+				'zeiten' => [['bereich' => 'cafe', 'tag' => 'Dienstag', 'von1' => '09:00', 'bis1' => '17:00']],
+			];
+			foreach ([
+				'two pages without an address' => [['2_a', 'A', $areaCafe], ['3_b', 'B', $areaCafe]],
+				'two pages without an address, order swapped' => [['2_b', 'B', $areaCafe], ['3_a', 'A', $areaCafe]],
+				'one page without an address' => [['2_a', 'A', $areaCafe]],
+			] as $label => $pages) {
+				$tmp = annai_site(['noren']);
+				try {
+					annai_page($tmp, '', 'site', ['title' => 'Hof', 'marke' => 'Hof']);
+					annai_page($tmp, '1_kontakt', 'betrieb', ['title' => 'Kontakt', 'strasse' => 'Musterweg 1', 'plz' => '12345', 'ort' => 'Musterstadt',
+						'bereiche' => [['schluessel' => 'laden', 'name' => 'Laden']],
+						'zeiten' => [['bereich' => 'laden', 'tag' => 'Montag', 'von1' => '08:00', 'bis1' => '12:00']]]);
+					foreach ($pages as [$dir, $title, $fields]) {
+						annai_page($tmp, $dir, 'betrieb', ['title' => $title] + $fields);
+					}
+					$kirby = annai_kirby($tmp, ['annai.active' => true, 'noren.active' => true, 'noren.language' => 'de', 'annai.language' => 'de']);
+					$units = Business::units($kirby);
+					$flags = [];
+					foreach ($units as $unit) {
+						$flags[$unit['location'] . ':' . $unit['area']] = $unit['atBusiness'];
+					}
+					ksort($flags);
+					// One page: nobody else claims `cafe`, so it stays at the business.
+					expect(
+						count($pages) === 2 ? ['a:cafe' => false, 'b:cafe' => false, 'kontakt:laden' => true] : ['a:cafe' => true, 'kontakt:laden' => true],
+						$flags,
+						"$label: atBusiness per unit"
+					);
+					expect(array_fill(0, count($units), null), array_column($units, 'place'), "$label: no unit has a place of its own");
+				} finally {
+					annai_remove_tree($tmp);
+				}
+			}
+
+			// The business page has `cafe` too: it keeps the key, the page without an address does not.
+			// Without a business page (`fn () => null`) and three pages without an address that
+			// all have `cafe`, nobody keeps it; `laden` is claimed by one page and stays.
+			$laden = ['schluessel' => 'laden', 'name' => 'Laden'];
+			$cafe = ['schluessel' => 'cafe', 'name' => 'Café'];
+			$ladenCafe = [
+				'bereiche' => [$laden, $cafe],
+				'zeiten' => [['bereich' => 'laden', 'tag' => 'Montag', 'von1' => '08:00', 'bis1' => '12:00'], ['bereich' => 'cafe', 'tag' => 'Dienstag', 'von1' => '09:00', 'bis1' => '17:00']],
+			];
+			$address = ['strasse' => 'Musterweg 1', 'plz' => '12345', 'ort' => 'Musterstadt'];
+			foreach ([
+				'business page has cafe' => [
+					['1_kontakt' => $address + $ladenCafe, '2_a' => $areaCafe],
+					[],
+					['a:cafe' => false, 'kontakt:cafe' => true, 'kontakt:laden' => true],
+				],
+				'no business page' => [
+					['1_kontakt' => $ladenCafe, '2_a' => $areaCafe, '3_b' => $areaCafe],
+					['annai.location' => fn () => null],
+					['a:cafe' => false, 'b:cafe' => false, 'kontakt:cafe' => false, 'kontakt:laden' => true],
+				],
+			] as $label => [$pages, $options, $expected]) {
+				$tmp = annai_site(['noren']);
+				try {
+					annai_page($tmp, '', 'site', ['title' => 'Hof', 'marke' => 'Hof'] + ($options === [] ? [] : $address));
+					foreach ($pages as $dir => $fields) {
+						annai_page($tmp, $dir, 'betrieb', ['title' => ucfirst(substr($dir, 2))] + $fields);
+					}
+					$kirby = annai_kirby($tmp, ['annai.active' => true, 'noren.active' => true, 'noren.language' => 'de', 'annai.language' => 'de'] + $options);
+					$flags = [];
+					foreach (Business::units($kirby) as $unit) {
+						$flags[$unit['location'] . ':' . $unit['area']] = $unit['atBusiness'];
+					}
+					ksort($flags);
+					expect($expected, $flags, "$label: atBusiness per unit");
+				} finally {
+					annai_remove_tree($tmp);
+				}
+			}
+
 			// Two Noren locations (two betrieb pages): each unit's hours come from its own page.
 			$shared = [];
 			$twoLocations = function (array $second, array $options = []) use (&$shared): void {

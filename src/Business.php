@@ -42,6 +42,9 @@ class Business
 	 * the fragment (`#loc:b:cafe`, see JsonLd::fragment()), so two pages with the
 	 * same area key never share an @id. A changed @id is a new entity for Google,
 	 * so the fragment stays stable for the same page.
+	 *
+	 * This looks at one unit only. Two pages without an address of their own can
+	 * still claim the same area key; shareAreaKeys() settles that afterwards.
 	 */
 	private static function atBusiness(App $kirby, Page|null $page, Page|null $business, array|null $place): bool
 	{
@@ -759,6 +762,42 @@ class Business
 	}
 
 	/**
+	 * One bare area key (`#cafe`) names one department. atBusiness() judges a
+	 * unit alone, so the units of two pages without an address of their own, or
+	 * of the business page and such a page, can all claim the same key and give
+	 * two nodes the same @id; crawlers merge those. When atBusiness units of more
+	 * than one page claim a key, only the units of the business page keep it (a
+	 * unit without a page counts as the business page); the others lose
+	 * `atBusiness` and take the page-bound form (`#loc:<page id>:<area>`, see
+	 * JsonLd::fragment()). Nobody keeps the key when it is claimed by no unit of
+	 * the business page. Decided by page, not by position, so Noren's unit order
+	 * does not matter. A key claimed from one page only is left alone.
+	 *
+	 * @param array<int, array> $units
+	 * @return array<int, array>
+	 */
+	private static function shareAreaKeys(array $units, Page|null $business): array
+	{
+		$home = $business?->id();
+		// The page a claiming unit belongs to; '' is the business page.
+		$owner = static fn (array $unit): string => $unit['location'] === null || $unit['location'] === $home ? '' : $unit['location'];
+		$claims = static fn (array $unit): bool => $unit['atBusiness'] === true && is_string($unit['area']) && $unit['area'] !== '';
+
+		$owners = [];
+		foreach ($units as $unit) {
+			if ($claims($unit)) {
+				$owners[$unit['area']][$owner($unit)] = true;
+			}
+		}
+		foreach ($units as $index => $unit) {
+			if ($claims($unit) && count($owners[$unit['area']]) > 1 && $owner($unit) !== '') {
+				$units[$index]['atBusiness'] = false;
+			}
+		}
+		return $units;
+	}
+
+	/**
 	 * Does the head of this page show the Noren units? Only the home page's
 	 * business node (jsonLd()) and the `annai.jsonld` hook, which gets the facts
 	 * on every page, carry hours. Noren switches Kirby's page cache off for the
@@ -899,7 +938,7 @@ class Business
 				// Address of a unit at another location than the business page (its own
 				// fields, no site fallback: the site fields describe the main business).
 				'place'    => $place,
-				// At the business: its areas keep the bare area key as @id fragment.
+				// At the business: its areas keep the bare area key as @id fragment (shareAreaKeys() below can still take it away).
 				'atBusiness' => self::atBusiness($kirby, $page, $business, $place),
 				'name'     => Text::line((string)($several ? ($unit['label'] ?? $unit['name'] ?? '') : ($unit['name'] ?? ''))),
 				'primary'  => false,
@@ -912,6 +951,8 @@ class Business
 				],
 			];
 		}
+
+		$result = self::shareAreaKeys($result, $business);
 
 		$primary = self::primary($kirby, $result);
 		if ($primary !== null) {

@@ -8,6 +8,12 @@ All notable changes to this project are documented here. Versions follow
   the sitemap, llms.txt and the head show without configuration) is a **major**
   version: a site would publish other data after a routine update.
 
+## [2.5.1] — 2026-11-03
+
+### Fixed
+
+- **Departments on several Noren pages without an address of their own could share an `@id`.** Units of such pages count as at the business, so each took the bare area key: two pages without an address, both with the area `cafe`, gave two departments `#cafe`, and so did the business page and a page without an address. This was already so before 2.5.0. Crawlers merge nodes with the same `@id`, so this is a patch: the old output was invalid. Now only the business page keeps `#<area>`; the units of the other pages get `#loc:<page id>:<area>`. If no unit of the business page has that key, all of them get the page-bound form. Sites without such a collision are unchanged; a single page without an address keeps `#<area>`. See [Department `@id`](docs/reference.md#department-id).
+
 ## [2.5.0] — 2026-11-03
 
 ### Fixed
