@@ -50,10 +50,25 @@ On the home page, one node built from the fields and Noren:
 - `@type` from `sayamaapps.annai.type`; `@id` `<url>/#business` (the fragment is `sayamaapps.annai.entityId`); `name`, `description`, `url`, `image`
 - `telephone` (E.164), `faxNumber`, `email`, `address` (`PostalAddress`), `geo` (`GeoCoordinates`)
 - `openingHoursSpecification` and `specialOpeningHoursSpecification` of the primary Noren area
-- `department` for further areas and for units at another Noren location, each with its own `@id`
+- `department` for further areas and for units at another Noren location, each with its own `@id` (see [Department `@id`](#department-id))
 - `sameAs` from `sayamaapps.annai.sameAs` and the profile fields; `potentialAction` from `sayamaapps.annai.action`
 
 Empty values are left out. The output is encoded so that a `</script>` typed into a field cannot break out of the script element.
+
+### Department `@id`
+
+Every node of the document has its own `@id`: the business node `<url>/#<entityId>` and each department `<url>/#<fragment>`.
+
+| Department | Fragment | Example |
+|---|---|---|
+| An area at the business | the area key | `#cafe` |
+| An area at the business whose key is the `entityId` or holds `:` | `area:` and the key | `#area:business` |
+| A Noren location other than the business, without an area | `loc:` and the page id | `#loc:musterstadt/sued` |
+| An area of a Noren location other than the business | `loc:`, the page id, `:` and the key | `#loc:sued:cafe` |
+
+The page id keeps its `/`. The page id and the key are percent-encoded, so a `:` in either one becomes `%3A` and `:` only separates the parts. A key at the business is not encoded. The forms cannot meet: a bare key has no `:`, `area:` and `loc:` differ, and the number of `:` tells a location with an area from one without. Do not set `sayamaapps.annai.entityId` to a value that starts with `loc:` or `area:`.
+
+**One-time change in 2.5.0, sites with several Noren locations:** a department at another location was `#<page id with / as ->` and, with an area, `#<page id>-<area>` (`#sued-cafe`). Two locations or areas could give the same text (`a/b` and `a-b`, or `a` with `b-c` and `a-b` with `c`), and so could a location's area and an area of the business (`#annex-cafe`). It is now `#loc:sued:cafe`. Search engines see these departments under a new `@id` once; a reference to the old `@id` in your own markup needs the new one. A single-location site is not affected.
 
 ## Check problems
 

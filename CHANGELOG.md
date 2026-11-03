@@ -8,6 +8,17 @@ All notable changes to this project are documented here. Versions follow
   the sitemap, llms.txt and the head show without configuration) is a **major**
   version: a site would publish other data after a routine update.
 
+## [2.5.0] — 2026-11-03
+
+### Fixed
+
+- **Two nodes of one JSON-LD document could share an `@id`.** A department at another Noren location was named by its page id with `/` as `-` and the area key, so the locations `a/b` and `a-b` with the same area, a location `a` with area `b-c` and a location `a-b` with area `c`, and an area `annex-cafe` of the business and the area `cafe` of location `annex` gave the same `@id`. An area of the business named like the business fragment (`business` by default) did too. Crawlers merge nodes with the same `@id`.
+
+### Changed
+
+- **Department `@id` of a unit at another Noren location, once, for sites with several locations.** It is `#loc:<page id>` and, with an area, `#loc:<page id>:<area>` (was `#<page id>` and `#<page id>-<area>`). The page id keeps its `/`; both parts are percent-encoded, so `:` only separates them. Search engines see these departments under a new `@id` once.
+- An area of the business keeps `#<area>`, except when its key equals `sayamaapps.annai.entityId` or holds a `:`: it is `#area:<area>` then. The business node's `@id` is unchanged. See [Department `@id`](docs/reference.md#department-id).
+
 ## [2.4.0] — 2026-10-31
 
 ### Changed

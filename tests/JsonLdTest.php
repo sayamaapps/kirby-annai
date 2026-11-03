@@ -67,6 +67,69 @@ function jsonld_testhof_facts(): array
 #[CoversClass(JsonLd::class)]
 final class JsonLdTest extends TestCase
 {
+	/** The exact forms, one per case. */
+	public function testDepartmentIdForms(): void
+	{
+		$facts = jsonld_testhof_facts();
+		$facts['units'] = [
+			['area' => 'laden', 'name' => 'Laden', 'primary' => true, 'schema' => []],
+			['area' => 'cafe', 'location' => 'kontakt', 'atBusiness' => true, 'name' => 'Cafe', 'primary' => false, 'schema' => []],
+			['area' => 'business', 'name' => 'Bus', 'primary' => false, 'schema' => []],
+			['area' => 'x:y', 'name' => 'Bus', 'primary' => false, 'schema' => []],
+			['area' => 'cafe', 'location' => 'a/b', 'atBusiness' => false, 'name' => 'A', 'primary' => false, 'schema' => [], 'place' => ['street' => 'Weg 1', 'city' => 'Ort']],
+			['area' => 'b:c', 'location' => 'a:d/ü', 'atBusiness' => false, 'name' => 'B', 'primary' => false, 'schema' => [], 'place' => ['street' => 'Weg 1', 'city' => 'Ort']],
+			['area' => null, 'location' => 'a/b', 'atBusiness' => false, 'name' => 'C', 'primary' => false, 'schema' => [], 'place' => ['street' => 'Weg 1', 'city' => 'Ort']],
+		];
+		expect(
+			[
+				'https://x/#cafe',
+				'https://x/#area:business',
+				'https://x/#area:x%3Ay',
+				'https://x/#loc:a/b:cafe',
+				'https://x/#loc:a%3Ad/%C3%BC:b%3Ac',
+				'https://x/#loc:a/b',
+			],
+			array_column(JsonLd::localBusiness($facts)['department'], '@id'),
+			'localBusiness: bare key at the business, area: for the entityId and for a ":", loc: for another location (page id with "/", parts percent-encoded)'
+		);
+		expect('https://x/#business', JsonLd::localBusiness($facts)['@id'], 'localBusiness: the business node keeps #entityId');
+	}
+
+	/**
+	 * Department @ids (docs/reference.md, JSON-LD business node): the bare area key at
+	 * the business, `loc:` plus the page id for another location, `area:` for a key
+	 * that may not stay bare. Every combination of the parts below gives its own @id,
+	 * next to the business node's, also when a part holds ":", "%", "/" or "loc:".
+	 */
+	public function testDepartmentIdsAreUnique(): void
+	{
+		$parts = ['a', 'b', 'a-b', 'a/b', 'a:b', 'b:a', 'a%3Ab', 'loc', 'loc:a', 'area:a', 'business', 'betrieb', 'é', 'a b'];
+		foreach (['business', 'betrieb', 'a'] as $entityId) {
+			$facts = jsonld_testhof_facts();
+			$facts['entityId'] = $entityId;
+			$facts['units'] = [];
+			foreach ($parts as $area) {
+				// At the business: no location page to tell the unit by.
+				$facts['units'][] = ['area' => $area, 'name' => 'B', 'primary' => false, 'schema' => []];
+				foreach ([...$parts, null] as $key) {
+					// At another location: $area is the location's page id here, $key the area.
+					$facts['units'][] = ['area' => $key, 'location' => $area, 'atBusiness' => false, 'name' => 'L', 'primary' => false, 'schema' => [],
+						'place' => ['street' => 'Nordweg 3', 'city' => 'Musterstadt']];
+				}
+			}
+			$node = JsonLd::localBusiness($facts);
+			$ids = array_merge([$node['@id']], array_column($node['department'], '@id'));
+			expect(1 + count($facts['units']), count($ids), "entityId $entityId: every unit has a department");
+			expect(count($ids), count(array_unique($ids)), "entityId $entityId: all @ids of one document are different");
+			foreach ($ids as $id) {
+				$fragment = substr($id, strlen('https://x/#'));
+				if (str_starts_with($fragment, 'loc:') || str_starts_with($fragment, 'area:')) {
+					holds(preg_match('#^(?:[A-Za-z0-9._~/-]|%[0-9A-F]{2}|:)+$#', $fragment) === 1, "entityId $entityId: $fragment is a valid URI fragment");
+				}
+			}
+		}
+	}
+
 	public function testSuite(): void
 	{
 		// --- localBusiness on the Testhof facts (§9.5) ---------------------------
@@ -130,9 +193,9 @@ final class JsonLdTest extends TestCase
 		$facts['units'][] = ['area' => null, 'name' => 'Ohne Ort', 'primary' => false, 'schema' => []];
 		$departments = JsonLd::localBusiness($facts)['department'];
 		expect(
-			['https://x/#standorte-sued-cafe', 'https://x/#nord'],
+			['https://x/#loc:standorte/sued:cafe', 'https://x/#loc:nord'],
 			array_column($departments, '@id'),
-			'localBusiness: another location gives @id location-area or location; a unit with neither is dropped'
+			'localBusiness: another location gives @id loc:location:area or loc:location; a unit with neither is dropped'
 		);
 		expect(
 			['@type' => 'PostalAddress', 'streetAddress' => 'Bahnhofstraße 2', 'postalCode' => '12346', 'addressLocality' => 'Musterdorf', 'addressCountry' => 'DE'],

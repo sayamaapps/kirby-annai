@@ -1085,7 +1085,7 @@ final class BusinessTest extends TestCase
 				$doc = Business::jsonLd($kirby, $kirby->site()->homePage());
 				$ids = array_map(fn (array $d): string => (string)($d['@id'] ?? ''), $doc['department'] ?? []);
 				expect(count($ids), count(array_unique($ids)), 'same address, same area key on two pages: department @ids are unique');
-				holds(in_array(true, array_map(fn (string $id): bool => str_ends_with($id, '#b-cafe'), $ids), true), 'same address: the second page\'s area is #b-cafe');
+				holds(in_array(true, array_map(fn (string $id): bool => str_ends_with($id, '#loc:b:cafe'), $ids), true), 'same address: the second page\'s area is #loc:b:cafe');
 				// A page with an address of its own, even the business's, is its own location: not "at the business".
 				expect([true, true, false], array_column(Business::units($kirby), 'atBusiness'), 'same address: the second page\'s unit is not at the business (its page carries an address)');
 			} finally {
@@ -1125,7 +1125,7 @@ final class BusinessTest extends TestCase
 			expect(['https://schema.org/Monday'], $days($document), 'units: two locations, the business node has location A\'s Monday');
 			expect(1, count($departments), 'units: two locations, one department for location B');
 			expect(['https://schema.org/Tuesday'], $days($departments[0] ?? []), 'units: two locations, department carries location B\'s Tuesday');
-			expect('http://example.invalid/#b-praxis', $departments[0]['@id'] ?? null, 'units: two locations, department @id from location and area');
+			expect('http://example.invalid/#loc:b:praxis', $departments[0]['@id'] ?? null, 'units: two locations, department @id from location and area');
 			expect('Bahnhofstraße 2', $departments[0]['address']['streetAddress'] ?? null, 'units: two locations, department address from its own page');
 			expect('+493034567002', $departments[0]['telephone'] ?? null, 'units: two locations, department phone from its own page');
 			// With units of two location pages the name is Noren's label ("<location> · <area>"), see below.
@@ -1150,7 +1150,7 @@ final class BusinessTest extends TestCase
 				'units: annai.area at another location → business node pairs location A\'s address, phone and hours'
 			);
 			expect(
-				[['http://example.invalid/#b-praxis', 'Bahnhofstraße 2', '+493034567002', ['https://schema.org/Tuesday']]],
+				[['http://example.invalid/#loc:b:praxis', 'Bahnhofstraße 2', '+493034567002', ['https://schema.org/Tuesday']]],
 				array_map(fn ($d) => [$d['@id'] ?? null, $d['address']['streetAddress'] ?? null, $d['telephone'] ?? null, $days($d)], $departments),
 				'units: annai.area at another location → Praxis B is the department with location B\'s address, phone and hours'
 			);
@@ -1169,7 +1169,7 @@ final class BusinessTest extends TestCase
 			[$units, $departments] = $shared['bizTwoLocations'];
 			expect([null], array_column(array_slice($units, 1), 'area'), 'units: second location without areas is a unit with area null');
 			expect(1, count($departments), 'units: a second location without areas becomes a department');
-			expect('http://example.invalid/#b', $departments[0]['@id'] ?? null, 'units: department @id of a location without areas is the page id');
+			expect('http://example.invalid/#loc:b', $departments[0]['@id'] ?? null, 'units: department @id of a location without areas is loc: and the page id');
 			expect(['https://schema.org/Tuesday'], $days($departments[0] ?? []), 'units: department of a location without areas carries its hours');
 
 			// No business page (`annai.location => fn () => null`), the address in
@@ -1212,7 +1212,7 @@ final class BusinessTest extends TestCase
 				'no business page: the business node has the site address and phone with Nord\'s hours'
 			);
 			expect(
-				[['http://example.invalid/#sued-praxis', 'Südweg 3', '+493034567003', ['https://schema.org/Tuesday']]],
+				[['http://example.invalid/#loc:sued:praxis', 'Südweg 3', '+493034567003', ['https://schema.org/Tuesday']]],
 				array_map(fn ($d) => [$d['@id'] ?? null, $d['address']['streetAddress'] ?? null, $d['telephone'] ?? null, $days($d)], $document['department'] ?? []),
 				'no business page: the second location is a department with its OWN address and phone'
 			);
