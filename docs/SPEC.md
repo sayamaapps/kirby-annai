@@ -653,9 +653,12 @@ final class JsonLd
      *    'sameAs' => list<string>,
      *    'department' => [ for every unit with primary false that has an area or a location:
      *        ['@type' => type, '@id' => url . '/#' . fragment   // the bare area for a unit with `atBusiness` (§3.8: no address
-     *                                                           // of its own, or the business page); else location id ("/" → "-")
-     *                                                           // [. '-' . area] — a unit with `place` (another location),
-     *                                                           // a page with an address of its own, or a unit without an area
+     *                                                           // of its own, or the business page), unless the key is the
+     *                                                           // entityId or holds ":" — then 'area:' . encoded key; else
+     *                                                           // 'loc:' . location id ("/" kept) [. ':' . area], each part
+     *                                                           // percent-encoded (":" → %3A) — a unit with `place` (another
+     *                                                           // location), a page with an address of its own, or a unit without
+     *                                                           // an area
      *         'name' => name !== '' ? name . ' — ' . unit.name : unit.name,
      *         'address' => same address, or the unit's `place` address, 'telephone' => phoneE164, or place phoneE164,
      *         'openingHoursSpecification' => unit schema, 'specialOpeningHoursSpecification' => unit schema] ],
@@ -876,7 +879,7 @@ final class Business
      *    'atBusiness' => bool: place null and (the unit's page is location(), Noren has no page, or the page
      *                  carries no address of its own — the hours on one page, the address on `annai.location`,
      *                  in site.txt, or none at all with `fn () => null`). Its department @id is the bare area
-     *                  key (§3.6). A page with an address of its own, even the business's, is false, so two
+     *                  key (§3.6; `area:<key>` when the key is the entityId or holds ":"). A page with an address of its own, even the business's, is false, so two
      *                  pages with the same area key keep distinct @ids,
      *    'name'     => 'Hofladen': Noren's `name`; as soon as the units come from more than one location
      *                  page, Noren's `label` ("Praxis Nord · Praxis", `<location short> · <area short>`),
@@ -1549,7 +1552,7 @@ Fixture: site.txt with `Marke`, `Zusatz`, `Beschreibung`, `Instagram`; page
 - `field('street')` from the page; `field('email')` falls back to site; both empty → `''`
 - `facts()`: name from `marke`, fallback to title when `marke` empty; `description` is the rendered field as plain text (`**Bio**`, `(link: …)` and tags gone, not shortened); `phoneE164`; `sameAs` merges option + `instagram` field; `geo` legacy keys; `action` legacy keys; `type` default; `units` `[]` without Noren
 - With Noren (symlinked when `ANNAI_NOREN_PATH` exists, else print `SKIP` lines and `holds(true)`): `noren.active`, two areas → two units, primary = `annai.area` else first, `days[0]['blocks']` `[[480,720],[840,1080]]`, `note`, `closures` with `hours`, `schema` keys present
-- With Noren: the address page as `annai.location` (or `fn () => null`, or a page without an address) and two areas on a Noren page without an address of its own → both units `atBusiness`, the department `@id` is `#cafe`; two Noren pages with the same address and area key → `#cafe` and `#b-cafe`
+- With Noren: the address page as `annai.location` (or `fn () => null`, or a page without an address) and two areas on a Noren page without an address of its own → both units `atBusiness`, the department `@id` is `#cafe`; two Noren pages with the same address and area key → `#cafe` and `#loc:b:cafe`; an area named like the entityId at the business → `#area:business`; locations `a/b` and `a-b` with area `cafe` → `#loc:a/b:cafe` and `#loc:a-b:cafe` (`DepartmentIdTest`)
 - With Noren, `annai.location => fn () => null` and two Noren pages with addresses of their own: with the site address equal to the first page's, that unit is primary (`place` null) and the second a department with its OWN address and phone, its llms.txt block with address lines; with a site address of neither, both are departments with their own addresses, no primary, the business node keeps the site address without hours. Two locations with the same area name → names `Praxis Nord · Praxis` / `Praxis Süd · Praxis` (headings, department name), no bare `### Praxis`. `annai.area` without a match is logged; a matching one logs nothing
 - With Noren and the page cache on: a subpage keeps `response()->cache()` true and its cache entry (`laden.latest.html`); the home page keeps its hours and stays out of the cache; with an `annai.jsonld` hook the facts carry the units on the subpage; `facts($kirby, false)['units']` is `[]`
 - `jsonLd()`: home → one node; `/laden` → null; hook adds a node → `@graph`; hook returning `[]` → null; `type => false` + hook → the hook's node alone

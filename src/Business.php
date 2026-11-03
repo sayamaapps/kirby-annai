@@ -39,9 +39,9 @@ class Business
 	 * own: the hours live on one page, the address on `annai.location` or in
 	 * site.txt (also with `fn () => null`, no business page at all). Only a page
 	 * with an address of its own — even the business's — keeps its page id in
-	 * the fragment (`#b-cafe`), so two pages with the same area key never share
-	 * an @id. A changed @id is a new entity for Google, so the fragment stays
-	 * stable for the same page.
+	 * the fragment (`#loc:b:cafe`, see JsonLd::fragment()), so two pages with the
+	 * same area key never share an @id. A changed @id is a new entity for Google,
+	 * so the fragment stays stable for the same page.
 	 */
 	private static function atBusiness(App $kirby, Page|null $page, Page|null $business, array|null $place): bool
 	{

@@ -83,25 +83,38 @@ class JsonLd
 	}
 
 	/**
-	 * Fragment of a department's @id: the area key for a unit at the business
-	 * (`#cafe`; Business::units() says so with `atBusiness`: no
-	 * address of its own, or the business page itself); for a unit at another
-	 * location (or one without an area) the location's page id with "/" as "-",
-	 * plus "-" and the area key when there is one (`#standort-b`,
-	 * `#standort-b-praxis`), so two locations with the same area key do not
-	 * share an @id. null when the unit has neither.
+	 * Fragment of a department's @id, null when the unit has neither an area nor
+	 * a location. No two units of one document get the same one:
+	 *
+	 * - `cafe`, the bare area key, for a unit at the business (Business::units()
+	 *   says so with `atBusiness`: no address of its own, or the business page
+	 *   itself). Not when the key equals the business node's fragment
+	 *   (`entityId`) or holds ":", then the unit takes the `area:` form.
+	 * - `loc:standort/b` or `loc:standort/b:praxis`, for a unit at another
+	 *   location (or one without an area): "loc:", the location's page id with
+	 *   "/" kept, and ":" plus the area key when there is one.
+	 * - `area:business`, "area:" and the key, for a unit at the business whose
+	 *   key may not stay bare.
+	 *
+	 * Page id and key are percent-encoded part by part, so ":" only separates
+	 * the parts (an area key is free text and a page folder may be named
+	 * "a:b"). A bare key holds no ":", "loc:" and "area:" differ, and the number
+	 * of ":" tells "loc:<id>" from "loc:<id>:<area>". Only an `entityId` that
+	 * starts with "loc:" or "area:" could still meet a department; the
+	 * reference says not to set one.
 	 */
-	private static function fragment(array $unit): string|null
+	private static function fragment(array $unit, string $entityId): string|null
 	{
 		$area = is_string($unit['area'] ?? null) && $unit['area'] !== '' ? $unit['area'] : null;
-		$location = is_string($unit['location'] ?? null) && $unit['location'] !== '' ? str_replace('/', '-', (string)$unit['location']) : null;
-		if ($area !== null && ($unit['atBusiness'] ?? !is_array($unit['place'] ?? null)) === true) {
-			return $area;
+		$location = is_string($unit['location'] ?? null) && $unit['location'] !== '' ? $unit['location'] : null;
+		$atBusiness = ($unit['atBusiness'] ?? !is_array($unit['place'] ?? null)) === true;
+		if ($area !== null && ($atBusiness || $location === null)) {
+			return !str_contains($area, ':') && $area !== $entityId ? $area : 'area:' . self::part($area);
 		}
 		if ($location === null) {
-			return $area;
+			return null;
 		}
-		return $area !== null ? $location . '-' . $area : $location;
+		return 'loc:' . self::part($location, true) . ($area !== null ? ':' . self::part($area) : '');
 	}
 
 	/**
@@ -119,6 +132,7 @@ class JsonLd
 		}
 
 		$url = (string)($facts['url'] ?? '');
+		$entityId = (string)($facts['entityId'] ?? 'business');
 		$address = self::address($facts);
 
 		$primary = null;
@@ -131,7 +145,7 @@ class JsonLd
 				$primary ??= $unit;
 				continue;
 			}
-			$fragment = self::fragment($unit);
+			$fragment = self::fragment($unit, $entityId);
 			if ($fragment === null) {
 				continue;
 			}
@@ -160,7 +174,7 @@ class JsonLd
 
 		$node = [
 			'@type'                            => $type,
-			'@id'                              => $url . '/#' . ($facts['entityId'] ?? 'business'),
+			'@id'                              => $url . '/#' . $entityId,
 			'name'                             => $name,
 			'description'                      => $facts['description'] ?? null,
 			'url'                              => $url,
@@ -186,6 +200,17 @@ class JsonLd
 		];
 
 		return Text::prune($node);
+	}
+
+	/**
+	 * Percent-encodes one part of a fragment (RFC 3986). The result holds no ":",
+	 * so ":" can separate the parts; rawurlencode() is injective ("%" becomes
+	 * "%25"). "/" is encoded unless $keepSlash is true (a page id).
+	 */
+	private static function part(string $text, bool $keepSlash = false): string
+	{
+		$encoded = rawurlencode($text);
+		return $keepSlash ? str_replace('%2F', '/', $encoded) : $encoded;
 	}
 
 	/** The complete script element for the document. */
