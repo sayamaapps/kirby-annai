@@ -26,12 +26,13 @@ function depLocation(string $title, string $street, array $areas): array
  * Renders the home page of a throwaway site with Noren and returns its
  * JSON-LD block, as a crawler reads it from the annai/head snippet.
  * $pages: content folder => [template, fields]. The first betrieb page is the business.
+ * $site: more fields of site.txt (the business address, say).
  */
-function depRender(array $pages, array $options = []): array
+function depRender(array $pages, array $options = [], array $site = []): array
 {
 	$tmp = annai_site(['noren']);
 	try {
-		annai_page($tmp, '', 'site', ['title' => 'Hof', 'marke' => 'Hof']);
+		annai_page($tmp, '', 'site', ['title' => 'Hof', 'marke' => 'Hof'] + $site);
 		foreach ($pages as $dir => [$template, $fields]) {
 			annai_page($tmp, $dir, $template, $fields);
 		}
@@ -78,6 +79,8 @@ final class DepartmentIdTest extends TestCase
 	public static function documents(): array
 	{
 		$business = static fn (array $areas): array => ['1_kontakt' => ['betrieb', depLocation('Kontakt', 'Musterweg 1', $areas)]];
+		// The one Noren page has the address of site.txt too.
+		$address = ['strasse' => 'Musterweg 1', 'plz' => '12345', 'ort' => 'Musterstadt'];
 		return [
 			// A location in a folder and a location with a dash share an area key.
 			'location a/b and location a-b, area cafe' => [
@@ -152,17 +155,42 @@ final class DepartmentIdTest extends TestCase
 				['business'],
 				'betrieb',
 			],
+			// One Noren page. It is the business page unless annai.location says otherwise;
+			// a page that is not the business page and has an address of its own is
+			// a location, also when that is the address of site.txt.
+			'one Noren page with an address, the business page' => [
+				$business(['laden', 'cafe']),
+				[],
+				['cafe'],
+				'business',
+				$address,
+			],
+			'one Noren page with an address, annai.location => fn () => null' => [
+				$business(['laden', 'cafe']),
+				['annai.location' => fn () => null],
+				['loc:kontakt:cafe'],
+				'business',
+				$address,
+			],
+			'one Noren page with an address, annai.location names another page' => [
+				$business(['laden', 'cafe']),
+				['annai.location' => 'home'],
+				['loc:kontakt:cafe'],
+				'business',
+				$address,
+			],
 		];
 	}
 
 	/**
 	 * @param array<string, array{0: string, 1: array}> $pages
 	 * @param list<string> $fragments the fragments of the departments, in any order
+	 * @param array<string, string> $site more fields of site.txt
 	 */
 	#[DataProvider('documents')]
-	public function testEveryIdOfTheDocumentIsUnique(array $pages, array $options, array $fragments, string $entityId): void
+	public function testEveryIdOfTheDocumentIsUnique(array $pages, array $options, array $fragments, string $entityId, array $site = []): void
 	{
-		$document = depRender($pages, $options);
+		$document = depRender($pages, $options, $site);
 		$ids = depIds($document);
 		expect(array_values(array_unique($ids)), $ids, 'every @id in the document is different');
 		expect(self::BASE . '#' . $entityId, $document['@id'] ?? null, 'the business node keeps #entityId');
