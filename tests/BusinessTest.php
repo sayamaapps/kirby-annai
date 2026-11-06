@@ -309,7 +309,7 @@ final class BusinessTest extends TestCase
 			expect([], $facts['units'], 'facts: units [] without Noren');
 			expect(
 				['name', 'tagline', 'description', 'url', 'image', 'phone', 'phoneE164', 'fax', 'faxE164', 'email',
-					'street', 'postalCode', 'city', 'country', 'geo', 'sameAs', 'action', 'type', 'entityId', 'units'],
+					'street', 'postalCode', 'city', 'country', 'geo', 'sameAs', 'action', 'type', 'entityId', 'units', 'gastro', 'extra'],
 				array_keys($facts),
 				'facts: keys of §3.8'
 			);

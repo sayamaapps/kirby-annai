@@ -102,6 +102,8 @@ class Routes
 				'phone'      => (string)($facts['phone'] ?? ''),
 				'phoneE164'  => (string)($facts['phoneE164'] ?? ''),
 				'email'      => (string)($facts['email'] ?? ''),
+				'cuisine'    => implode(', ', (array)($facts['gastro']['servesCuisine'] ?? [])),
+				'priceRange' => (string)($facts['gastro']['priceRange'] ?? ''),
 				'action'     => is_array($action) && ($action['target'] ?? '') !== ''
 					? ['name' => (string)($action['name'] ?? ''), 'target' => (string)$action['target']]
 					: null,

@@ -41,7 +41,7 @@ Compiled 2026-10-11 from the vendor pages linked in `src/Robots.php`; check them
 
 ## llms.txt sections
 
-Contact (omitted when empty), opening hours (one `###` per area when there are several), upcoming events (Koyomi), free sections (`sayamaapps.annai.llms.extra`), pages (the home page first), optional pages (`sayamaapps.annai.llms.optional`). Headings and day names follow `sayamaapps.annai.language`. The H1 is the brand field, else the site title.
+Contact with cuisine and price range when set (omitted when empty), opening hours (one `###` per area when there are several), upcoming events (Koyomi), free sections (`sayamaapps.annai.llms.extra`), pages (the home page first), optional pages (`sayamaapps.annai.llms.optional`). Headings and day names follow `sayamaapps.annai.language`. The H1 is the brand field, else the site title.
 
 ## JSON-LD business node
 
@@ -52,6 +52,8 @@ On the home page, one node built from the fields and Noren:
 - `openingHoursSpecification` and `specialOpeningHoursSpecification` of the primary Noren area
 - `department` for further areas and for units at another Noren location, each with its own `@id` (see [Department `@id`](#department-id))
 - `sameAs` from `sayamaapps.annai.sameAs` and the profile fields; `potentialAction` from `sayamaapps.annai.action`
+- `servesCuisine`, `priceRange`, `acceptsReservations`, `hasMap`, `hasMenu` from the options of the same name (README, [Gastronomy](../README.md#gastronomy))
+- the properties of `sayamaapps.annai.extra` and of the Kirby hook `sayamaapps.annai.business`, which never replace a property set above
 
 Empty values are left out. The output is encoded so that a `</script>` typed into a field cannot break out of the script element.
 
@@ -147,6 +149,8 @@ Annai adds these to Kirby's site and page objects. They return `null`, `[]`, `''
     'action' => ['type' => 'OrderAction', 'name' => '…', 'target' => 'https://…'] | null,
     'type' => 'GroceryStore' | false, 'entityId' => 'business',
     'units' => [/* see below */],
+    'gastro' => ['servesCuisine' => 'Italienisch', 'priceRange' => '€€', 'acceptsReservations' => true],   // only what is set
+    'extra' => ['paymentAccepted' => 'Cash'],   // sayamaapps.annai.extra + hook sayamaapps.annai.business
 ]
 ```
 

@@ -83,6 +83,40 @@ A `/` in `sayamaapps.annai.disallow` closes the site for everyone.
 - While Sudare protects the site, every page carries `noindex, nofollow, noarchive`. `sayamaapps.annai.noindex => true` also closes the files: robots.txt says `Disallow: /`, the sitemap is empty, and llms.txt holds only its name.
 - Clear the page cache when a preview switches on and at go-live: cached pages are served before Annai runs.
 
+## Gastronomy
+
+For a restaurant, set the schema.org type and the properties guests search for. Each one is left out unless it is set:
+
+```php
+// site/config/config.php — Gasthaus Muster, Musterstadt
+return [
+    'sayamaapps.annai.active'              => true,
+    'sayamaapps.annai.type'                => 'Restaurant',
+    'sayamaapps.annai.servesCuisine'       => 'Italienisch',          // or a list: ['Italienisch', 'Pizza']
+    'sayamaapps.annai.priceRange'          => '€€',
+    'sayamaapps.annai.acceptsReservations' => true,                   // true, false or a booking URL
+    'sayamaapps.annai.hasMap'              => 'https://maps.example.com/?q=Gasthaus+Muster',
+    'sayamaapps.annai.hasMenu'             => 'https://example.com/speisekarte', // URL, Menu array or Closure
+    'sayamaapps.annai.extra'               => ['paymentAccepted' => 'Cash, Credit Card'],
+];
+```
+
+Reservations by phone: `acceptsReservations => true`; the phone number is the `telephone` of the node already. `llms.txt` lists cuisine and price range under the contact lines.
+
+`extra` mixes any further schema.org properties into the business node, as a map or `Closure(): array`. It never replaces a property Annai sets itself (`@type`, `@id`, `name`, address, hours, the options above, …).
+
+**Properties from other plugins.** A plugin adds properties through the Kirby hook `sayamaapps.annai.business`. Each handler gets the properties of the handlers before it and returns them with its own:
+
+```php
+Kirby::plugin('example/tageskarte', [
+    'hooks' => [
+        'sayamaapps.annai.business' => fn (array $fields, array $facts): array => $fields + ['hasMenu' => ['@type' => 'Menu', 'name' => 'Tageskarte']],
+    ],
+]);
+```
+
+Site options win: `hasMenu` in the config or `extra` replaces a contributed `hasMenu`. A throwing handler is logged and nothing contributed is used. The plugin does not depend on Annai: without Annai, nobody calls the hook.
+
 ## Check tool
 
 Run it before go-live. It reports each page, the robots, sitemap, llms.txt and phone findings, and makes no HTTP requests:
@@ -117,7 +151,13 @@ The 2.x name `annai.<key>` still works as a fallback until 3.0, flat or nested, 
 | `area` | `null` | Noren area with the main hours |
 | `sameAs` | `[]` | Profile URLs (`http(s)`), or `Closure(): list` |
 | `geo` | `null` | `['lat' => …, 'lng' => …]` |
+| `acceptsReservations` | `null` | `true`, `false` or a booking URL ([Gastronomy](#gastronomy)) |
 | `action` | `null` | `['type', 'name', 'target']`, or `Closure(): ?array` |
+| `servesCuisine` | `null` | Cuisine, string or list |
+| `priceRange` | `null` | Price range, e.g. `'€€'` |
+| `hasMap` | `null` | Map URL |
+| `hasMenu` | `null` | Menu URL, schema.org array, or `Closure` |
+| `extra` | `[]` | Further schema.org properties, or `Closure(): array` |
 | `labels` | `[]` | Own plugin texts by key |
 | `image` | `null` | Share image: path, URL, array, or `Closure(Page)` |
 | `country` | `'DE'` | `addressCountry` |

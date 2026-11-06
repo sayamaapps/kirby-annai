@@ -21,6 +21,8 @@ return [
 	'llms.address' => 'Address',
 	'llms.phone' => 'Phone',
 	'llms.email' => 'Email',
+	'llms.cuisine' => 'Cuisine',
+	'llms.priceRange' => 'Price range',
 	'llms.action' => 'Main action',
 	'llms.hours' => 'Opening hours',
 	'llms.hoursLine' => '{hours}',

@@ -105,6 +105,13 @@ class LlmsTxt
 			$lines[] = '- ' . I18n::t('llms.email') . ': ' . $email;
 		}
 
+		foreach (['cuisine' => 'llms.cuisine', 'priceRange' => 'llms.priceRange'] as $key => $label) {
+			$value = self::plain((string)($contact[$key] ?? ''));
+			if ($value !== '') {
+				$lines[] = '- ' . I18n::t($label) . ': ' . $value;
+			}
+		}
+
 		$action = $contact['action'] ?? null;
 		if (is_array($action)) {
 			$target = Text::line((string)($action['target'] ?? ''));
