@@ -213,6 +213,12 @@ class JsonLd
 		return $keepSlash ? str_replace('%2F', '/', $encoded) : $encoded;
 	}
 
+	/** The complete script element for the document. */
+	public static function script(array $document): string
+	{
+		return '<script type="application/ld+json">' . self::encode($document) . '</script>';
+	}
+
 	/**
 	 * Adds the properties of `sayamaapps.annai.extra` and of the hook
 	 * Business::HOOK to a business node. A key the node has already (Annai's
@@ -230,11 +236,5 @@ class JsonLd
 			}
 		}
 		return $node;
-	}
-
-	/** The complete script element for the document. */
-	public static function script(array $document): string
-	{
-		return '<script type="application/ld+json">' . self::encode($document) . '</script>';
 	}
 }

@@ -56,50 +56,6 @@ function gastroNode(App $kirby): array
 #[CoversClass(LlmsTxt::class)]
 final class GastroTest extends TestCase
 {
-	public function testNothingSetAddsNothing(): void
-	{
-		gastroSite([], function (App $kirby): void {
-			$node = gastroNode($kirby);
-			expect([], Business::facts($kirby)['gastro'], 'facts: gastro [] without options');
-			expect([], Business::facts($kirby)['extra'], 'facts: extra [] without options and hooks');
-			foreach (['servesCuisine', 'priceRange', 'acceptsReservations', 'hasMap', 'hasMenu'] as $key) {
-				holds(!array_key_exists($key, $node), 'node: no ' . $key . ' when unset');
-			}
-		});
-	}
-
-	public function testServesCuisine(): void
-	{
-		gastroSite(['sayamaapps.annai.servesCuisine' => ' Italienisch '], function (App $kirby): void {
-			expect('Italienisch', gastroNode($kirby)['servesCuisine'] ?? null, 'servesCuisine: a string, trimmed');
-		});
-		gastroSite(['sayamaapps.annai.servesCuisine' => ['Italienisch', 'Pizza', '', 'Pizza']], function (App $kirby): void {
-			expect(['Italienisch', 'Pizza'], gastroNode($kirby)['servesCuisine'] ?? null, 'servesCuisine: a list, empty and duplicate entries dropped');
-		});
-		gastroSite(['sayamaapps.annai.servesCuisine' => ['Italienisch']], function (App $kirby): void {
-			expect('Italienisch', gastroNode($kirby)['servesCuisine'] ?? null, 'servesCuisine: a list of one becomes a string');
-		});
-		gastroSite(['sayamaapps.annai.servesCuisine' => 42], function (App $kirby, string $tmp): void {
-			$log = annai_with_error_log($tmp, function () use ($kirby): void {
-				holds(!array_key_exists('servesCuisine', gastroNode($kirby)), 'servesCuisine: a number is left out');
-			});
-			holds(str_contains($log, 'servesCuisine must be a string'), 'servesCuisine: a number is logged');
-		});
-	}
-
-	public function testPriceRange(): void
-	{
-		gastroSite(['sayamaapps.annai.priceRange' => '€€'], function (App $kirby): void {
-			expect('€€', gastroNode($kirby)['priceRange'] ?? null, 'priceRange: as set');
-		});
-		gastroSite(['sayamaapps.annai.priceRange' => '  '], function (App $kirby, string $tmp): void {
-			$log = annai_with_error_log($tmp, function () use ($kirby): void {
-				holds(!array_key_exists('priceRange', gastroNode($kirby)), 'priceRange: blank is left out');
-			});
-			holds(str_contains($log, 'priceRange must be'), 'priceRange: blank is logged');
-		});
-	}
-
 	public function testAcceptsReservations(): void
 	{
 		gastroSite(['sayamaapps.annai.acceptsReservations' => true], function (App $kirby): void {
@@ -116,6 +72,41 @@ final class GastroTest extends TestCase
 				holds(!array_key_exists('acceptsReservations', gastroNode($kirby)), 'acceptsReservations: text is left out');
 			});
 			holds(str_contains($log, 'acceptsReservations must be'), 'acceptsReservations: text is logged');
+		});
+	}
+
+	public function testExtraNeverReplacesAnnaisKeys(): void
+	{
+		$options = [
+			'sayamaapps.annai.priceRange' => '€€',
+			'sayamaapps.annai.extra'      => [
+				'paymentAccepted' => 'Cash, Credit Card',
+				'name'            => 'Anderer Name',
+				'@id'             => 'https://example.com/#anders',
+				'@type'           => 'Thing',
+				'@context'        => 'https://example.org',
+				'priceRange'      => '€€€€',
+				'empty'           => '',
+			],
+		];
+		gastroSite($options, function (App $kirby): void {
+			$node = gastroNode($kirby);
+			expect('Cash, Credit Card', $node['paymentAccepted'] ?? null, 'extra: a new property is added');
+			expect('Gasthaus Muster', $node['name'] ?? null, 'extra: name stays');
+			expect('https://example.com/#business', $node['@id'] ?? null, 'extra: @id stays');
+			expect('LocalBusiness', $node['@type'] ?? null, 'extra: @type stays');
+			expect('https://schema.org', $node['@context'] ?? null, 'extra: @context stays');
+			expect('€€', $node['priceRange'] ?? null, 'extra: a gastronomy option wins');
+			holds(!array_key_exists('empty', $node), 'extra: empty values are pruned');
+		});
+		gastroSite(['sayamaapps.annai.extra' => fn () => ['servesCuisine' => 'Pizza']], function (App $kirby): void {
+			expect('Pizza', gastroNode($kirby)['servesCuisine'] ?? null, 'extra: a Closure, and a property no option sets');
+		});
+		gastroSite(['sayamaapps.annai.extra' => ['a', 'b']], function (App $kirby, string $tmp): void {
+			$log = annai_with_error_log($tmp, function () use ($kirby): void {
+				expect([], Business::facts($kirby)['extra'], 'extra: a list is ignored');
+			});
+			holds(str_contains($log, 'extra must be a map'), 'extra: a list is logged');
 		});
 	}
 
@@ -152,41 +143,6 @@ final class GastroTest extends TestCase
 				holds(!array_key_exists('hasMenu', gastroNode($kirby)), 'hasMenu: a list is left out');
 			});
 			holds(str_contains($log, 'hasMenu must be'), 'hasMenu: a list is logged');
-		});
-	}
-
-	public function testExtraNeverReplacesAnnaisKeys(): void
-	{
-		$options = [
-			'sayamaapps.annai.priceRange' => '€€',
-			'sayamaapps.annai.extra'      => [
-				'paymentAccepted' => 'Cash, Credit Card',
-				'name'            => 'Anderer Name',
-				'@id'             => 'https://example.com/#anders',
-				'@type'           => 'Thing',
-				'@context'        => 'https://example.org',
-				'priceRange'      => '€€€€',
-				'empty'           => '',
-			],
-		];
-		gastroSite($options, function (App $kirby): void {
-			$node = gastroNode($kirby);
-			expect('Cash, Credit Card', $node['paymentAccepted'] ?? null, 'extra: a new property is added');
-			expect('Gasthaus Muster', $node['name'] ?? null, 'extra: name stays');
-			expect('https://example.com/#business', $node['@id'] ?? null, 'extra: @id stays');
-			expect('LocalBusiness', $node['@type'] ?? null, 'extra: @type stays');
-			expect('https://schema.org', $node['@context'] ?? null, 'extra: @context stays');
-			expect('€€', $node['priceRange'] ?? null, 'extra: a gastronomy option wins');
-			holds(!array_key_exists('empty', $node), 'extra: empty values are pruned');
-		});
-		gastroSite(['sayamaapps.annai.extra' => fn () => ['servesCuisine' => 'Pizza']], function (App $kirby): void {
-			expect('Pizza', gastroNode($kirby)['servesCuisine'] ?? null, 'extra: a Closure, and a property no option sets');
-		});
-		gastroSite(['sayamaapps.annai.extra' => ['a', 'b']], function (App $kirby, string $tmp): void {
-			$log = annai_with_error_log($tmp, function () use ($kirby): void {
-				expect([], Business::facts($kirby)['extra'], 'extra: a list is ignored');
-			});
-			holds(str_contains($log, 'extra must be a map'), 'extra: a list is logged');
 		});
 	}
 
@@ -240,5 +196,49 @@ final class GastroTest extends TestCase
 		I18n::setLabels([]);
 		$text = LlmsTxt::render(['title' => 'Gasthaus Muster', 'contact' => ['cuisine' => 'Italian', 'priceRange' => '€€']]);
 		holds(str_contains($text, "- Cuisine: Italian\n- Price range: €€"), 'llms.txt: English labels');
+	}
+
+	public function testNothingSetAddsNothing(): void
+	{
+		gastroSite([], function (App $kirby): void {
+			$node = gastroNode($kirby);
+			expect([], Business::facts($kirby)['gastro'], 'facts: gastro [] without options');
+			expect([], Business::facts($kirby)['extra'], 'facts: extra [] without options and hooks');
+			foreach (['servesCuisine', 'priceRange', 'acceptsReservations', 'hasMap', 'hasMenu'] as $key) {
+				holds(!array_key_exists($key, $node), 'node: no ' . $key . ' when unset');
+			}
+		});
+	}
+
+	public function testPriceRange(): void
+	{
+		gastroSite(['sayamaapps.annai.priceRange' => '€€'], function (App $kirby): void {
+			expect('€€', gastroNode($kirby)['priceRange'] ?? null, 'priceRange: as set');
+		});
+		gastroSite(['sayamaapps.annai.priceRange' => '  '], function (App $kirby, string $tmp): void {
+			$log = annai_with_error_log($tmp, function () use ($kirby): void {
+				holds(!array_key_exists('priceRange', gastroNode($kirby)), 'priceRange: blank is left out');
+			});
+			holds(str_contains($log, 'priceRange must be'), 'priceRange: blank is logged');
+		});
+	}
+
+	public function testServesCuisine(): void
+	{
+		gastroSite(['sayamaapps.annai.servesCuisine' => ' Italienisch '], function (App $kirby): void {
+			expect('Italienisch', gastroNode($kirby)['servesCuisine'] ?? null, 'servesCuisine: a string, trimmed');
+		});
+		gastroSite(['sayamaapps.annai.servesCuisine' => ['Italienisch', 'Pizza', '', 'Pizza']], function (App $kirby): void {
+			expect(['Italienisch', 'Pizza'], gastroNode($kirby)['servesCuisine'] ?? null, 'servesCuisine: a list, empty and duplicate entries dropped');
+		});
+		gastroSite(['sayamaapps.annai.servesCuisine' => ['Italienisch']], function (App $kirby): void {
+			expect('Italienisch', gastroNode($kirby)['servesCuisine'] ?? null, 'servesCuisine: a list of one becomes a string');
+		});
+		gastroSite(['sayamaapps.annai.servesCuisine' => 42], function (App $kirby, string $tmp): void {
+			$log = annai_with_error_log($tmp, function () use ($kirby): void {
+				holds(!array_key_exists('servesCuisine', gastroNode($kirby)), 'servesCuisine: a number is left out');
+			});
+			holds(str_contains($log, 'servesCuisine must be a string'), 'servesCuisine: a number is logged');
+		});
 	}
 }
