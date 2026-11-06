@@ -26,6 +26,9 @@ use WeakMap;
  */
 class Business
 {
+	/** Kirby hook through which other plugins add properties to the business node (contributed()). */
+	public const HOOK = 'sayamaapps.annai.business';
+
 	private const LOCATION_KEYS = ['street', 'postalCode', 'city', 'phone', 'fax', 'email'];
 
 	/** @var WeakMap<Site, array{index: bool, page: Page|null}>|null byTemplate() per site object */
@@ -248,7 +251,9 @@ class Business
 	 *    'action'      => ['type' => 'OrderAction', 'name' => 'Online bestellen', 'target' => 'https://…'] | null,
 	 *    'type'        => 'LocalBusiness' | 'GroceryStore' | false,
 	 *    'entityId'    => 'business' (Options),
-	 *    'units'       => units($kirby), or [] with $withUnits false (see showsUnits())]
+	 *    'units'       => units($kirby), or [] with $withUnits false (see showsUnits()),
+	 *    'gastro'      => Options::gastro(): servesCuisine, priceRange, acceptsReservations, hasMap, hasMenu, each only when set,
+	 *    'extra'       => Options::extra() + what the hook HOOK contributes (contributed()); the option wins]
 	 * [] when Annai is off.
 	 */
 	public static function facts(App $kirby, bool $withUnits = true): array
@@ -318,7 +323,7 @@ class Business
 		}
 		$sameAs = array_values(array_unique($sameAs));
 
-		return [
+		$facts = [
 			'name'        => $name,
 			'tagline'     => Text::line($read('tagline')),
 			// Rendered like the meta description: "**Bio**" and "(link: …)" went into
@@ -343,7 +348,47 @@ class Business
 			'type'        => Options::type($kirby),
 			'entityId'    => Options::entityId($kirby),
 			'units'       => $withUnits ? self::units($kirby) : [],
+			'gastro'      => Options::gastro($kirby),
 		];
+		$facts['extra'] = Options::extra($kirby) + self::contributed($kirby, $facts);
+		return $facts;
+	}
+
+	/**
+	 * Properties other plugins add to the business node through the Kirby
+	 * hook `sayamaapps.annai.business` (HOOK):
+	 *
+	 *   'hooks' => ['sayamaapps.annai.business' => fn (array $fields, array $facts): array => $fields + ['hasMenu' => …]]
+	 *
+	 * Each handler gets the fields of the handlers before it and returns them
+	 * with its own added. A handler that throws or returns no map is logged and
+	 * nothing contributed is used. Keys Annai sets itself, the gastronomy
+	 * options and `sayamaapps.annai.extra` win over contributed ones.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private static function contributed(App $kirby, array $facts): array
+	{
+		try {
+			$fields = $kirby->apply(self::HOOK, ['fields' => [], 'facts' => $facts], 'fields');
+		} catch (\Throwable $error) {
+			Options::warn($kirby, 'Annai: a ' . self::HOOK . ' hook threw ' . $error::class . ': ' . $error->getMessage() . ' — no contributed properties.');
+			return [];
+		}
+		if ($fields === null || $fields === []) {
+			return [];
+		}
+		if (!is_array($fields) || array_is_list($fields)) {
+			Options::warn($kirby, 'Annai: a ' . self::HOOK . ' hook must return a map of schema.org properties, not ' . get_debug_type($fields) . ' — ignored.');
+			return [];
+		}
+		$map = [];
+		foreach ($fields as $key => $value) {
+			if (is_string($key) && trim($key) !== '') {
+				$map[trim($key)] = $value;
+			}
+		}
+		return $map;
 	}
 
 	/**

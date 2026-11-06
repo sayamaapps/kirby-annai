@@ -199,7 +199,7 @@ class JsonLd
 			] : null,
 		];
 
-		return Text::prune($node);
+		return self::withExtra(Text::prune($node + (array)($facts['gastro'] ?? [])), (array)($facts['extra'] ?? []));
 	}
 
 	/**
@@ -211,6 +211,25 @@ class JsonLd
 	{
 		$encoded = rawurlencode($text);
 		return $keepSlash ? str_replace('%2F', '/', $encoded) : $encoded;
+	}
+
+	/**
+	 * Adds the properties of `sayamaapps.annai.extra` and of the hook
+	 * Business::HOOK to a business node. A key the node has already (Annai's
+	 * own properties and the gastronomy options) is never overwritten, and
+	 * `@context` is never taken. Empty values are pruned like the node's.
+	 *
+	 * @param array<string, mixed> $node
+	 * @return array<string, mixed>
+	 */
+	private static function withExtra(array $node, array $extra): array
+	{
+		foreach (Text::prune($extra) as $key => $value) {
+			if (is_string($key) && $key !== '@context' && !array_key_exists($key, $node)) {
+				$node[$key] = $value;
+			}
+		}
+		return $node;
 	}
 
 	/** The complete script element for the document. */

@@ -1363,6 +1363,8 @@ stay with the site.
 | `llms.address` | Address | Adresse |
 | `llms.phone` | Phone | Telefon |
 | `llms.email` | Email | E-Mail |
+| `llms.cuisine` | Cuisine | Küche |
+| `llms.priceRange` | Price range | Preisklasse |
 | `llms.action` | Main action | Haupthandlung |
 | `llms.hours` | Opening hours | Öffnungszeiten |
 | `llms.hoursLine` | `{hours}` | `{hours} Uhr` |

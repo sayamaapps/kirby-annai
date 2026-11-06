@@ -14,6 +14,8 @@ return [
 	'llms.address' => 'Adresse',
 	'llms.phone' => 'Telefon',
 	'llms.email' => 'E-Mail',
+	'llms.cuisine' => 'Küche',
+	'llms.priceRange' => 'Preisklasse',
 	'llms.action' => 'Haupthandlung',
 	'llms.hours' => 'Öffnungszeiten',
 	'llms.hoursLine' => '{hours} Uhr',

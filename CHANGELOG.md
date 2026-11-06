@@ -8,6 +8,18 @@ All notable changes to this project are documented here. Versions follow
   the sitemap, llms.txt and the head show without configuration) is a **major**
   version: a site would publish other data after a routine update.
 
+## [2.6.0] — 2026-11-06
+
+### Added
+
+- **Restaurant properties of the business node:** `sayamaapps.annai.servesCuisine` (string or list), `priceRange` (`'€€'`), `acceptsReservations` (`true`, `false` or a booking URL), `hasMap` (URL) and `hasMenu` (URL, a schema.org array such as a `Menu`, or a Closure). Each one is in the JSON-LD only when it is set. See [Gastronomy](README.md#gastronomy).
+- **`sayamaapps.annai.extra`:** further schema.org properties for the business node, as a map or `Closure(): array`. It never replaces a property Annai sets.
+- **Kirby hook `sayamaapps.annai.business`:** other plugins add properties to the business node (`fn (array $fields, array $facts): array`). Site options win over contributed properties.
+- `llms.txt` lists cuisine and price range under the contact lines when they are set (labels `llms.cuisine`, `llms.priceRange`).
+- `Business::facts()` has the keys `gastro` and `extra`.
+
+Without the new options and hooks the output is unchanged.
+
 ## [2.5.1] — 2026-11-03
 
 ### Fixed

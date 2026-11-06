@@ -235,6 +235,37 @@ class Options
 	}
 
 	/**
+	 * `sayamaapps.annai.extra`: schema.org properties mixed into the business
+	 * node, as a map (`['paymentAccepted' => 'Cash, Credit Card']`) or a
+	 * Closure(): array read when the page renders. Keys must be non-empty
+	 * strings; a list or a scalar is warned and ignored. Keys Annai sets itself
+	 * are never overwritten (JsonLd::localBusiness()).
+	 *
+	 * @return array<string, mixed>
+	 */
+	public static function extra(App $kirby): array
+	{
+		$value = self::get($kirby, 'extra');
+		if ($value instanceof Closure) {
+			$value = self::call($kirby, 'extra', $value, [], null, 'no extra properties');
+		}
+		if ($value === null || $value === []) {
+			return [];
+		}
+		if (!is_array($value) || array_is_list($value)) {
+			self::warn($kirby, 'Annai: ' . self::setKey($kirby, 'extra') . " must be a map of schema.org properties, e.g. ['paymentAccepted' => 'Cash'] — ignored.");
+			return [];
+		}
+		$map = [];
+		foreach ($value as $key => $item) {
+			if (is_string($key) && trim($key) !== '') {
+				$map[trim($key)] = $item;
+			}
+		}
+		return $map;
+	}
+
+	/**
 	 * Field names, `sayamaapps.annai.fields` merged over the defaults. Unknown keys are
 	 * ignored; empty or wrongly typed values keep the default. `profiles` is a
 	 * list of field names (a string is wrapped into a list).
@@ -282,6 +313,80 @@ class Options
 		}
 		self::warn($kirby, 'Annai: ' . self::setKey($kirby, $key) . ' must be true or false — using ' . var_export($default, true) . '.');
 		return $default;
+	}
+
+	/**
+	 * Restaurant properties of the business node, each only when set
+	 * (README, Gastronomy): `servesCuisine` (string or list), `priceRange`
+	 * (string, "€€"), `acceptsReservations` (bool or http(s) URL), `hasMap`
+	 * (http(s) URL) and `hasMenu` (http(s) URL, a schema.org array such as a
+	 * Menu node, or a Closure returning either). A value of the wrong shape is
+	 * warned and left out.
+	 *
+	 * @return array<string, mixed>
+	 */
+	public static function gastro(App $kirby): array
+	{
+		$fields = [];
+
+		$cuisine = self::get($kirby, 'servesCuisine');
+		if (is_string($cuisine)) {
+			$cuisine = [$cuisine];
+		}
+		if (is_array($cuisine)) {
+			$list = array_values(array_unique(self::stringList($cuisine)));
+			if ($list !== []) {
+				$fields['servesCuisine'] = count($list) === 1 ? $list[0] : $list;
+			}
+		} elseif ($cuisine !== null) {
+			self::warn($kirby, 'Annai: ' . self::setKey($kirby, 'servesCuisine') . ' must be a string or a list of strings — ignored.');
+		}
+
+		$price = self::get($kirby, 'priceRange');
+		if (is_string($price) && trim($price) !== '') {
+			$fields['priceRange'] = trim($price);
+		} elseif ($price !== null) {
+			self::warn($kirby, 'Annai: ' . self::setKey($kirby, 'priceRange') . " must be a non-empty string such as '€€' — ignored.");
+		}
+
+		$reservations = self::get($kirby, 'acceptsReservations');
+		if (is_bool($reservations)) {
+			$fields['acceptsReservations'] = $reservations;
+		} elseif ($reservations !== null) {
+			$url = self::url($reservations);
+			if ($url !== null) {
+				$fields['acceptsReservations'] = $url;
+			} else {
+				self::warn($kirby, 'Annai: ' . self::setKey($kirby, 'acceptsReservations') . ' must be true, false or an http(s) URL — ignored.');
+			}
+		}
+
+		$map = self::get($kirby, 'hasMap');
+		if ($map !== null) {
+			$url = self::url($map);
+			if ($url !== null) {
+				$fields['hasMap'] = $url;
+			} else {
+				self::warn($kirby, 'Annai: ' . self::setKey($kirby, 'hasMap') . ' must be an http(s) URL — ignored.');
+			}
+		}
+
+		$menu = self::get($kirby, 'hasMenu');
+		if ($menu instanceof Closure) {
+			$menu = self::call($kirby, 'hasMenu', $menu, [], null, 'no menu');
+		}
+		if ($menu !== null) {
+			$url = self::url($menu);
+			if ($url !== null) {
+				$fields['hasMenu'] = $url;
+			} elseif (is_array($menu) && $menu !== [] && !array_is_list($menu)) {
+				$fields['hasMenu'] = $menu;
+			} else {
+				self::warn($kirby, 'Annai: ' . self::setKey($kirby, 'hasMenu') . ' must be an http(s) URL or a schema.org array such as a Menu — ignored.');
+			}
+		}
+
+		return $fields;
 	}
 
 	/**
@@ -692,6 +797,19 @@ class Options
 		}
 		self::warn($kirby, 'Annai: ' . self::setKey($kirby, 'type') . ' must be a schema.org type name or false — using LocalBusiness.');
 		return 'LocalBusiness';
+	}
+
+	/** A trimmed http(s) URL without whitespace or control characters, else null. */
+	private static function url(mixed $value): string|null
+	{
+		if (!is_string($value)) {
+			return null;
+		}
+		$value = trim($value);
+		if (preg_match('#^https?://#i', $value) !== 1 || preg_match('/[\x{00}-\x{20}\x{7F}-\x{9F}]/u', $value) === 1) {
+			return null;
+		}
+		return $value;
 	}
 
 	/**
