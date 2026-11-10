@@ -124,9 +124,16 @@ class Business
 	 * default language's page in every language it is not translated into.
 	 * The hook keeps its precedence; its URL goes through Text::line() like
 	 * every other head text.
+	 *
+	 * The error page has none ('' → no canonical link, no og:url): Kirby
+	 * renders it for every unknown URL with a 404, so /error is the canonical
+	 * of nothing. The hook is not asked either.
 	 */
 	private static function canonical(App $kirby, Page $page): string
 	{
+		if ($page->isErrorPage()) {
+			return '';
+		}
 		$hook = Options::hook($kirby, 'canonical');
 		if ($hook !== null) {
 			$value = Options::call($kirby, 'canonical', $hook, [$page], null, 'using the page URL');

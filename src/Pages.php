@@ -55,13 +55,15 @@ class Pages
 	 * says noindex (excluded, a draft, the preview): a head must not tell
 	 * engines not to index a page and in the next line offer them its language
 	 * versions. The sitemap entries read languageAlternates() instead: the
-	 * preview is no property of the page.
+	 * preview is no property of the page. [] for the error page too, whatever
+	 * `annai.exclude.templates` says: it stands for every unknown URL, not for
+	 * a page with language versions.
 	 *
 	 * @return array<string,string>
 	 */
 	public static function alternates(App $kirby, Page $page): array
 	{
-		if (!self::hreflangOn($kirby) || self::robots($kirby, $page) !== null) {
+		if (!self::hreflangOn($kirby) || $page->isErrorPage() || self::robots($kirby, $page) !== null) {
 			return [];
 		}
 		return self::languageAlternates($kirby, $page);

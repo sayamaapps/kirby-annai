@@ -753,7 +753,7 @@ final class Head
   it is excerpted, not rendered — `Kinder <6 Jahre` keeps its text and an
   `&amp;` stays as written (`strip_tags()` used to eat everything
   from a literal `<` on).
-- Canonical: `$page->url()` (never query parameters); hook `annai.canonical`.
+- Canonical: `$page->url()` (never query parameters); hook `annai.canonical`. The error page has none (no canonical link, no `og:url`, no hreflang alternates): it is rendered with a 404 for every unknown URL.
   On a multi-language site a page without content in the current language
   (`Pages::hasContentIn()` false; Kirby renders it with the default language's
   content) points to `Pages::contentUrl()`: the default language's URL when it
