@@ -232,7 +232,7 @@ class Check
 		$content = Pages::contentUrl($kirby, $page);
 		if ($content !== null && $canonical === $content) {
 			$notes[] = sprintf(self::NO_CONTENT_NOTE, (string)$kirby->language()?->code(), $canonical);
-		} elseif ($canonical !== $page->url()) {
+		} elseif ($canonical !== $page->url() && !$page->isErrorPage()) {
 			$problems[] = 'canonical differs from the page URL';
 		}
 		if ($image !== null && preg_match('#^https://#i', $image) !== 1) {

@@ -8,6 +8,12 @@ All notable changes to this project are documented here. Versions follow
   the sitemap, llms.txt and the head show without configuration) is a **major**
   version: a site would publish other data after a routine update.
 
+## Unreleased
+
+### Fixed
+
+- **The error page has no canonical, no `og:url` and no hreflang alternates.** Kirby renders it with a 404 for every unknown URL, so its own URL (`/error`) was the canonical of every missing page. `sayamaapps.annai.canonical` is not asked for the error page either. Other pages are unchanged. `Check` no longer reports "canonical differs from the page URL" for it.
+
 ## [2.6.0] — 2026-11-06
 
 ### Added
