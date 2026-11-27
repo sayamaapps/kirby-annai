@@ -1,8 +1,8 @@
 # Annai
 
-Search-engine and AI-agent output for [Kirby CMS](https://getkirby.com) 5: `robots.txt`, `sitemap.xml`, `llms.txt`, JSON-LD and meta tags.
+Search-engine and AI-agent output for [Kirby CMS](https://getkirby.com) 5 and 6: `robots.txt`, `sitemap.xml`, `llms.txt`, JSON-LD and meta tags.
 
-**Versions:** Kirby `^5.0` · PHP 8.2 to 8.5 · package 2.x. The changes of each release are in [CHANGELOG.md](CHANGELOG.md); what is planned for the next major version is in [Planned for 3.0](#planned-for-30).
+**Versions:** Kirby `^5.0 || ^6.0` · PHP 8.2 to 8.5 · package 2.x. The changes of each release are in [CHANGELOG.md](CHANGELOG.md); what is planned for the next major version is in [Planned for 3.0](#planned-for-30).
 
 Annai builds these from the site's own content, so they cannot drift from the pages. The files are served at runtime and name the current domain. The plugin has no styling and processes no visitor data.
 
@@ -17,7 +17,7 @@ Annai builds these from the site's own content, so they cannot drift from the pa
 ## Requirements
 
 - PHP 8.2 or newer with `ext-mbstring` and `ext-json`
-- Kirby 5 (`^5.0`), the site at the host root
+- Kirby 5 or 6 (`^5.0 || ^6.0`; Kirby 6 needs PHP 8.3 or newer), the site at the host root
 - Multilingual sites with language prefixes on one domain are supported. Languages on their own domains in one installation are not.
 - Optional: Noren, Koyomi and Sudare, detected and never required. With Noren, set `noren.locations` (also when `sayamaapps.annai.location` is set), or Noren walks the whole page index on every page view that shows hours.
 

@@ -1,6 +1,6 @@
 {
     "name": "sayamaapps/kirby-annai",
-    "description": "Search and AI-agent discovery for Kirby 5 sites: robots.txt, sitemap, llms.txt, JSON-LD, meta tags.",
+    "description": "Search and AI-agent discovery for Kirby 5 and 6 sites: robots.txt, sitemap, llms.txt, JSON-LD, meta tags.",
     "license": "MIT",
     "type": "kirby-plugin",
     "keywords": [
@@ -36,7 +36,7 @@
     },
     "require-dev": {
         "ergebnis/composer-normalize": "^2.54",
-        "getkirby/cms": "^5.0",
+        "getkirby/cms": "^5.0 || ^6.0",
         "icanhazstring/composer-unused": "^0.9.7",
         "maglnet/composer-require-checker": "^4.0",
         "phpmd/phpmd": "^2.15",
@@ -65,7 +65,7 @@
     "extra": {
         "installer-name": "annai",
         "kirby": {
-            "compatible": "^5.0"
+            "compatible": "^5.0 || ^6.0"
         },
         "kirby-cms-path": false
     },
